@@ -87,3 +87,14 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+
+// Error page test routes (only in development)
+if (app()->environment('local')) {
+    Route::prefix('test-errors')->group(function () {
+        Route::get('/403', fn() => Inertia::render('Errors/Error403'))->name('test.error403');
+        Route::get('/404', fn() => Inertia::render('Errors/Error404'))->name('test.error404');
+        Route::get('/419', fn() => Inertia::render('Errors/Error419'))->name('test.error419');
+        Route::get('/500', fn() => Inertia::render('Errors/Error500'))->name('test.error500');
+        Route::get('/503', fn() => Inertia::render('Errors/Error503'))->name('test.error503');
+    });
+}

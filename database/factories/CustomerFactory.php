@@ -14,17 +14,26 @@ class CustomerFactory extends Factory
     {
         return [
             'name' => fake()->company(),
-            'identifier_type' => IdentifierType::MATRICULE_FISCALE,
+            'identifier_type' => IdentifierType::MATRICULE_FISCAL,
             'identifier_value' => $this->generateMF(),
-            'matricule_fiscale' => null,
-            'tax_category_code' => 'A',
-            'secondary_establishment' => '000',
-            'address_street' => fake()->streetAddress(),
-            'address_city' => fake()->randomElement(['Tunis', 'Sfax', 'Sousse', 'Kairouan', 'Bizerte', 'Gabès', 'Ariana', 'Monastir']),
-            'address_postal_code' => fake()->numerify('####'),
-            'address_country_code' => 'TN',
+            'matricule_fiscal' => null,
+            'category_type' => fake()->randomElement(['A', 'B', 'D', 'N', 'P']),
+            'person_type' => fake()->randomElement(['C', 'M', 'N', 'P']),
+            'tax_office' => fake()->numerify('###'),
+            'registre_commerce' => fake()->optional()->bothify('RC-######'),
+            'legal_form' => fake()->randomElement(['SA', 'SARL', 'EI', 'SP']),
+
+            'address_description' => fake()->sentence(),
+            'street' => fake()->streetAddress(),
+            'city' => fake()->randomElement(['Tunis', 'Sfax', 'Sousse', 'Kairouan', 'Bizerte', 'Gabès', 'Ariana', 'Monastir']),
+            'postal_code' => fake()->numerify('####'),
+            'country_code' => 'TN',
+
             'phone' => fake()->numerify('+216 ## ### ###'),
+            'fax' => null,
             'email' => fake()->companyEmail(),
+            'website' => fake()->optional()->url(),
+            'notes' => fake()->optional()->sentence(),
         ];
     }
 

@@ -71,7 +71,7 @@ class PaymentController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        return back()->with('success', 'Paiement enregistré avec succès.');
+        return back()->with('success', 'Payment recorded successfully.');
     }
 
     public function destroy(Payment $payment): RedirectResponse
@@ -79,11 +79,11 @@ class PaymentController extends Controller
         $invoice = $payment->invoice;
 
         if (!$invoice->isEditable() && $invoice->status !== 'accepted') {
-            return back()->with('error', 'Impossible de supprimer ce paiement.');
+            return back()->with('error', 'Cannot delete this payment.');
         }
 
         $payment->delete();
 
-        return back()->with('success', 'Paiement supprimé avec succès.');
+        return back()->with('success', 'Payment deleted successfully.');
     }
 }

@@ -77,4 +77,20 @@ class InvoiceLine extends Model
     {
         return $this->belongsTo(self::class, 'parent_line_id');
     }
+
+    /**
+     * Accessor for line_total_ht (alias for line_net_amount).
+     */
+    public function getLineTotalHtAttribute(): ?string
+    {
+        return $this->line_net_amount;
+    }
+
+    /**
+     * Accessor for line_total_ttc (alias for line_total).
+     */
+    public function getLineTotalTtcAttribute(): ?string
+    {
+        return $this->line_total;
+    }
 }

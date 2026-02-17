@@ -53,4 +53,36 @@ class CompanySetting extends Model
             'certificate_passphrase' => 'encrypted',
         ];
     }
+
+    /**
+     * Accessor for matricule_fiscale (alias for matricule_fiscal).
+     */
+    public function getMatriculeFiscaleAttribute(): ?string
+    {
+        return $this->matricule_fiscal;
+    }
+
+    /**
+     * Accessor for address_street (alias for street).
+     */
+    public function getAddressStreetAttribute(): ?string
+    {
+        return $this->street;
+    }
+
+    /**
+     * Accessor for address_postal_code (alias for postal_code).
+     */
+    public function getAddressPostalCodeAttribute(): ?string
+    {
+        return $this->postal_code;
+    }
+
+    /**
+     * Accessor for address_city (alias for city).
+     */
+    public function getAddressCityAttribute(): ?string
+    {
+        return $this->city;
+    }
 }

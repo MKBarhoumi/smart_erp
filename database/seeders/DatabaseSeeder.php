@@ -19,6 +19,6 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
-        $this->call(Add_users::class);
+        $this->call(QuickRandomSeeder::class);
     }
 }

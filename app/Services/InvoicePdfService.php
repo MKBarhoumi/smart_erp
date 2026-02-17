@@ -48,6 +48,7 @@ class InvoicePdfService
 
         $pdf = Pdf::loadView('pdf.invoice', [
             'invoice' => $invoice,
+            'company' => $settings,
             'settings' => $settings,
             'qrCode' => $qrCode,
             'amountInWords' => $amountInWords,

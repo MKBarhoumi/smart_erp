@@ -89,7 +89,13 @@ class ReportController extends Controller
             ['invoices' => fn ($q) => $q->whereNotIn('status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])],
             'total_ttc'
         )
-            ->withSum('invoices as paid_total', 'payments.amount')
+            ->addSelect([
+                'paid_total' => DB::table('payments')
+                    ->join('invoices', 'payments.invoice_id', '=', 'invoices.id')
+                    ->whereColumn('invoices.customer_id', 'customers.id')
+                    ->whereNull('invoices.deleted_at')
+                    ->selectRaw('COALESCE(SUM(payments.amount), 0)'),
+            ])
             ->orderByDesc('invoices_sum_total_ttc')
             ->paginate(20);
 

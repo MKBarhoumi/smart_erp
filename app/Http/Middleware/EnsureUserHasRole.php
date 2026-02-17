@@ -17,7 +17,7 @@ class EnsureUserHasRole
     {
         $user = $request->user();
 
-        if (!$user || !$user->hasAnyRole($roles)) {
+        if (!$user || !$user->hasAnyRole(...$roles)) {
             abort(403, 'Unauthorized.');
         }
 

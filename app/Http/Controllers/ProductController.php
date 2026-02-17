@@ -40,7 +40,7 @@ class ProductController extends Controller
         Product::create($request->validated());
 
         return redirect()->route('products.index')
-            ->with('success', 'Produit créé avec succès.');
+            ->with('success', 'Product created successfully.');
     }
 
     public function show(Product $product): Response
@@ -66,18 +66,18 @@ class ProductController extends Controller
         $product->update($request->validated());
 
         return redirect()->route('products.index')
-            ->with('success', 'Produit mis à jour avec succès.');
+            ->with('success', 'Product updated successfully.');
     }
 
     public function destroy(Product $product): RedirectResponse
     {
         if ($product->invoiceLines()->exists()) {
-            return back()->with('error', 'Impossible de supprimer un produit référencé dans des factures.');
+            return back()->with('error', 'Cannot delete a product referenced in invoices.');
         }
 
         $product->delete();
 
         return redirect()->route('products.index')
-            ->with('success', 'Produit supprimé avec succès.');
+            ->with('success', 'Product deleted successfully.');
     }
 }

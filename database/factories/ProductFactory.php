@@ -20,8 +20,8 @@ class ProductFactory extends Factory
             'unit_of_measure' => fake()->randomElement(['U', 'KG', 'L', 'M', 'H']),
             'is_subject_to_timbre' => fake()->boolean(30),
             'track_inventory' => fake()->boolean(50),
-            'current_stock_quantity' => fake()->randomFloat(3, 0, 1000),
-            'minimum_stock_quantity' => fake()->randomFloat(3, 0, 50),
+            'current_stock' => fake()->randomFloat(3, 0, 1000),
+            'min_stock_alert' => fake()->randomFloat(3, 0, 50),
         ];
     }
 
@@ -29,8 +29,8 @@ class ProductFactory extends Factory
     {
         return $this->state(fn () => [
             'track_inventory' => true,
-            'current_stock_quantity' => fake()->randomFloat(3, 100, 1000),
-            'minimum_stock_quantity' => '10.000',
+            'current_stock' => fake()->randomFloat(3, 100, 1000),
+            'min_stock_alert' => '10.000',
         ]);
     }
 }

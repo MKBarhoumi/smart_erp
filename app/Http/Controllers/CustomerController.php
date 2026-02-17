@@ -57,7 +57,7 @@ class CustomerController extends Controller
         Customer::create($data);
 
         return redirect()->route('customers.index')
-            ->with('success', 'Client créé avec succès.');
+            ->with('success', 'Customer created successfully.');
     }
 
     public function show(Customer $customer): Response
@@ -92,18 +92,18 @@ class CustomerController extends Controller
         $customer->update($data);
 
         return redirect()->route('customers.index')
-            ->with('success', 'Client mis à jour avec succès.');
+            ->with('success', 'Customer updated successfully.');
     }
 
     public function destroy(Customer $customer): RedirectResponse
     {
         if ($customer->invoices()->exists()) {
-            return back()->with('error', 'Impossible de supprimer un client avec des factures existantes.');
+            return back()->with('error', 'Cannot delete a customer with existing invoices.');
         }
 
         $customer->delete();
 
         return redirect()->route('customers.index')
-            ->with('success', 'Client supprimé avec succès.');
+            ->with('success', 'Customer deleted successfully.');
     }
 }

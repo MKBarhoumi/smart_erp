@@ -156,7 +156,7 @@ class InvoiceController extends Controller
             }
 
             return redirect()->route('invoices.show', $invoice)
-                ->with('success', 'Facture créée avec succès.');
+                ->with('success', 'Invoice created successfully.');
         });
     }
 
@@ -181,7 +181,7 @@ class InvoiceController extends Controller
     {
         if (!$invoice->isEditable()) {
             return redirect()->route('invoices.show', $invoice)
-                ->with('error', 'Cette facture ne peut plus être modifiée.');
+                ->with('error', 'This invoice can no longer be edited.');
         }
 
         $invoice->load(['lines', 'customer']);
@@ -202,7 +202,7 @@ class InvoiceController extends Controller
     public function update(StoreInvoiceRequest $request, Invoice $invoice): RedirectResponse
     {
         if (!$invoice->isEditable()) {
-            return back()->with('error', 'Cette facture ne peut plus être modifiée.');
+            return back()->with('error', 'This invoice can no longer be edited.');
         }
 
         $validated = $request->validated();
@@ -275,20 +275,20 @@ class InvoiceController extends Controller
             }
 
             return redirect()->route('invoices.show', $invoice)
-                ->with('success', 'Facture mise à jour avec succès.');
+                ->with('success', 'Invoice updated successfully.');
         });
     }
 
     public function destroy(Invoice $invoice): RedirectResponse
     {
         if (!$invoice->isEditable()) {
-            return back()->with('error', 'Cette facture ne peut plus être supprimée.');
+            return back()->with('error', 'This invoice can no longer be deleted.');
         }
 
         $invoice->delete();
 
         return redirect()->route('invoices.index')
-            ->with('success', 'Facture supprimée avec succès.');
+            ->with('success', 'Invoice deleted successfully.');
     }
 
     /**
@@ -302,7 +302,7 @@ class InvoiceController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Facture validée avec succès.');
+        return back()->with('success', 'Invoice validated successfully.');
     }
 
     /**
@@ -320,12 +320,12 @@ class InvoiceController extends Controller
             $invoice->update(['signed_xml' => $signedXml]);
             $invoice->transitionTo(InvoiceStatus::SIGNED);
         } catch (TeifValidationException|SignatureException $e) {
-            return back()->with('error', 'Erreur de signature: ' . $e->getMessage());
+            return back()->with('error', 'Signature error: ' . $e->getMessage());
         } catch (InvoiceStateException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Facture signée avec succès.');
+        return back()->with('success', 'Invoice signed successfully.');
     }
 
     /**
@@ -334,7 +334,7 @@ class InvoiceController extends Controller
     public function submit(Invoice $invoice): RedirectResponse
     {
         if (empty($invoice->signed_xml)) {
-            return back()->with('error', 'La facture doit être signée avant soumission.');
+            return back()->with('error', 'The invoice must be signed before submission.');
         }
 
         try {
@@ -353,15 +353,15 @@ class InvoiceController extends Controller
                 $invoice->update(['accepted_at' => now()]);
                 $invoice->transitionTo(InvoiceStatus::ACCEPTED);
 
-                return back()->with('success', 'Facture soumise et acceptée par TTN.');
+                return back()->with('success', 'Invoice submitted and accepted by TTN.');
             }
         } catch (TTNSubmissionException $e) {
-            return back()->with('error', 'Erreur TTN: ' . $e->getMessage());
+            return back()->with('error', 'TTN Error: ' . $e->getMessage());
         } catch (InvoiceStateException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Facture soumise à TTN avec succès.');
+        return back()->with('success', 'Invoice submitted to TTN successfully.');
     }
 
     /**
@@ -380,10 +380,12 @@ class InvoiceController extends Controller
     /**
      * Download signed XML.
      */
-    public function downloadXml(Invoice $invoice): HttpResponse
+    public function downloadXml(Invoice $invoice): RedirectResponse|HttpResponse
     {
         if (empty($invoice->signed_xml)) {
-            abort(404, 'Pas de XML signé disponible.');
+            return redirect()
+                ->back()
+                ->with('error', 'No signed XML available. Please sign the invoice first.');
         }
 
         return response($invoice->signed_xml, 200, [
@@ -427,7 +429,7 @@ class InvoiceController extends Controller
             }
 
             return redirect()->route('invoices.edit', $newInvoice)
-                ->with('success', 'Facture dupliquée en brouillon.');
+                ->with('success', 'Invoice duplicated as draft.');
         });
     }
 }

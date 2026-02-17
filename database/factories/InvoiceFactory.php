@@ -24,6 +24,7 @@ class InvoiceFactory extends Factory
             'customer_id' => Customer::factory(),
             'created_by' => User::factory(),
             'invoice_number' => 'FAC/' . date('Y') . '/' . fake()->unique()->numerify('####'),
+            'document_identifier' => 'DOC/' . date('Y') . '/' . fake()->unique()->numerify('########'),
             'document_type_code' => DocumentTypeCode::FACTURE,
             'status' => InvoiceStatus::DRAFT,
             'invoice_date' => fake()->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),

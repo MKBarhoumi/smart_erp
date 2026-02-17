@@ -14,6 +14,6 @@ class VerifyEmailController extends Controller
     {
         $request->fulfill();
 
-        return redirect('/')->with('success', 'Adresse e-mail vérifiée avec succès.');
+        return redirect('/')->with('success', 'Email address verified successfully.');
     }
 }

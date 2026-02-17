@@ -41,7 +41,7 @@ class SettingsController extends Controller
         $settings->fill($request->validated());
         $settings->save();
 
-        return back()->with('success', 'Paramètres mis à jour avec succès.');
+        return back()->with('success', 'Settings updated successfully.');
     }
 
     public function uploadCertificate(Request $request): RedirectResponse
@@ -73,6 +73,6 @@ class SettingsController extends Controller
         $settings->logo_path = $path;
         $settings->save();
 
-        return back()->with('success', 'Logo mis à jour avec succès.');
+        return back()->with('success', 'Logo updated successfully.');
     }
 }
