@@ -6,6 +6,6 @@ namespace App\Exceptions;
 
 use Exception;
 
-class InvoiceStateException extends Exception
+class OldInvoiceStateException extends Exception
 {
 }

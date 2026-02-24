@@ -54,9 +54,9 @@ export interface Product {
   updated_at: string;
 }
 
-export interface InvoiceLine {
+export interface OldInvoiceLine {
   id: string;
-  invoice_id: string;
+  oldinvoice_id: string;
   line_number: number;
   product_id: string | null;
   item_code: string;
@@ -76,9 +76,9 @@ export interface InvoiceLine {
   line_total_ttc?: string;
 }
 
-export interface InvoiceTaxLine {
+export interface OldInvoiceTaxLine {
   id: string;
-  invoice_id: string;
+  oldinvoice_id: string;
   tax_type_code: string;
   tax_type_name: string;
   tax_rate: string;
@@ -86,13 +86,13 @@ export interface InvoiceTaxLine {
   tax_amount: string;
 }
 
-export interface Invoice {
+export interface OldInvoice {
   id: string;
-  invoice_number: string;
+  oldinvoice_number: string;
   document_identifier: string | null;
   document_type_code: 'I-11' | 'I-12' | 'I-13' | 'I-14' | 'I-15' | 'I-16';
-  parent_invoice_id: string | null;
-  invoice_date: string;
+  parent_oldinvoice_id: string | null;
+  oldinvoice_date: string;
   due_date: string | null;
   billing_period_start: string | null;
   billing_period_end: string | null;
@@ -114,8 +114,8 @@ export interface Invoice {
   accepted_at: string | null;
   rejection_reason: string | null;
   notes: string | null;
-  lines?: InvoiceLine[];
-  tax_lines?: InvoiceTaxLine[];
+  lines?: OldInvoiceLine[];
+  tax_lines?: OldInvoiceTaxLine[];
   payments?: Payment[];
   created_at: string;
   updated_at: string;
@@ -123,7 +123,7 @@ export interface Invoice {
 
 export interface Payment {
   id: string;
-  invoice_id: string;
+  oldinvoice_id: string;
   created_by: string;
   payment_date: string;
   amount: string;
@@ -165,9 +165,9 @@ export interface CompanySettings {
   certificate_file: string | null;
   certificate_passphrase: string | null;
   certificate_expires_at: string | null;
-  invoice_prefix: string;
-  invoice_number_format: string;
-  next_invoice_counter: number;
+  oldinvoice_prefix: string;
+  oldinvoice_number_format: string;
+  next_oldinvoice_counter: number;
   default_timbre_fiscal: string;
   // extra fields used by the settings form that come from backend or aliases
   tax_category_code?: string;
@@ -177,7 +177,7 @@ export interface CompanySettings {
 export interface Plan {
   id: string;
   name: string;
-  max_invoices_per_month: number | null;
+  max_oldinvoices_per_month: number | null;
   max_users: number | null;
   max_products: number | null;
   has_ttn_integration: boolean;
@@ -211,9 +211,9 @@ export interface DashboardData {
   revenue_month: string;
   revenue_year: string;
   outstanding_receivables: string;
-  overdue_invoices_count: number;
-  overdue_invoices_total: string;
-  recent_invoices: Invoice[];
+  overdue_oldinvoices_count: number;
+  overdue_oldinvoices_total: string;
+  recent_oldinvoices: OldInvoice[];
   low_stock_alerts: Product[];
   ttn_summary: {
     pending: number;

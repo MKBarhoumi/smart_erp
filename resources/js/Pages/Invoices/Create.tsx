@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import type { Product } from '@/types';
-import InvoiceForm from './Form';
+import OldInvoiceForm from './Form';
 
 interface Props {
     customers: Array<{ id: string; name: string; identifier_value: string }>;
@@ -11,8 +11,8 @@ interface Props {
 export default function Create(props: Props) {
     return (
         <>
-            <Head title="New Invoice" />
-            <InvoiceForm {...props} />
+            <Head title="New OldInvoice" />
+            <OldInvoiceForm {...props} />
         </>
     );
 }

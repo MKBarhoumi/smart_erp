@@ -19,7 +19,7 @@ const Icon = ({ d, className = 'w-5 h-5' }: { d: string; className?: string }) =
 
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: <Icon d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" /> },
-  { name: 'Invoices', href: '/invoices', icon: <Icon d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /> },
+  { name: 'OldInvoices', href: '/oldinvoices', icon: <Icon d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /> },
   { name: 'Customers', href: '/customers', icon: <Icon d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /> },
   { name: 'Products', href: '/products', icon: <Icon d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /> },
   { name: 'Payments', href: '/payments', icon: <Icon d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /> },
@@ -98,14 +98,14 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
               </svg>
               <input
               type="text"
-              placeholder="Search invoices, customers, products..."
+              placeholder="Search oldinvoices, customers, products..."
               className="w-full rounded-lg border-gray-300 pl-10 pr-4 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                 const q = (e.target as HTMLInputElement).value;
                 if (q.trim()) {
-                  if (currentPath.startsWith('/invoices')) {
-                  router.get('/invoices', { search: q });
+                  if (currentPath.startsWith('/oldinvoices')) {
+                  router.get('/oldinvoices', { search: q });
                   } else if (currentPath.startsWith('/customers')) {
                   router.get('/customers', { search: q });
                   } else if (currentPath.startsWith('/products')) {

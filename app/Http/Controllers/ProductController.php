@@ -71,8 +71,8 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        if ($product->invoiceLines()->exists()) {
-            return back()->with('error', 'Cannot delete a product referenced in invoices.');
+        if ($product->oldinvoiceLines()->exists()) {
+            return back()->with('error', 'Cannot delete a product referenced in oldinvoices.');
         }
 
         $product->delete();

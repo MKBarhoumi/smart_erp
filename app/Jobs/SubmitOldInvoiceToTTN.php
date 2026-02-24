@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Enums\InvoiceStatus;
+use App\Enums\OldInvoiceStatus;
 use App\Exceptions\TTNSubmissionException;
-use App\Models\Invoice;
+use App\Models\OldInvoice;
 use App\Services\TeifXmlBuilder;
 use App\Services\TTNApiClient;
 use App\Services\XadesSignatureService;
@@ -17,7 +17,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class SubmitInvoiceToTTN implements ShouldQueue
+class SubmitOldInvoiceToTTN implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -26,7 +26,7 @@ class SubmitInvoiceToTTN implements ShouldQueue
     public array $backoff = [30, 120, 300];
 
     public function __construct(
-        public readonly Invoice $invoice,
+        public readonly OldInvoice $oldinvoice,
     ) {
     }
 
@@ -37,36 +37,36 @@ class SubmitInvoiceToTTN implements ShouldQueue
     ): void {
         try {
             // Build and sign XML if not already signed
-            if (empty($this->invoice->signed_xml)) {
-                $unsignedXml = $xmlBuilder->build($this->invoice);
+            if (empty($this->oldinvoice->signed_xml)) {
+                $unsignedXml = $xmlBuilder->build($this->oldinvoice);
                 $signedXml = $signatureService->sign($unsignedXml);
-                $this->invoice->update(['signed_xml' => $signedXml]);
-                $this->invoice->transitionTo(InvoiceStatus::SIGNED);
+                $this->oldinvoice->update(['signed_xml' => $signedXml]);
+                $this->oldinvoice->transitionTo(OldInvoiceStatus::SIGNED);
             }
 
             // Submit to TTN
-            $result = $ttnClient->submit($this->invoice, $this->invoice->signed_xml);
+            $result = $ttnClient->submit($this->oldinvoice, $this->oldinvoice->signed_xml);
 
-            $this->invoice->update([
+            $this->oldinvoice->update([
                 'ref_ttn_val' => $result['ref_ttn_val'],
                 'cev_qr_content' => $result['cev'],
                 'submitted_at' => now(),
             ]);
 
-            $this->invoice->transitionTo(InvoiceStatus::SUBMITTED);
+            $this->oldinvoice->transitionTo(OldInvoiceStatus::SUBMITTED);
 
             if (strtolower($result['status']) === 'accepted') {
-                $this->invoice->update(['accepted_at' => now()]);
-                $this->invoice->transitionTo(InvoiceStatus::ACCEPTED);
+                $this->oldinvoice->update(['accepted_at' => now()]);
+                $this->oldinvoice->transitionTo(OldInvoiceStatus::ACCEPTED);
             }
 
-            Log::info('Invoice submitted to TTN', [
-                'invoice_id' => $this->invoice->id,
+            Log::info('OldInvoice submitted to TTN', [
+                'oldinvoice_id' => $this->oldinvoice->id,
                 'ref_ttn_val' => $result['ref_ttn_val'],
             ]);
         } catch (TTNSubmissionException $e) {
             Log::error('TTN submission job failed', [
-                'invoice_id' => $this->invoice->id,
+                'oldinvoice_id' => $this->oldinvoice->id,
                 'error' => $e->getMessage(),
                 'attempt' => $this->attempts(),
             ]);
@@ -78,7 +78,7 @@ class SubmitInvoiceToTTN implements ShouldQueue
     public function failed(\Throwable $exception): void
     {
         Log::critical('TTN submission permanently failed', [
-            'invoice_id' => $this->invoice->id,
+            'oldinvoice_id' => $this->oldinvoice->id,
             'error' => $exception->getMessage(),
         ]);
     }

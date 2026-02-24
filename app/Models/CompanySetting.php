@@ -33,9 +33,9 @@ class CompanySetting extends Model
         'bank_name',
         'bank_branch_code',
         'postal_account',
-        'invoice_prefix',
-        'invoice_number_format',
-        'next_invoice_counter',
+        'oldinvoice_prefix',
+        'oldinvoice_number_format',
+        'next_oldinvoice_counter',
         'default_timbre_fiscal',
         'certificate_file',
         'certificate_passphrase',
@@ -48,7 +48,7 @@ class CompanySetting extends Model
     protected function casts(): array
     {
         return [
-            'next_invoice_counter' => 'integer',
+            'next_oldinvoice_counter' => 'integer',
             'certificate_expires_at' => 'datetime',
             'certificate_passphrase' => 'encrypted',
         ];

@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\DocumentTypeCode;
-use App\Enums\InvoiceStatus;
+use App\Enums\OldInvoiceStatus;
 use App\Models\Customer;
-use App\Models\Invoice;
-use App\Models\InvoiceLine;
+use App\Models\OldInvoice;
+use App\Models\OldInvoiceLine;
 use App\Models\User;
-use App\Services\InvoiceCalculationService;
+use App\Services\OldInvoiceCalculationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class InvoiceTest extends TestCase
+class OldInvoiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -34,31 +34,31 @@ class InvoiceTest extends TestCase
         return User::factory()->create(['role' => 'admin']);
     }
 
-    private function createInvoice(array $overrides = []): Invoice
+    private function createOldInvoice(array $overrides = []): OldInvoice
     {
         $customer = $overrides['customer'] ?? $this->createCustomer();
         $user = $overrides['user'] ?? $this->createUser();
         unset($overrides['customer'], $overrides['user']);
 
-        return Invoice::create(array_merge([
+        return OldInvoice::create(array_merge([
             'customer_id' => $customer->id,
             'created_by' => $user->id,
-            'invoice_number' => 'FAC-' . uniqid(),
+            'oldinvoice_number' => 'FAC-' . uniqid(),
             'document_identifier' => 'FAC-' . uniqid(),
             'document_type_code' => DocumentTypeCode::FACTURE,
-            'invoice_date' => '2025-01-15',
+            'oldinvoice_date' => '2025-01-15',
             'due_date' => '2025-02-15',
-            'status' => InvoiceStatus::DRAFT,
+            'status' => OldInvoiceStatus::DRAFT,
             'total_ht' => '0.000',
             'total_tva' => '0.000',
             'total_ttc' => '0.000',
         ], $overrides));
     }
 
-    public function test_invoice_can_be_created(): void
+    public function test_oldinvoice_can_be_created(): void
     {
-        $invoice = $this->createInvoice([
-            'invoice_number' => 'FAC-2025-0001',
+        $oldinvoice = $this->createOldInvoice([
+            'oldinvoice_number' => 'FAC-2025-0001',
             'document_identifier' => 'FAC-2025-0001',
             'total_ht' => '1000.000',
             'total_tva' => '190.000',
@@ -66,39 +66,39 @@ class InvoiceTest extends TestCase
             'timbre_fiscal' => '1.000',
         ]);
 
-        $this->assertDatabaseHas('invoices', [
-            'invoice_number' => 'FAC-2025-0001',
-            'status' => InvoiceStatus::DRAFT->value,
+        $this->assertDatabaseHas('oldinvoices', [
+            'oldinvoice_number' => 'FAC-2025-0001',
+            'status' => OldInvoiceStatus::DRAFT->value,
         ]);
     }
 
-    public function test_invoice_status_is_enum(): void
+    public function test_oldinvoice_status_is_enum(): void
     {
-        $invoice = $this->createInvoice();
+        $oldinvoice = $this->createOldInvoice();
 
-        $this->assertInstanceOf(InvoiceStatus::class, $invoice->status);
-        $this->assertInstanceOf(DocumentTypeCode::class, $invoice->document_type_code);
+        $this->assertInstanceOf(OldInvoiceStatus::class, $oldinvoice->status);
+        $this->assertInstanceOf(DocumentTypeCode::class, $oldinvoice->document_type_code);
     }
 
-    public function test_invoice_belongs_to_customer(): void
+    public function test_oldinvoice_belongs_to_customer(): void
     {
         $customer = $this->createCustomer();
-        $invoice = $this->createInvoice(['customer' => $customer]);
+        $oldinvoice = $this->createOldInvoice(['customer' => $customer]);
 
-        $this->assertEquals($customer->id, $invoice->customer->id);
-        $this->assertEquals('Test Customer', $invoice->customer->name);
+        $this->assertEquals($customer->id, $oldinvoice->customer->id);
+        $this->assertEquals('Test Customer', $oldinvoice->customer->name);
     }
 
-    public function test_invoice_has_lines(): void
+    public function test_oldinvoice_has_lines(): void
     {
-        $invoice = $this->createInvoice([
+        $oldinvoice = $this->createOldInvoice([
             'total_ht' => '1000.000',
             'total_tva' => '190.000',
             'total_ttc' => '1190.000',
         ]);
 
-        InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'SRV-001',
             'item_description' => 'Service A',
             'quantity' => '2.000',
@@ -111,31 +111,31 @@ class InvoiceTest extends TestCase
             'line_number' => 1,
         ]);
 
-        $invoice->refresh();
+        $oldinvoice->refresh();
 
-        $this->assertCount(1, $invoice->lines);
-        $this->assertEquals('Service A', $invoice->lines->first()->item_description);
+        $this->assertCount(1, $oldinvoice->lines);
+        $this->assertEquals('Service A', $oldinvoice->lines->first()->item_description);
     }
 
-    public function test_invoice_status_transition_draft_to_validated(): void
+    public function test_oldinvoice_status_transition_draft_to_validated(): void
     {
-        $invoice = $this->createInvoice();
+        $oldinvoice = $this->createOldInvoice();
 
-        $this->assertTrue($invoice->status->canTransitionTo(InvoiceStatus::VALIDATED));
+        $this->assertTrue($oldinvoice->status->canTransitionTo(OldInvoiceStatus::VALIDATED));
 
-        $invoice->update(['status' => InvoiceStatus::VALIDATED]);
+        $oldinvoice->update(['status' => OldInvoiceStatus::VALIDATED]);
 
-        $this->assertEquals(InvoiceStatus::VALIDATED, $invoice->fresh()->status);
+        $this->assertEquals(OldInvoiceStatus::VALIDATED, $oldinvoice->fresh()->status);
     }
 
-    public function test_invoice_calculation_with_lines(): void
+    public function test_oldinvoice_calculation_with_lines(): void
     {
-        $service = new InvoiceCalculationService();
+        $service = new OldInvoiceCalculationService();
 
-        $invoice = $this->createInvoice();
+        $oldinvoice = $this->createOldInvoice();
 
-        InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'SRV-001',
             'item_description' => 'Service',
             'quantity' => '5.000',
@@ -148,8 +148,8 @@ class InvoiceTest extends TestCase
             'line_number' => 1,
         ]);
 
-        $invoice->refresh();
-        $totals = $service->calculateTotals($invoice, '1.000', true);
+        $oldinvoice->refresh();
+        $totals = $service->calculateTotals($oldinvoice, '1.000', true);
 
         $this->assertEquals('500.000', $totals['total_ht']);
         $this->assertEquals('95.000', $totals['total_tva']);
@@ -157,27 +157,27 @@ class InvoiceTest extends TestCase
         $this->assertEquals('596.000', $totals['total_ttc']);
     }
 
-    public function test_invoice_all_document_types(): void
+    public function test_oldinvoice_all_document_types(): void
     {
         $customer = $this->createCustomer();
         $user = $this->createUser();
 
         foreach (DocumentTypeCode::cases() as $type) {
-            $invoice = Invoice::create([
+            $oldinvoice = OldInvoice::create([
                 'customer_id' => $customer->id,
                 'created_by' => $user->id,
-                'invoice_number' => "DOC-{$type->value}-" . uniqid(),
+                'oldinvoice_number' => "DOC-{$type->value}-" . uniqid(),
                 'document_identifier' => "DOC-{$type->value}-" . uniqid(),
                 'document_type_code' => $type,
-                'invoice_date' => now(),
+                'oldinvoice_date' => now(),
                 'due_date' => now()->addMonth(),
-                'status' => InvoiceStatus::DRAFT,
+                'status' => OldInvoiceStatus::DRAFT,
                 'total_ht' => '0.000',
                 'total_tva' => '0.000',
                 'total_ttc' => '0.000',
             ]);
 
-            $this->assertEquals($type, $invoice->document_type_code);
+            $this->assertEquals($type, $oldinvoice->document_type_code);
         }
     }
 }

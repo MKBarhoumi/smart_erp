@@ -23,7 +23,7 @@ class SettingsTest extends TestCase
             'category_type' => 'A',
             'person_type' => 'M',
             'city' => 'Tunis',
-            'invoice_prefix' => 'FAC',
+            'oldinvoice_prefix' => 'FAC',
         ];
     }
 
@@ -50,16 +50,16 @@ class SettingsTest extends TestCase
         $this->assertEquals('New Name SARL', CompanySetting::first()->company_name);
     }
 
-    public function test_invoice_counter_can_be_incremented(): void
+    public function test_oldinvoice_counter_can_be_incremented(): void
     {
         CompanySetting::create(array_merge($this->settingsDefaults(), [
-            'next_invoice_counter' => 5,
+            'next_oldinvoice_counter' => 5,
         ]));
 
         $settings = CompanySetting::first();
-        $settings->increment('next_invoice_counter');
+        $settings->increment('next_oldinvoice_counter');
 
-        $this->assertEquals(6, CompanySetting::first()->next_invoice_counter);
+        $this->assertEquals(6, CompanySetting::first()->next_oldinvoice_counter);
     }
 
     public function test_certificate_fields_are_nullable(): void

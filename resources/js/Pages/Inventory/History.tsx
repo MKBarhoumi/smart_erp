@@ -14,7 +14,7 @@ interface StockMovement {
   stock_before: string;
   stock_after: string;
   reason: string | null;
-  invoice_id: string | null;
+  oldinvoice_id: string | null;
   performed_by: string | null;
   performer?: { name: string } | null;
   created_at: string;

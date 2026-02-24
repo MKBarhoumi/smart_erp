@@ -1,16 +1,16 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import type { FormEvent} from 'react';
 import { useState } from 'react';
-import { InvoiceStatusBadge } from '@/Components/ui/Badge';
+import { OldInvoiceStatusBadge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Modal } from '@/Components/ui/Modal';
 import { Select } from '@/Components/ui/Select';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Invoice, Payment, PageProps } from '@/types';
+import type { OldInvoice, Payment, PageProps } from '@/types';
 
 interface Props extends PageProps {
-    invoice: Invoice & {
+    oldinvoice: OldInvoice & {
         customer: { id: string; name: string; identifier_value: string; identifier_type: string; address_street: string; address_city: string };
         lines: Array<{
             id: string;
@@ -36,7 +36,7 @@ interface Props extends PageProps {
     canDelete: boolean;
 }
 
-export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit, canDelete }: Props) {
+export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canEdit, canDelete }: Props) {
     const [showPayment, setShowPayment] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
 
@@ -49,7 +49,7 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
 
     const submitPayment = (e: FormEvent) => {
         e.preventDefault();
-        paymentForm.post(`/invoices/${invoice.id}/payments`, {
+        paymentForm.post(`/oldinvoices/${oldinvoice.id}/payments`, {
             onSuccess: () => {
                 setShowPayment(false);
                 paymentForm.reset();
@@ -73,28 +73,28 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
 
     return (
         <AuthenticatedLayout>
-            <Head title={`Invoice ${invoice.invoice_number}`} />
+            <Head title={`OldInvoice ${oldinvoice.oldinvoice_number}`} />
 
             <div className="space-y-6">
                 {/* Header */}
-                <div className={`rounded-lg p-6 shadow ${statusColor[invoice.status] ?? 'bg-white'}`}>
+                <div className={`rounded-lg p-6 shadow ${statusColor[oldinvoice.status] ?? 'bg-white'}`}>
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">{invoice.invoice_number}</h1>
+                            <h1 className="text-2xl font-bold text-gray-900">{oldinvoice.oldinvoice_number}</h1>
                             <p className="mt-1 text-sm text-gray-500">
-                                Type: {invoice.document_type_code} &bull; Created on {new Date(invoice.created_at).toLocaleDateString('en-US')}
-                                {invoice.creator && ` by ${invoice.creator.name}`}
+                                Type: {oldinvoice.document_type_code} &bull; Created on {new Date(oldinvoice.created_at).toLocaleDateString('en-US')}
+                                {oldinvoice.creator && ` by ${oldinvoice.creator.name}`}
                             </p>
-                            <div className="mt-2"><InvoiceStatusBadge status={invoice.status} /></div>
+                            <div className="mt-2"><OldInvoiceStatusBadge status={oldinvoice.status} /></div>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            {canEdit && <Link href={`/invoices/${invoice.id}/edit`}><Button size="sm">Edit</Button></Link>}
-                            {canValidate && <Button size="sm" variant="secondary" onClick={() => action(`/invoices/${invoice.id}/validate`)}>Validate</Button>}
-                            {canSign && <Button size="sm" variant="secondary" onClick={() => action(`/invoices/${invoice.id}/sign`)}>Sign</Button>}
-                            {canSubmit && <Button size="sm" onClick={() => action(`/invoices/${invoice.id}/submit`)}>Submit TTN</Button>}
-                            <a href={`/invoices/${invoice.id}/pdf`} target="_blank"><Button size="sm" variant="ghost">PDF</Button></a>
-                            <a href={`/invoices/${invoice.id}/xml`} target="_blank"><Button size="sm" variant="ghost">XML</Button></a>
-                            <Button size="sm" variant="ghost" onClick={() => action(`/invoices/${invoice.id}/duplicate`)}>Duplicate</Button>
+                            {canEdit && <Link href={`/oldinvoices/${oldinvoice.id}/edit`}><Button size="sm">Edit</Button></Link>}
+                            {canValidate && <Button size="sm" variant="secondary" onClick={() => action(`/oldinvoices/${oldinvoice.id}/validate`)}>Validate</Button>}
+                            {canSign && <Button size="sm" variant="secondary" onClick={() => action(`/oldinvoices/${oldinvoice.id}/sign`)}>Sign</Button>}
+                            {canSubmit && <Button size="sm" onClick={() => action(`/oldinvoices/${oldinvoice.id}/submit`)}>Submit TTN</Button>}
+                            <a href={`/oldinvoices/${oldinvoice.id}/pdf`} target="_blank"><Button size="sm" variant="ghost">PDF</Button></a>
+                            <a href={`/oldinvoices/${oldinvoice.id}/xml`} target="_blank"><Button size="sm" variant="ghost">XML</Button></a>
+                            <Button size="sm" variant="ghost" onClick={() => action(`/oldinvoices/${oldinvoice.id}/duplicate`)}>Duplicate</Button>
                             {canDelete && <Button size="sm" variant="danger" onClick={() => setShowDelete(true)}>Delete</Button>}
                         </div>
                     </div>
@@ -104,17 +104,17 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                     {/* Client */}
                     <div className="rounded-lg bg-white p-6 shadow">
                         <h2 className="mb-3 text-lg font-semibold">Customer</h2>
-                        <p className="font-medium">{invoice.customer.name}</p>
-                        <p className="text-sm text-gray-500">{invoice.customer.identifier_type}: {invoice.customer.identifier_value}</p>
-                        {invoice.customer.address_street && <p className="mt-2 text-sm text-gray-600">{invoice.customer.address_street}, {invoice.customer.address_city}</p>}
+                        <p className="font-medium">{oldinvoice.customer.name}</p>
+                        <p className="text-sm text-gray-500">{oldinvoice.customer.identifier_type}: {oldinvoice.customer.identifier_value}</p>
+                        {oldinvoice.customer.address_street && <p className="mt-2 text-sm text-gray-600">{oldinvoice.customer.address_street}, {oldinvoice.customer.address_city}</p>}
                     </div>
 
                     {/* Dates */}
                     <div className="rounded-lg bg-white p-6 shadow">
                         <h2 className="mb-3 text-lg font-semibold">Dates</h2>
                         <dl className="space-y-2 text-sm">
-                            <div className="flex justify-between"><dt className="text-gray-500">Invoice Date</dt><dd>{invoice.invoice_date}</dd></div>
-                            {invoice.due_date && <div className="flex justify-between"><dt className="text-gray-500">Due Date</dt><dd>{invoice.due_date}</dd></div>}
+                            <div className="flex justify-between"><dt className="text-gray-500">OldInvoice Date</dt><dd>{oldinvoice.oldinvoice_date}</dd></div>
+                            {oldinvoice.due_date && <div className="flex justify-between"><dt className="text-gray-500">Due Date</dt><dd>{oldinvoice.due_date}</dd></div>}
                         </dl>
                     </div>
 
@@ -122,18 +122,18 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                     <div className="rounded-lg bg-white p-6 shadow">
                         <h2 className="mb-3 text-lg font-semibold">Amounts</h2>
                         <dl className="space-y-2 text-sm">
-                            <div className="flex justify-between"><dt className="text-gray-500">Total excl. tax</dt><dd>{parseFloat(invoice.total_ht).toFixed(3)} TND</dd></div>
-                            <div className="flex justify-between"><dt className="text-gray-500">Total VAT</dt><dd>{parseFloat(invoice.total_tva).toFixed(3)} TND</dd></div>
-                            <div className="flex justify-between"><dt className="text-gray-500">Stamp duty</dt><dd>{parseFloat(invoice.timbre_fiscal).toFixed(3)} TND</dd></div>
+                            <div className="flex justify-between"><dt className="text-gray-500">Total excl. tax</dt><dd>{parseFloat(oldinvoice.total_ht).toFixed(3)} TND</dd></div>
+                            <div className="flex justify-between"><dt className="text-gray-500">Total VAT</dt><dd>{parseFloat(oldinvoice.total_tva).toFixed(3)} TND</dd></div>
+                            <div className="flex justify-between"><dt className="text-gray-500">Stamp duty</dt><dd>{parseFloat(oldinvoice.timbre_fiscal).toFixed(3)} TND</dd></div>
                             <hr />
-                            <div className="flex justify-between text-lg font-bold"><dt>Total incl. tax</dt><dd>{parseFloat(invoice.total_ttc).toFixed(3)} TND</dd></div>
+                            <div className="flex justify-between text-lg font-bold"><dt>Total incl. tax</dt><dd>{parseFloat(oldinvoice.total_ttc).toFixed(3)} TND</dd></div>
                         </dl>
                     </div>
                 </div>
 
                 {/* Lines */}
                 <div className="rounded-lg bg-white p-6 shadow">
-                    <h2 className="mb-4 text-lg font-semibold">Invoice Lines</h2>
+                    <h2 className="mb-4 text-lg font-semibold">OldInvoice Lines</h2>
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm">
                             <thead className="border-b text-left text-xs uppercase text-gray-500">
@@ -151,7 +151,7 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {invoice.lines.map((line, i) => (
+                                {oldinvoice.lines.map((line, i) => (
                                     <tr key={line.id}>
                                         <td className="px-3 py-2">{i + 1}</td>
                                         <td className="px-3 py-2 font-mono text-xs">{line.item_code}</td>
@@ -171,7 +171,7 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                 </div>
 
                 {/* Tax Summary */}
-                {invoice.tax_lines.length > 0 && (
+                {oldinvoice.tax_lines.length > 0 && (
                     <div className="rounded-lg bg-white p-6 shadow">
                         <h2 className="mb-4 text-lg font-semibold">Tax Summary</h2>
                         <table className="min-w-full text-sm">
@@ -179,7 +179,7 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                                 <tr><th className="px-3 py-2">Type</th><th className="px-3 py-2 text-right">Rate</th><th className="px-3 py-2 text-right">Taxable Amount</th><th className="px-3 py-2 text-right">Tax Amount</th></tr>
                             </thead>
                             <tbody className="divide-y">
-                                {invoice.tax_lines.map((tl, i) => (
+                                {oldinvoice.tax_lines.map((tl, i) => (
                                     <tr key={i}>
                                         <td className="px-3 py-2">{tl.tax_type_code}</td>
                                         <td className="px-3 py-2 text-right">{parseFloat(tl.tax_rate).toFixed(2)}%</td>
@@ -193,12 +193,12 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                 )}
 
                 {/* TTN Info */}
-                {invoice.ref_ttn_val && (
+                {oldinvoice.ref_ttn_val && (
                     <div className="rounded-lg bg-white p-6 shadow">
                         <h2 className="mb-3 text-lg font-semibold">TTN Information</h2>
                         <dl className="space-y-2 text-sm">
-                            <div className="flex justify-between"><dt className="text-gray-500">TTN Ref.</dt><dd className="font-mono">{invoice.ref_ttn_val}</dd></div>
-                            {invoice.cev_qr_content && <div className="flex justify-between"><dt className="text-gray-500">CEV / QR</dt><dd className="break-all font-mono text-xs">{invoice.cev_qr_content}</dd></div>}
+                            <div className="flex justify-between"><dt className="text-gray-500">TTN Ref.</dt><dd className="font-mono">{oldinvoice.ref_ttn_val}</dd></div>
+                            {oldinvoice.cev_qr_content && <div className="flex justify-between"><dt className="text-gray-500">CEV / QR</dt><dd className="break-all font-mono text-xs">{oldinvoice.cev_qr_content}</dd></div>}
                         </dl>
                     </div>
                 )}
@@ -207,11 +207,11 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                 <div className="rounded-lg bg-white p-6 shadow">
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-lg font-semibold">Payments</h2>
-                        {['accepted', 'validated', 'signed', 'submitted'].includes(invoice.status) && (
+                        {['accepted', 'validated', 'signed', 'submitted'].includes(oldinvoice.status) && (
                             <Button size="sm" onClick={() => setShowPayment(true)}>+ Payment</Button>
                         )}
                     </div>
-                    {invoice.payments.length === 0 ? (
+                    {oldinvoice.payments.length === 0 ? (
                         <p className="text-sm text-gray-500">No payments recorded.</p>
                     ) : (
                         <table className="min-w-full text-sm">
@@ -219,14 +219,14 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                                 <tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Method</th><th className="px-3 py-2">Ref.</th><th className="px-3 py-2 text-right">Amount</th><th className="px-3 py-2"></th></tr>
                             </thead>
                             <tbody className="divide-y">
-                                {invoice.payments.map((p) => (
+                                {oldinvoice.payments.map((p) => (
                                     <tr key={p.id}>
                                         <td className="px-3 py-2">{p.payment_date}</td>
                                         <td className="px-3 py-2 capitalize">{p.method.replace('_', ' ')}</td>
                                         <td className="px-3 py-2">{p.reference || '—'}</td>
                                         <td className="px-3 py-2 text-right font-medium">{parseFloat(p.amount).toFixed(3)} TND</td>
                                         <td className="px-3 py-2 text-right">
-                                            <button onClick={() => router.delete(`/invoices/${invoice.id}/payments/${p.id}`)} className="text-red-600 hover:underline text-xs">Delete</button>
+                                            <button onClick={() => router.delete(`/oldinvoices/${oldinvoice.id}/payments/${p.id}`)} className="text-red-600 hover:underline text-xs">Delete</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -236,7 +236,7 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                 </div>
 
                 {/* TTN Logs */}
-                {invoice.ttn_logs && invoice.ttn_logs.length > 0 && (
+                {oldinvoice.ttn_logs && oldinvoice.ttn_logs.length > 0 && (
                     <div className="rounded-lg bg-white p-6 shadow">
                         <h2 className="mb-4 text-lg font-semibold">TTN Log</h2>
                         <table className="min-w-full text-sm">
@@ -244,7 +244,7 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                                 <tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Direction</th><th className="px-3 py-2">HTTP</th></tr>
                             </thead>
                             <tbody className="divide-y">
-                                {invoice.ttn_logs.map((log) => (
+                                {oldinvoice.ttn_logs.map((log) => (
                                     <tr key={log.id}>
                                         <td className="px-3 py-2">{new Date(log.created_at).toLocaleString('en-US')}</td>
                                         <td className="px-3 py-2">{log.direction}</td>
@@ -257,10 +257,10 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                 )}
 
                 {/* Notes */}
-                {invoice.notes && (
+                {oldinvoice.notes && (
                     <div className="rounded-lg bg-white p-6 shadow">
                         <h2 className="mb-2 text-lg font-semibold">Notes</h2>
-                        <p className="text-sm text-gray-700 whitespace-pre-line">{invoice.notes}</p>
+                        <p className="text-sm text-gray-700 whitespace-pre-line">{oldinvoice.notes}</p>
                     </div>
                 )}
             </div>
@@ -286,10 +286,10 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
 
             {/* Delete Modal */}
             <Modal show={showDelete} onClose={() => setShowDelete(false)} title="Confirm Deletion">
-                <p className="text-sm text-gray-600">Delete invoice <strong>{invoice.invoice_number}</strong>? This action is irreversible.</p>
+                <p className="text-sm text-gray-600">Delete oldinvoice <strong>{oldinvoice.oldinvoice_number}</strong>? This action is irreversible.</p>
                 <div className="mt-4 flex justify-end gap-3">
                     <Button variant="secondary" onClick={() => setShowDelete(false)}>Cancel</Button>
-                    <Button variant="danger" onClick={() => router.delete(`/invoices/${invoice.id}`)}>Delete</Button>
+                    <Button variant="danger" onClick={() => router.delete(`/oldinvoices/${oldinvoice.id}`)}>Delete</Button>
                 </div>
             </Modal>
         </AuthenticatedLayout>

@@ -6,8 +6,8 @@
 	<xs:element name="TEIF">
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element name="InvoiceHeader" type="HeaderType"/>
-				<xs:element name="InvoiceBody" type="BodyType"/>
+				<xs:element name="OldInvoiceHeader" type="HeaderType"/>
+				<xs:element name="OldInvoiceBody" type="BodyType"/>
 				<xs:element name="AdditionnalDocuments" type="AdRefType" minOccurs="0"/>
 				<xs:element name="RefTtnVal" type="RefTtnType" minOccurs="0"/>
 				<xs:element ref="ds:Signature" maxOccurs="unbounded"/>
@@ -46,9 +46,9 @@
 			<xs:element name="Ftx" type="FtxType" minOccurs="0"/>
 			<xs:element name="SpecialConditions" type="SpecialConditionsType" minOccurs="0"/>
 			<xs:element name="LinSection" type="LinSegType"/>
-			<xs:element name="InvoiceMoa" type="MoaInvoiceType"/>
-			<xs:element name="InvoiceTax" type="TaxInvoiceType"/>
-			<xs:element name="InvoiceAlc" type="AlcInvoiceType" minOccurs="0"/>
+			<xs:element name="OldInvoiceMoa" type="MoaOldInvoiceType"/>
+			<xs:element name="OldInvoiceTax" type="TaxOldInvoiceType"/>
+			<xs:element name="OldInvoiceAlc" type="AlcOldInvoiceType" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="HeaderType">
@@ -655,7 +655,7 @@
 		</xs:sequence>
 		<xs:attribute name="lang" type="LangEnumType"/>
 	</xs:complexType>
-	<xs:complexType name="MoaInvoiceType">
+	<xs:complexType name="MoaOldInvoiceType">
 		<xs:sequence>
 			<xs:element name="AmountDetails" type="MoaDetailsType" maxOccurs="unbounded"/>
 		</xs:sequence>
@@ -671,9 +671,9 @@
 			<xs:element name="RffDtm" type="RefGrpType" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:complexType name="TaxInvoiceType">
+	<xs:complexType name="TaxOldInvoiceType">
 		<xs:sequence>
-			<xs:element name="InvoiceTaxDetails" type="TaxDetailsType" maxOccurs="unbounded"/>
+			<xs:element name="OldInvoiceTaxDetails" type="TaxDetailsType" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="TaxDetailsType">
@@ -682,7 +682,7 @@
 			<xs:element name="AmountDetails" type="MoaDetailsType" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:complexType name="AlcInvoiceType">
+	<xs:complexType name="AlcOldInvoiceType">
 		<xs:sequence>
 			<xs:element name="AllowanceDetails" type="AlcDetailsType" maxOccurs="unbounded"/>
 		</xs:sequence>

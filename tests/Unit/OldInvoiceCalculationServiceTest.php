@@ -5,28 +5,28 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Enums\DocumentTypeCode;
-use App\Enums\InvoiceStatus;
+use App\Enums\OldInvoiceStatus;
 use App\Models\Customer;
-use App\Models\Invoice;
-use App\Models\InvoiceLine;
+use App\Models\OldInvoice;
+use App\Models\OldInvoiceLine;
 use App\Models\User;
-use App\Services\InvoiceCalculationService;
+use App\Services\OldInvoiceCalculationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class InvoiceCalculationServiceTest extends TestCase
+class OldInvoiceCalculationServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private InvoiceCalculationService $service;
+    private OldInvoiceCalculationService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new InvoiceCalculationService();
+        $this->service = new OldInvoiceCalculationService();
     }
 
-    private function createInvoice(): Invoice
+    private function createOldInvoice(): OldInvoice
     {
         $customer = Customer::create([
             'name' => 'Test Co',
@@ -35,14 +35,14 @@ class InvoiceCalculationServiceTest extends TestCase
         ]);
         $user = User::factory()->create();
 
-        return Invoice::create([
+        return OldInvoice::create([
             'customer_id' => $customer->id,
             'created_by' => $user->id,
-            'invoice_number' => 'FAC-' . uniqid(),
+            'oldinvoice_number' => 'FAC-' . uniqid(),
             'document_identifier' => 'FAC-' . uniqid(),
             'document_type_code' => DocumentTypeCode::FACTURE,
-            'invoice_date' => now(),
-            'status' => InvoiceStatus::DRAFT,
+            'oldinvoice_date' => now(),
+            'status' => OldInvoiceStatus::DRAFT,
             'total_ht' => '0.000',
             'total_tva' => '0.000',
             'total_ttc' => '0.000',
@@ -51,9 +51,9 @@ class InvoiceCalculationServiceTest extends TestCase
 
     public function test_calculate_line_basic(): void
     {
-        $invoice = $this->createInvoice();
-        $line = InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        $oldinvoice = $this->createOldInvoice();
+        $line = OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'PRD-01',
             'item_description' => 'Test',
             'quantity' => '10.000',
@@ -72,9 +72,9 @@ class InvoiceCalculationServiceTest extends TestCase
 
     public function test_calculate_line_with_discount(): void
     {
-        $invoice = $this->createInvoice();
-        $line = InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        $oldinvoice = $this->createOldInvoice();
+        $line = OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'PRD-02',
             'item_description' => 'Discounted',
             'quantity' => '5.000',
@@ -94,9 +94,9 @@ class InvoiceCalculationServiceTest extends TestCase
 
     public function test_calculate_line_zero_tva(): void
     {
-        $invoice = $this->createInvoice();
-        $line = InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        $oldinvoice = $this->createOldInvoice();
+        $line = OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'PRD-03',
             'item_description' => 'No TVA',
             'quantity' => '1.000',
@@ -114,9 +114,9 @@ class InvoiceCalculationServiceTest extends TestCase
 
     public function test_calculate_totals_single_line(): void
     {
-        $invoice = $this->createInvoice();
-        InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        $oldinvoice = $this->createOldInvoice();
+        OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'PRD-04',
             'item_description' => 'Single',
             'quantity' => '10.000',
@@ -126,8 +126,8 @@ class InvoiceCalculationServiceTest extends TestCase
             'line_number' => 1,
         ]);
 
-        $invoice->refresh();
-        $result = $this->service->calculateTotals($invoice, '1.000', true);
+        $oldinvoice->refresh();
+        $result = $this->service->calculateTotals($oldinvoice, '1.000', true);
 
         $this->assertEquals('1000.000', $result['total_ht']);
         $this->assertEquals('190.000', $result['total_tva']);
@@ -137,9 +137,9 @@ class InvoiceCalculationServiceTest extends TestCase
 
     public function test_calculate_totals_multiple_lines_different_tva(): void
     {
-        $invoice = $this->createInvoice();
-        InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        $oldinvoice = $this->createOldInvoice();
+        OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'PRD-05',
             'item_description' => 'TVA 19',
             'quantity' => '10.000',
@@ -148,8 +148,8 @@ class InvoiceCalculationServiceTest extends TestCase
             'tva_rate' => '19.00',
             'line_number' => 1,
         ]);
-        InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'PRD-06',
             'item_description' => 'TVA 7',
             'quantity' => '5.000',
@@ -159,8 +159,8 @@ class InvoiceCalculationServiceTest extends TestCase
             'line_number' => 2,
         ]);
 
-        $invoice->refresh();
-        $result = $this->service->calculateTotals($invoice, '1.000', true);
+        $oldinvoice->refresh();
+        $result = $this->service->calculateTotals($oldinvoice, '1.000', true);
 
         $this->assertEquals('2000.000', $result['total_ht']);
         $this->assertEquals('260.000', $result['total_tva']);
@@ -170,9 +170,9 @@ class InvoiceCalculationServiceTest extends TestCase
 
     public function test_calculate_totals_no_timbre(): void
     {
-        $invoice = $this->createInvoice();
-        InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        $oldinvoice = $this->createOldInvoice();
+        OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'PRD-07',
             'item_description' => 'No timbre',
             'quantity' => '1.000',
@@ -182,8 +182,8 @@ class InvoiceCalculationServiceTest extends TestCase
             'line_number' => 1,
         ]);
 
-        $invoice->refresh();
-        $result = $this->service->calculateTotals($invoice, '0');
+        $oldinvoice->refresh();
+        $result = $this->service->calculateTotals($oldinvoice, '0');
 
         $this->assertEquals('50.000', $result['total_ht']);
         $this->assertEquals('9.500', $result['total_tva']);
@@ -201,9 +201,9 @@ class InvoiceCalculationServiceTest extends TestCase
 
     public function test_bcmath_precision_no_float_drift(): void
     {
-        $invoice = $this->createInvoice();
-        $line = InvoiceLine::create([
-            'invoice_id' => $invoice->id,
+        $oldinvoice = $this->createOldInvoice();
+        $line = OldInvoiceLine::create([
+            'oldinvoice_id' => $oldinvoice->id,
             'item_code' => 'PRD-08',
             'item_description' => 'Precision',
             'quantity' => '0.100',

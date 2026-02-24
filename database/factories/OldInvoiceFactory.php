@@ -3,15 +3,15 @@
 namespace Database\Factories;
 
 use App\Enums\DocumentTypeCode;
-use App\Enums\InvoiceStatus;
+use App\Enums\OldInvoiceStatus;
 use App\Models\Customer;
-use App\Models\Invoice;
+use App\Models\OldInvoice;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class InvoiceFactory extends Factory
+class OldInvoiceFactory extends Factory
 {
-    protected $model = Invoice::class;
+    protected $model = OldInvoice::class;
 
     public function definition(): array
     {
@@ -23,11 +23,11 @@ class InvoiceFactory extends Factory
         return [
             'customer_id' => Customer::factory(),
             'created_by' => User::factory(),
-            'invoice_number' => 'FAC/' . date('Y') . '/' . fake()->unique()->numerify('####'),
+            'oldinvoice_number' => 'FAC/' . date('Y') . '/' . fake()->unique()->numerify('####'),
             'document_identifier' => 'DOC/' . date('Y') . '/' . fake()->unique()->numerify('########'),
             'document_type_code' => DocumentTypeCode::FACTURE,
-            'status' => InvoiceStatus::DRAFT,
-            'invoice_date' => fake()->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
+            'status' => OldInvoiceStatus::DRAFT,
+            'oldinvoice_date' => fake()->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
             'due_date' => fake()->dateTimeBetween('now', '+3 months')->format('Y-m-d'),
             'total_ht' => number_format((float) $totalHT, 3, '.', ''),
             'total_tva' => number_format((float) $totalTVA, 3, '.', ''),
@@ -38,18 +38,18 @@ class InvoiceFactory extends Factory
 
     public function validated(): static
     {
-        return $this->state(fn () => ['status' => InvoiceStatus::VALIDATED]);
+        return $this->state(fn () => ['status' => OldInvoiceStatus::VALIDATED]);
     }
 
     public function signed(): static
     {
-        return $this->state(fn () => ['status' => InvoiceStatus::SIGNED]);
+        return $this->state(fn () => ['status' => OldInvoiceStatus::SIGNED]);
     }
 
     public function accepted(): static
     {
         return $this->state(fn () => [
-            'status' => InvoiceStatus::ACCEPTED,
+            'status' => OldInvoiceStatus::ACCEPTED,
             'ref_ttn_val' => 'TTN-' . fake()->numerify('##########'),
         ]);
     }

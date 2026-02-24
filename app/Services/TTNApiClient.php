@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\TTNSubmissionException;
-use App\Models\Invoice;
+use App\Models\OldInvoice;
 use App\Models\TTNSubmissionLog;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
  * HTTPS client for Tunisia TradeNet (TTN) El Fatoora API.
- * Handles invoice submission, status polling, and response parsing.
+ * Handles oldinvoice submission, status polling, and response parsing.
  */
 class TTNApiClient
 {
@@ -34,10 +34,10 @@ class TTNApiClient
      *
      * @throws TTNSubmissionException
      */
-    public function submit(Invoice $invoice, string $signedXml): array
+    public function submit(OldInvoice $oldinvoice, string $signedXml): array
     {
         $log = TTNSubmissionLog::create([
-            'invoice_id' => $invoice->id,
+            'oldinvoice_id' => $oldinvoice->id,
             'direction' => 'outbound',
             'payload' => $signedXml,
             'status' => 'pending',
@@ -51,7 +51,7 @@ class TTNApiClient
                     'Accept' => 'application/xml',
                 ])
                 ->withBody($signedXml, 'application/xml')
-                ->post("{$this->baseUrl}/invoices");
+                ->post("{$this->baseUrl}/oldinvoices");
 
             $responseBody = $response->body();
 
@@ -81,7 +81,7 @@ class TTNApiClient
             throw $e;
         } catch (\Throwable $e) {
             Log::error('TTN submission error', [
-                'invoice_id' => $invoice->id,
+                'oldinvoice_id' => $oldinvoice->id,
                 'error' => $e->getMessage(),
             ]);
 
@@ -112,7 +112,7 @@ class TTNApiClient
                     'Authorization' => "Bearer {$this->apiKey}",
                     'Accept' => 'application/xml',
                 ])
-                ->get("{$this->baseUrl}/invoices/{$refTtnVal}/status");
+                ->get("{$this->baseUrl}/oldinvoices/{$refTtnVal}/status");
 
             if (!$response->successful()) {
                 throw new TTNSubmissionException(
@@ -144,7 +144,7 @@ class TTNApiClient
                     'Authorization' => "Bearer {$this->apiKey}",
                     'Accept' => 'application/json',
                 ])
-                ->get("{$this->baseUrl}/invoices/{$refTtnVal}/cev");
+                ->get("{$this->baseUrl}/oldinvoices/{$refTtnVal}/cev");
 
             if (!$response->successful()) {
                 throw new TTNSubmissionException(

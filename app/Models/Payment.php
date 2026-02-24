@@ -13,7 +13,7 @@ class Payment extends Model
     use HasUuids;
 
     protected $fillable = [
-        'invoice_id',
+        'oldinvoice_id',
         'created_by',
         'payment_date',
         'amount',
@@ -33,11 +33,11 @@ class Payment extends Model
     }
 
     /**
-     * @return BelongsTo<Invoice, $this>
+     * @return BelongsTo<OldInvoice, $this>
      */
-    public function invoice(): BelongsTo
+    public function oldinvoice(): BelongsTo
     {
-        return $this->belongsTo(Invoice::class);
+        return $this->belongsTo(OldInvoice::class);
     }
 
     /**

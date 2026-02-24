@@ -2,17 +2,17 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Badge } from '@/Components/ui/Badge';
 import { Pagination } from '@/Components/ui/Pagination';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Payment, Invoice, PaginatedData, PageProps } from '@/types';
+import type { Payment, OldInvoice, PaginatedData, PageProps } from '@/types';
 
-interface PaymentWithInvoice extends Payment {
-  invoice: Pick<Invoice, 'id' | 'invoice_number' | 'total_ttc' | 'status'> & {
+interface PaymentWithOldInvoice extends Payment {
+  oldinvoice: Pick<OldInvoice, 'id' | 'oldinvoice_number' | 'total_ttc' | 'status'> & {
     customer: { id: string; name: string };
   };
   creator?: { name: string };
 }
 
 interface Props extends PageProps {
-  payments: PaginatedData<PaymentWithInvoice>;
+  payments: PaginatedData<PaymentWithOldInvoice>;
   filters: { search?: string; method?: string; date_from?: string; date_to?: string };
   totalCollected: string;
 }
@@ -45,7 +45,7 @@ export default function Index({ payments, filters, totalCollected }: Props) {
             <label className="mb-1 block text-xs font-medium text-gray-600">Search</label>
             <input
               type="text"
-              placeholder="Invoice #, customer, reference..."
+              placeholder="OldInvoice #, customer, reference..."
               defaultValue={filters.search}
               onChange={(e) => {
                 const value = e.target.value;
@@ -94,7 +94,7 @@ export default function Index({ payments, filters, totalCollected }: Props) {
             <thead className="border-b bg-gray-50 text-left text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Invoice</th>
+                <th className="px-4 py-3">OldInvoice</th>
                 <th className="px-4 py-3">Customer</th>
                 <th className="px-4 py-3">Method</th>
                 <th className="px-4 py-3">Reference</th>
@@ -115,11 +115,11 @@ export default function Index({ payments, filters, totalCollected }: Props) {
                   <tr key={payment.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 whitespace-nowrap">{payment.payment_date}</td>
                     <td className="px-4 py-3">
-                      <Link href={`/invoices/${payment.invoice.id}`} className="font-medium text-indigo-600 hover:underline">
-                        {payment.invoice.invoice_number}
+                      <Link href={`/oldinvoices/${payment.oldinvoice.id}`} className="font-medium text-indigo-600 hover:underline">
+                        {payment.oldinvoice.oldinvoice_number}
                       </Link>
                     </td>
-                    <td className="px-4 py-3">{payment.invoice.customer?.name || '—'}</td>
+                    <td className="px-4 py-3">{payment.oldinvoice.customer?.name || '—'}</td>
                     <td className="px-4 py-3">
                       <Badge variant="info">{methodLabels[payment.method] || payment.method}</Badge>
                     </td>

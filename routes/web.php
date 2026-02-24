@@ -3,7 +3,7 @@
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\OldInvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
@@ -39,20 +39,20 @@ Route::middleware('auth')->group(function () {
     // Products
     Route::resource('products', ProductController::class);
 
-    // Invoices
-    Route::resource('invoices', InvoiceController::class);
-    Route::prefix('invoices/{invoice}')->name('invoices.')->group(function () {
-        Route::post('/validate', [InvoiceController::class, 'validateInvoice'])->name('validate');
-        Route::post('/sign', [InvoiceController::class, 'sign'])->name('sign');
-        Route::post('/submit', [InvoiceController::class, 'submit'])->name('submit');
-        Route::get('/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
-        Route::get('/xml', [InvoiceController::class, 'downloadXml'])->name('xml');
-        Route::post('/duplicate', [InvoiceController::class, 'duplicate'])->name('duplicate');
+    // OldInvoices
+    Route::resource('oldinvoices', OldInvoiceController::class);
+    Route::prefix('oldinvoices/{oldinvoice}')->name('oldinvoices.')->group(function () {
+        Route::post('/validate', [OldInvoiceController::class, 'validateOldInvoice'])->name('validate');
+        Route::post('/sign', [OldInvoiceController::class, 'sign'])->name('sign');
+        Route::post('/submit', [OldInvoiceController::class, 'submit'])->name('submit');
+        Route::get('/pdf', [OldInvoiceController::class, 'downloadPdf'])->name('pdf');
+        Route::get('/xml', [OldInvoiceController::class, 'downloadXml'])->name('xml');
+        Route::post('/duplicate', [OldInvoiceController::class, 'duplicate'])->name('duplicate');
     });
 
     // Payments
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
-    Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
+    Route::post('/oldinvoices/{oldinvoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 
     // Inventory

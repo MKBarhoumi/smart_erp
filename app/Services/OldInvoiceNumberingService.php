@@ -6,10 +6,10 @@ namespace App\Services;
 
 use App\Models\CompanySetting;
 
-class InvoiceNumberingService
+class OldInvoiceNumberingService
 {
     /**
-     * Generate the next invoice number based on company settings.
+     * Generate the next oldinvoice number based on company settings.
      */
     public function generateNextNumber(): string
     {
@@ -18,9 +18,9 @@ class InvoiceNumberingService
             return 'INV-0001';
         }
 
-        $format = $settings->invoice_number_format;
-        $prefix = $settings->invoice_prefix;
-        $counter = $settings->next_invoice_counter;
+        $format = $settings->oldinvoice_number_format;
+        $prefix = $settings->oldinvoice_prefix;
+        $counter = $settings->next_oldinvoice_counter;
 
         $number = str_replace(
             ['{prefix}', '{YYYY}', '{YY}', '{MM}', '{counter}'],
@@ -34,7 +34,7 @@ class InvoiceNumberingService
             $format
         );
 
-        $settings->increment('next_invoice_counter');
+        $settings->increment('next_oldinvoice_counter');
 
         return $number;
     }

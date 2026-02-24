@@ -10,9 +10,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('invoice_allowances', function (Blueprint $table) {
+        Schema::create('oldinvoice_allowances', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('invoice_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('oldinvoice_id')->constrained()->cascadeOnDelete();
             $table->string('type')->comment('allowance or charge');
             $table->string('reason')->nullable();
             $table->decimal('rate', 5, 2)->default(0);
@@ -23,6 +23,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('invoice_allowances');
+        Schema::dropIfExists('oldinvoice_allowances');
     }
 };

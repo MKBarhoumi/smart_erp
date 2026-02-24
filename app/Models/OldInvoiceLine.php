@@ -9,12 +9,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class InvoiceLine extends Model
+class OldInvoiceLine extends Model
 {
     use HasUuids;
+    
+    /**
+     * @var string
+     */
+    protected $table = 'oldinvoice_lines';
+
 
     protected $fillable = [
-        'invoice_id',
+        'oldinvoice_id',
         'parent_line_id',
         'product_id',
         'line_number',
@@ -47,11 +53,11 @@ class InvoiceLine extends Model
     }
 
     /**
-     * @return BelongsTo<Invoice, $this>
+     * @return BelongsTo<OldInvoice, $this>
      */
-    public function invoice(): BelongsTo
+    public function oldinvoice(): BelongsTo
     {
-        return $this->belongsTo(Invoice::class);
+        return $this->belongsTo(OldInvoice::class);
     }
 
     /**

@@ -4,7 +4,7 @@ import type { PageProps } from '@/types';
 
 interface Props extends PageProps {
   year: number;
-  monthlyTimbre: Array<{ month: number; total_timbre: string; invoice_count: number }>;
+  monthlyTimbre: Array<{ month: number; total_timbre: string; oldinvoice_count: number }>;
   yearlyTotal: string;
   availableYears: number[];
 }
@@ -49,7 +49,7 @@ export default function Timbre({ year, monthlyTimbre, yearlyTotal, availableYear
             <thead className="border-b bg-gray-50 text-left text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-4 py-3">Month</th>
-                <th className="px-4 py-3 text-right">Invoices</th>
+                <th className="px-4 py-3 text-right">OldInvoices</th>
                 <th className="px-4 py-3 text-right">Stamp Duty</th>
               </tr>
             </thead>
@@ -62,7 +62,7 @@ export default function Timbre({ year, monthlyTimbre, yearlyTotal, availableYear
                 monthlyTimbre.map((row) => (
                   <tr key={row.month} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium">{monthNames[row.month - 1]}</td>
-                    <td className="px-4 py-3 text-right">{row.invoice_count}</td>
+                    <td className="px-4 py-3 text-right">{row.oldinvoice_count}</td>
                     <td className="px-4 py-3 text-right font-medium">{parseFloat(row.total_timbre).toFixed(3)} TND</td>
                   </tr>
                 ))
@@ -72,7 +72,7 @@ export default function Timbre({ year, monthlyTimbre, yearlyTotal, availableYear
               <tfoot className="border-t bg-gray-50">
                 <tr className="font-semibold">
                   <td className="px-4 py-3">Total</td>
-                  <td className="px-4 py-3 text-right">{monthlyTimbre.reduce((s, r) => s + r.invoice_count, 0)}</td>
+                  <td className="px-4 py-3 text-right">{monthlyTimbre.reduce((s, r) => s + r.oldinvoice_count, 0)}</td>
                   <td className="px-4 py-3 text-right">{parseFloat(yearlyTotal).toFixed(3)} TND</td>
                 </tr>
               </tfoot>

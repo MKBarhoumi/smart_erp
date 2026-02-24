@@ -39,9 +39,9 @@ export default function Edit({ settings, certificateInfo }: Props) {
         bank_name: settings.bank_name ?? '',
         bank_rib: settings.bank_rib ?? '',
         postal_account: settings.postal_account ?? '',
-        invoice_prefix: settings.invoice_prefix ?? 'FAC',
-        invoice_number_format: settings.invoice_number_format ?? '{PREFIX}-{YYYY}-{SEQ}',
-        next_invoice_counter: settings.next_invoice_counter ?? 1,
+        oldinvoice_prefix: settings.oldinvoice_prefix ?? 'FAC',
+        oldinvoice_number_format: settings.oldinvoice_number_format ?? '{PREFIX}-{YYYY}-{SEQ}',
+        next_oldinvoice_counter: settings.next_oldinvoice_counter ?? 1,
     });
 
     const certFileRef = useRef<HTMLInputElement>(null);
@@ -141,9 +141,9 @@ export default function Edit({ settings, certificateInfo }: Props) {
                 <div className="rounded-lg bg-white p-6 shadow">
                     <h2 className="mb-4 text-lg font-semibold">Invoicing</h2>
                     <div className="grid gap-4 sm:grid-cols-3">
-                        <Input label="Invoice Prefix" value={data.invoice_prefix} onChange={(e) => setData('invoice_prefix', e.target.value)} error={errors.invoice_prefix} />
-                        <Input label="Number Format" value={data.invoice_number_format} onChange={(e) => setData('invoice_number_format', e.target.value)} error={errors.invoice_number_format} />
-                        <Input label="Next Counter" type="number" value={String(data.next_invoice_counter)} onChange={(e) => setData('next_invoice_counter', parseInt(e.target.value) || 1)} error={errors.next_invoice_counter} />
+                        <Input label="OldInvoice Prefix" value={data.oldinvoice_prefix} onChange={(e) => setData('oldinvoice_prefix', e.target.value)} error={errors.oldinvoice_prefix} />
+                        <Input label="Number Format" value={data.oldinvoice_number_format} onChange={(e) => setData('oldinvoice_number_format', e.target.value)} error={errors.oldinvoice_number_format} />
+                        <Input label="Next Counter" type="number" value={String(data.next_oldinvoice_counter)} onChange={(e) => setData('next_oldinvoice_counter', parseInt(e.target.value) || 1)} error={errors.next_oldinvoice_counter} />
                     </div>
                 </div>
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Invoice;
+use App\Models\OldInvoice;
 use App\Models\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,13 +16,13 @@ class PaymentController extends Controller
     public function index(Request $request): Response
     {
         $payments = Payment::with([
-            'invoice:id,invoice_number,total_ttc,status,customer_id',
-            'invoice.customer:id,name',
+            'oldinvoice:id,oldinvoice_number,total_ttc,status,customer_id',
+            'oldinvoice.customer:id,name',
             'creator:id,name',
         ])
             ->when($request->input('search'), function ($query, $search) {
-                $query->whereHas('invoice', function ($q) use ($search) {
-                    $q->where('invoice_number', 'like', "%{$search}%")
+                $query->whereHas('oldinvoice', function ($q) use ($search) {
+                    $q->where('oldinvoice_number', 'like', "%{$search}%")
                         ->orWhereHas('customer', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
                 })
                     ->orWhere('reference', 'like', "%{$search}%");
@@ -43,7 +43,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function store(Request $request, Invoice $invoice): RedirectResponse
+    public function store(Request $request, OldInvoice $oldinvoice): RedirectResponse
     {
         $validated = $request->validate([
             'payment_date' => ['required', 'date'],
@@ -54,7 +54,7 @@ class PaymentController extends Controller
         ]);
 
         // Check remaining balance
-        $remaining = bcsub($invoice->total_ttc, $invoice->paid_amount, 3);
+        $remaining = bcsub($oldinvoice->total_ttc, $oldinvoice->paid_amount, 3);
         if (bccomp($validated['amount'], $remaining, 3) > 0) {
             return back()->withErrors([
                 'amount' => "Le montant ne peut pas dépasser le solde restant ({$remaining} TND).",
@@ -62,7 +62,7 @@ class PaymentController extends Controller
         }
 
         Payment::create([
-            'invoice_id' => $invoice->id,
+            'oldinvoice_id' => $oldinvoice->id,
             'created_by' => $request->user()->id,
             'payment_date' => $validated['payment_date'],
             'amount' => $validated['amount'],
@@ -76,9 +76,9 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment): RedirectResponse
     {
-        $invoice = $payment->invoice;
+        $oldinvoice = $payment->oldinvoice;
 
-        if (!$invoice->isEditable() && $invoice->status !== 'accepted') {
+        if (!$oldinvoice->isEditable() && $oldinvoice->status !== 'accepted') {
             return back()->with('error', 'Cannot delete this payment.');
         }
 

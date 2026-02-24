@@ -68,7 +68,7 @@ export default function Revenue({ data = [], year, availableYears = [], yearlyTo
                     <h2 className="mb-4 text-lg font-semibold">Monthly Detail</h2>
                     <table className="min-w-full text-sm">
                         <thead className="border-b text-left text-xs uppercase text-gray-500">
-                            <tr><th className="px-3 py-2">Month</th><th className="px-3 py-2 text-right">Invoices</th><th className="px-3 py-2 text-right">Total incl. tax</th></tr>
+                            <tr><th className="px-3 py-2">Month</th><th className="px-3 py-2 text-right">OldInvoices</th><th className="px-3 py-2 text-right">Total incl. tax</th></tr>
                         </thead>
                         <tbody className="divide-y">
                             {data.map((row) => (

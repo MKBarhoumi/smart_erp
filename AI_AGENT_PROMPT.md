@@ -65,7 +65,7 @@ You MUST generate XML that:
 - ✅ Includes `<AmountDescription>` in French words for `I-180` (total TTC)
 
 **Validation Steps:**
-1. Generate a sample invoice XML
+1. Generate a sample oldinvoice XML
 2. Validate against the XSD schema using `xmllint` or PHP DOMDocument validation
 3. Compare with the example XML provided (`exemple_signe_elfatoora.txt.xml`)
 4. Test with TTN sandbox (if available)
@@ -87,7 +87,7 @@ You MUST implement the signature workflow with:
 - ✅ Full X.509 certificate chain (4 levels: entity → TnTrust → Gov CA → Root CA)
 
 **Testing:**
-1. Sign a test invoice XML
+1. Sign a test oldinvoice XML
 2. Verify signature using OpenSSL: `openssl dgst -sha256 -verify pubkey.pem -signature sig.bin data.xml`
 3. Validate signed XML against `facture_INVOIC_V1.8.8_withSig_xsd`
 4. Parse and verify each component of the ds:Signature block
@@ -97,7 +97,7 @@ You MUST implement the signature workflow with:
 You MUST implement strict validation:
 - ✅ Pattern: `[0-9]{7}[ABCDEFGHJKLMNPQRSTVWXYZ][ABDNP][CMNP][0]{3}`
 - ✅ Exactly 13 characters
-- ✅ Validation on customer creation, invoice sender/receiver
+- ✅ Validation on customer creation, oldinvoice sender/receiver
 - ✅ User-friendly error messages: "Invalid Matricule Fiscale format. Expected: 7 digits + letter + A/B/D/N/P + C/M/N/P + 000"
 
 **Test Cases:**
@@ -159,7 +159,7 @@ const formatTND = (amount: number): string => {
 **Architecture Rules:**
 - ✅ Each tenant gets a separate PostgreSQL database named `{tenant_id}_erp_db`
 - ✅ Central database (`landlord`) stores: tenants, domains, plans
-- ✅ Tenant databases store: all business data (invoices, customers, products)
+- ✅ Tenant databases store: all business data (oldinvoices, customers, products)
 - ✅ NEVER allow cross-tenant data access
 - ✅ NEVER use `tenant_id` foreign keys — use separate databases
 - ✅ Tenant identification via subdomain middleware
@@ -185,17 +185,17 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Invoice;
+use App\Models\OldInvoice;
 use App\Exceptions\TeifValidationException;
 
 class TeifXmlBuilder
 {
     /**
-     * Generate TEIF XML for the given invoice.
+     * Generate TEIF XML for the given oldinvoice.
      *
      * @throws TeifValidationException
      */
-    public function build(Invoice $invoice): string
+    public function build(OldInvoice $oldinvoice): string
     {
         // Implementation with explicit return type, strict types, proper exceptions
     }
@@ -227,15 +227,15 @@ class TeifXmlBuilder
 import { FormEventHandler } from 'react';
 import { useForm } from '@inertiajs/react';
 
-interface InvoiceFormData {
+interface OldInvoiceFormData {
   document_identifier: string;
   customer_id: string;
-  invoice_date: string;
+  oldinvoice_date: string;
   due_date: string | null;
-  lines: InvoiceLine[];
+  lines: OldInvoiceLine[];
 }
 
-interface InvoiceLine {
+interface OldInvoiceLine {
   item_code: string;
   description: string;
   quantity: number;
@@ -243,18 +243,18 @@ interface InvoiceLine {
   tva_rate: number;
 }
 
-export default function InvoiceCreate() {
-  const { data, setData, post, processing, errors } = useForm<InvoiceFormData>({
+export default function OldInvoiceCreate() {
+  const { data, setData, post, processing, errors } = useForm<OldInvoiceFormData>({
     document_identifier: '',
     customer_id: '',
-    invoice_date: new Date().toISOString().split('T')[0],
+    oldinvoice_date: new Date().toISOString().split('T')[0],
     due_date: null,
     lines: [],
   });
 
   const submit: FormEventHandler = (e) => {
     e.preventDefault();
-    post(route('invoices.store'));
+    post(route('oldinvoices.store'));
   };
 
   return (
@@ -290,17 +290,17 @@ npm run build              # Production build test
 ### Backend Tests (PHPUnit/Pest)
 
 **Unit Tests:**
-- ✅ `InvoiceCalculationService` — all calculation scenarios
+- ✅ `OldInvoiceCalculationService` — all calculation scenarios
 - ✅ `TeifXmlBuilder` — XML generation with assertions on structure
 - ✅ `XadesSignatureService` — signature components validation
 - ✅ `MatriculeFiscaleValidator` — valid/invalid patterns
 - ✅ `AmountInWordsService` — French number-to-words conversion
 
 **Feature Tests:**
-- ✅ Invoice CRUD operations
+- ✅ OldInvoice CRUD operations
 - ✅ Customer CRUD operations
 - ✅ Product CRUD operations
-- ✅ Invoice status transitions (DRAFT → VALIDATED → SIGNED → SUBMITTED)
+- ✅ OldInvoice status transitions (DRAFT → VALIDATED → SIGNED → SUBMITTED)
 - ✅ Payment recording
 - ✅ Stock movements
 - ✅ Multi-tenant isolation
@@ -309,19 +309,19 @@ npm run build              # Production build test
 ```php
 <?php
 
-use App\Models\Invoice;
-use App\Services\InvoiceCalculationService;
+use App\Models\OldInvoice;
+use App\Services\OldInvoiceCalculationService;
 
-test('calculates invoice totals correctly with multiple tax rates', function () {
-    $invoice = Invoice::factory()->create([
+test('calculates oldinvoice totals correctly with multiple tax rates', function () {
+    $oldinvoice = OldInvoice::factory()->create([
         'lines' => [
             ['quantity' => 2, 'unit_price' => 10.000, 'tva_rate' => 19.00],
             ['quantity' => 1, 'unit_price' => 5.000, 'tva_rate' => 7.00],
         ],
     ]);
 
-    $service = new InvoiceCalculationService();
-    $totals = $service->calculateTotals($invoice);
+    $service = new OldInvoiceCalculationService();
+    $totals = $service->calculateTotals($oldinvoice);
 
     expect($totals['total_ht'])->toBe('25.000');
     expect($totals['total_tva'])->toBe('4.150'); // (20*0.19) + (5*0.07)
@@ -401,7 +401,7 @@ class TeifValidationException extends Exception
 
 class SignatureException extends Exception {}
 class TTNSubmissionException extends Exception {}
-class InvoiceStateException extends Exception {}
+class OldInvoiceStateException extends Exception {}
 ```
 
 **Use them:**
@@ -443,7 +443,7 @@ const { errors } = useForm();
 use Illuminate\Support\Facades\Queue;
 
 Queue::laterOn('ttn-submissions', now()->addSeconds(30), 
-    new SubmitInvoiceToTTN($invoice->id, attemptNumber: 1)
+    new SubmitOldInvoiceToTTN($oldinvoice->id, attemptNumber: 1)
 );
 
 // Retry schedule: 30s, 120s, 300s (max 3 attempts)
@@ -462,7 +462,7 @@ Queue::laterOn('ttn-submissions', now()->addSeconds(30),
 
 ### Database Optimization
 - ✅ Indexes on all foreign keys
-- ✅ Indexes on frequently queried columns: `status`, `invoice_date`, `customer_id`
+- ✅ Indexes on frequently queried columns: `status`, `oldinvoice_date`, `customer_id`
 - ✅ Composite index on `customers(identifier_type, identifier_value)`
 - ✅ Use `with()` for eager loading relationships (prevent N+1 queries)
 - ✅ Pagination on all list pages (25 items per page default)
@@ -470,7 +470,7 @@ Queue::laterOn('ttn-submissions', now()->addSeconds(30),
 ### Caching
 - ✅ Cache company settings (Redis, 1-hour TTL)
 - ✅ Cache tax rates (Redis, 24-hour TTL)
-- ✅ Cache product catalog for invoice creation (Redis, 15-minute TTL)
+- ✅ Cache product catalog for oldinvoice creation (Redis, 15-minute TTL)
 - ✅ Clear cache on updates
 
 ### Frontend Optimization
@@ -483,7 +483,7 @@ Queue::laterOn('ttn-submissions', now()->addSeconds(30),
 ### Queue Jobs
 - ✅ TTN submissions run via queue (don't block HTTP requests)
 - ✅ Email sending via queue
-- ✅ PDF generation via queue for large invoices
+- ✅ PDF generation via queue for large oldinvoices
 - ✅ Use Laravel Horizon for queue monitoring
 
 ---
@@ -503,14 +503,14 @@ Queue::laterOn('ttn-submissions', now()->addSeconds(30),
  * Generate the TEIF XML <Dtm> section with properly formatted dates.
  *
  * Dates are formatted according to TTN El Fatoora specification:
- * - I-31 (Invoice date): ddMMyy format
+ * - I-31 (OldInvoice date): ddMMyy format
  * - I-32 (Due date): ddMMyy format
  * - I-36 (Billing period): ddMMyy-ddMMyy format
  *
- * @param  Invoice  $invoice
+ * @param  OldInvoice  $oldinvoice
  * @return string XML fragment
  */
-private function buildDtmSection(Invoice $invoice): string
+private function buildDtmSection(OldInvoice $oldinvoice): string
 {
     // Implementation
 }
@@ -534,9 +534,9 @@ private function buildDtmSection(Invoice $invoice): string
 **Commit Strategy:**
 ```bash
 # Atomic commits per feature
-git commit -m "feat: implement TEIF XML InvoiceHeader builder"
+git commit -m "feat: implement TEIF XML OldInvoiceHeader builder"
 git commit -m "feat: implement Matricule Fiscale validation"
-git commit -m "test: add unit tests for invoice calculation service"
+git commit -m "test: add unit tests for oldinvoice calculation service"
 git commit -m "fix: correct TVA rounding to 3 decimals"
 git commit -m "docs: add XAdES-BES signature implementation notes"
 ```
@@ -554,7 +554,7 @@ git commit -m "docs: add XAdES-BES signature implementation notes"
 - `main` — Production-ready code
 - `develop` — Integration branch
 - `feature/teif-xml-builder` — Feature branches
-- `fix/invoice-calculation` — Bug fix branches
+- `fix/oldinvoice-calculation` — Bug fix branches
 
 ---
 
@@ -607,7 +607,7 @@ git commit -m "docs: add XAdES-BES signature implementation notes"
 ### Testing
 - [ ] Run full test suite: `php artisan test`
 - [ ] Smoke test all major features in production
-- [ ] Test invoice creation → validation → signing → TTN submission
+- [ ] Test oldinvoice creation → validation → signing → TTN submission
 - [ ] Verify PDF generation works
 - [ ] Verify email sending works
 - [ ] Test with real Tunisian certificate and TTN sandbox
@@ -622,7 +622,7 @@ git commit -m "docs: add XAdES-BES signature implementation notes"
 
 ✅ **All tests pass** with ≥80% code coverage
 
-✅ **A sample invoice** can be:
+✅ **A sample oldinvoice** can be:
 - Created with multiple line items
 - Calculated correctly (HT, TVA, Timbre, TTC)
 - Validated and locked
@@ -649,8 +649,8 @@ git commit -m "docs: add XAdES-BES signature implementation notes"
 - HTTPS enforced in production
 
 ✅ **Performance acceptable**:
-- Invoice list page loads in <1 second
-- Invoice creation/validation completes in <2 seconds
+- OldInvoice list page loads in <1 second
+- OldInvoice creation/validation completes in <2 seconds
 - PDF generation completes in <5 seconds
 - TTN submission queued and doesn't block UI
 
@@ -678,7 +678,7 @@ git commit -m "docs: add XAdES-BES signature implementation notes"
 ## Final Reminder
 
 This is a **REGULATORY COMPLIANCE PROJECT** for electronic invoicing in Tunisia. Errors in XML structure, signature implementation, or tax calculations could result in:
-- ❌ Invoices rejected by Tunisia TradeNet
+- ❌ OldInvoices rejected by Tunisia TradeNet
 - ❌ Legal non-compliance for businesses using the platform
 - ❌ Loss of trust and business viability
 

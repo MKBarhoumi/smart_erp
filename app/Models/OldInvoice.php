@@ -5,30 +5,34 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\DocumentTypeCode;
-use App\Enums\InvoiceStatus;
-use App\Exceptions\InvoiceStateException;
+use App\Enums\OldInvoiceStatus;
+use App\Exceptions\OldInvoiceStateException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-class Invoice extends Model
+class OldInvoice extends Model
 {
     use HasFactory;
     use HasUuids;
     use SoftDeletes;
 
+    /**
+     * @var string
+     */
+    protected $table = 'oldinvoices';
+
     protected $fillable = [
         'customer_id',
         'created_by',
-        'parent_invoice_id',
-        'invoice_number',
+        'parent_oldinvoice_id',
+        'oldinvoice_number',
         'document_identifier',
         'document_type_code',
         'status',
-        'invoice_date',
+        'oldinvoice_date',
         'due_date',
         'billing_period_start',
         'billing_period_end',
@@ -55,8 +59,8 @@ class Invoice extends Model
     {
         return [
             'document_type_code' => DocumentTypeCode::class,
-            'status' => InvoiceStatus::class,
-            'invoice_date' => 'date',
+            'status' => OldInvoiceStatus::class,
+            'oldinvoice_date' => 'date',
             'due_date' => 'date',
             'billing_period_start' => 'date',
             'billing_period_end' => 'date',
@@ -74,27 +78,27 @@ class Invoice extends Model
     }
 
     /**
-     * @return HasMany<InvoiceLine, $this>
+     * @return HasMany<OldInvoiceLine, $this>
      */
     public function lines(): HasMany
     {
-        return $this->hasMany(InvoiceLine::class)->orderBy('line_number');
+        return $this->hasMany(OldInvoiceLine::class)->orderBy('line_number');
     }
 
     /**
-     * @return HasMany<InvoiceTaxLine, $this>
+     * @return HasMany<OldInvoiceTaxLine, $this>
      */
     public function taxLines(): HasMany
     {
-        return $this->hasMany(InvoiceTaxLine::class);
+        return $this->hasMany(OldInvoiceTaxLine::class);
     }
 
     /**
-     * @return HasMany<InvoiceAllowance, $this>
+     * @return HasMany<OldInvoiceAllowance, $this>
      */
     public function allowances(): HasMany
     {
-        return $this->hasMany(InvoiceAllowance::class);
+        return $this->hasMany(OldInvoiceAllowance::class);
     }
 
     /**
@@ -116,9 +120,9 @@ class Invoice extends Model
     /**
      * @return BelongsTo<self, $this>
      */
-    public function parentInvoice(): BelongsTo
+    public function parentOldInvoice(): BelongsTo
     {
-        return $this->belongsTo(self::class, 'parent_invoice_id');
+        return $this->belongsTo(self::class, 'parent_oldinvoice_id');
     }
 
     /**
@@ -130,12 +134,12 @@ class Invoice extends Model
     }
 
     /**
-     * @throws InvoiceStateException
+     * @throws OldInvoiceStateException
      */
-    public function transitionTo(InvoiceStatus $newStatus): void
+    public function transitionTo(OldInvoiceStatus $newStatus): void
     {
         if (!$this->status->canTransitionTo($newStatus)) {
-            throw new InvoiceStateException(
+            throw new OldInvoiceStateException(
                 "Cannot transition from {$this->status->value} to {$newStatus->value}"
             );
         }
@@ -145,7 +149,7 @@ class Invoice extends Model
 
     public function isEditable(): bool
     {
-        return $this->status === InvoiceStatus::DRAFT;
+        return $this->status === OldInvoiceStatus::DRAFT;
     }
 
     public function getPaidAmountAttribute(): string

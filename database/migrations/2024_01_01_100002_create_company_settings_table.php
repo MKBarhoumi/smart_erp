@@ -47,9 +47,9 @@ return new class extends Migration
             $table->timestamp('certificate_expires_at')->nullable();
 
             // Invoicing
-            $table->string('invoice_prefix')->default('FA');
-            $table->string('invoice_number_format')->default('{prefix}/{YYYY}/{counter}');
-            $table->integer('next_invoice_counter')->default(1);
+            $table->string('oldinvoice_prefix')->default('FA');
+            $table->string('oldinvoice_number_format')->default('{prefix}/{YYYY}/{counter}');
+            $table->integer('next_oldinvoice_counter')->default(1);
             $table->decimal('default_timbre_fiscal', 20, 3)->default('1.000');
 
             // Logo

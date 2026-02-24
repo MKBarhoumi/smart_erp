@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('stock_movements', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('product_id')->constrained()->restrictOnDelete();
-            $table->foreignUuid('invoice_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUuid('oldinvoice_id')->nullable()->constrained()->nullOnDelete();
             $table->string('type')->comment('in, out, adjustment');
             $table->decimal('quantity', 20, 3);
             $table->decimal('stock_before', 20, 3);

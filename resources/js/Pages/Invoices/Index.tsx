@@ -1,38 +1,38 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { InvoiceStatusBadge } from '@/Components/ui/Badge';
+import { OldInvoiceStatusBadge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Pagination } from '@/Components/ui/Pagination';
 import { Select } from '@/Components/ui/Select';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Invoice, PaginatedData } from '@/types';
+import type { OldInvoice, PaginatedData } from '@/types';
 
 interface Props {
-    invoices: PaginatedData<Invoice & { customer: { id: string; name: string } | null }>;
+    oldinvoices: PaginatedData<OldInvoice & { customer: { id: string; name: string } | null }>;
     filters: { search?: string; status?: string; date_from?: string; date_to?: string };
     statuses: Array<{ value: string; label: string }>;
 }
 
-export default function InvoicesIndex({ invoices, filters, statuses }: Props) {
+export default function OldInvoicesIndex({ oldinvoices, filters, statuses }: Props) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [dateFrom, setDateFrom] = useState(filters.date_from ?? '');
     const [dateTo, setDateTo] = useState(filters.date_to ?? '');
 
     const applyFilters = () => {
-        router.get('/invoices', { search, status, date_from: dateFrom, date_to: dateTo }, { preserveState: true, replace: true });
+        router.get('/oldinvoices', { search, status, date_from: dateFrom, date_to: dateTo }, { preserveState: true, replace: true });
     };
 
     return (
         <AuthenticatedLayout>
-            <Head title="Invoices" />
+            <Head title="OldInvoices" />
 
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-                    <Link href="/invoices/create">
-                        <Button>New Invoice</Button>
+                    <h1 className="text-2xl font-bold text-gray-900">OldInvoices</h1>
+                    <Link href="/oldinvoices/create">
+                        <Button>New OldInvoice</Button>
                     </Link>
                 </div>
 
@@ -49,12 +49,12 @@ export default function InvoicesIndex({ invoices, filters, statuses }: Props) {
                     <Button onClick={applyFilters}>Filter</Button>
                 </div>
 
-                {/* Invoice table */}
+                {/* OldInvoice table */}
                 <div className="overflow-x-auto rounded-lg bg-white shadow">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Invoice #</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">OldInvoice #</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Customer</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Date</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Total incl. tax</th>
@@ -63,22 +63,22 @@ export default function InvoicesIndex({ invoices, filters, statuses }: Props) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {invoices.data.length === 0 && (
-                                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">No invoices found.</td></tr>
+                            {oldinvoices.data.length === 0 && (
+                                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">No oldinvoices found.</td></tr>
                             )}
-                            {invoices.data.map((inv) => (
+                            {oldinvoices.data.map((inv) => (
                                 <tr key={inv.id} className="hover:bg-gray-50">
                                     <td className="px-4 py-3">
-                                        <Link href={`/invoices/${inv.id}`} className="font-medium text-blue-600 hover:underline">
-                                            {inv.invoice_number}
+                                        <Link href={`/oldinvoices/${inv.id}`} className="font-medium text-blue-600 hover:underline">
+                                            {inv.oldinvoice_number}
                                         </Link>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-700">{inv.customer?.name ?? '—'}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-500">{inv.invoice_date}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-500">{inv.oldinvoice_date}</td>
                                     <td className="px-4 py-3 text-right font-medium">{Number(inv.total_ttc).toFixed(3)} TND</td>
-                                    <td className="px-4 py-3 text-center"><InvoiceStatusBadge status={inv.status} /></td>
+                                    <td className="px-4 py-3 text-center"><OldInvoiceStatusBadge status={inv.status} /></td>
                                     <td className="px-4 py-3 text-right">
-                                        <Link href={`/invoices/${inv.id}`} className="text-sm text-blue-600 hover:underline">
+                                        <Link href={`/oldinvoices/${inv.id}`} className="text-sm text-blue-600 hover:underline">
                                             View
                                         </Link>
                                     </td>
@@ -88,7 +88,7 @@ export default function InvoicesIndex({ invoices, filters, statuses }: Props) {
                     </table>
                 </div>
 
-                <Pagination links={invoices.links} />
+                <Pagination links={oldinvoices.links} />
             </div>
         </AuthenticatedLayout>
     );

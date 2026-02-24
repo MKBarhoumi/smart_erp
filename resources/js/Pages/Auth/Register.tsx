@@ -24,7 +24,7 @@ export default function Register() {
             <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Create an Account</h2>
                 <p className="mt-1 text-sm text-gray-600">
-                    Start managing your invoices with Smart ERP Lite
+                    Start managing your oldinvoices with Smart ERP Lite
                 </p>
             </div>
 

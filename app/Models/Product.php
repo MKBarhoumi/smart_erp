@@ -51,10 +51,10 @@ class Product extends Model
     }
 
     /**
-     * @return HasMany<InvoiceLine, $this>
+     * @return HasMany<OldInvoiceLine, $this>
      */
-    public function invoiceLines(): HasMany
+    public function oldinvoiceLines(): HasMany
     {
-        return $this->hasMany(InvoiceLine::class);
+        return $this->hasMany(OldInvoiceLine::class);
     }
 }

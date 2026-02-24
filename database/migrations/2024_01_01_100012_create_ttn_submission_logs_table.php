@@ -12,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('ttn_submission_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('invoice_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('oldinvoice_id')->constrained()->cascadeOnDelete();
             $table->string('direction')->default('outbound')->comment('outbound or inbound');
             $table->longText('payload')->nullable();
             $table->longText('response')->nullable();
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('error_message')->nullable();
             $table->timestamp('created_at')->nullable();
 
-            $table->index(['invoice_id', 'status']);
+            $table->index(['oldinvoice_id', 'status']);
         });
     }
 

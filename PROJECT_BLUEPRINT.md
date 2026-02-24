@@ -25,9 +25,9 @@
 
 **SaaS Smart ERP Lite** is a cloud-based, multi-tenant Enterprise Resource Planning platform purpose-built for **Tunisian B2B companies**. Its primary mission is to provide small and medium enterprises (SMEs) with an affordable, regulation-compliant tool to:
 
-- **Create, manage, and transmit electronic invoices** conforming to the Tunisia TradeNet (TTN) El Fatoora standard (TEIF XML v1.8.8).
-- **Digitally sign invoices** using XAdES-BES signatures with RSA-SHA256, as mandated by the Tunisian National Digital Certification Agency (ANCE).
-- **Generate Cachet Électronique Visible (CEV)** QR codes for physical/digital invoice verification.
+- **Create, manage, and transmit electronic oldinvoices** conforming to the Tunisia TradeNet (TTN) El Fatoora standard (TEIF XML v1.8.8).
+- **Digitally sign oldinvoices** using XAdES-BES signatures with RSA-SHA256, as mandated by the Tunisian National Digital Certification Agency (ANCE).
+- **Generate Cachet Électronique Visible (CEV)** QR codes for physical/digital oldinvoice verification.
 - **Handle Tunisian fiscal requirements**: TVA (VAT) at multiple rates, Timbre Fiscal (stamp duty), Matricule Fiscale (MF) validation, and TND 3-decimal monetary precision.
 - **Manage inventory, customers, products, and payments** through a clean, modern single-page application (SPA) interface.
 
@@ -49,7 +49,7 @@ The platform is designed as a **database-per-tenant** SaaS architecture, ensurin
 | **XML Processing** | PHP DOMDocument + ext-dom | — | For TEIF XML generation |
 | **Digital Signature** | PHP ext-openssl | — | RSA-SHA256, XAdES-BES envelope |
 | **QR Code** | `simplesoftwareio/simple-qrcode` | — | CEV QR code generation |
-| **PDF Generation** | DomPDF or Snappy | — | Invoice PDF export |
+| **PDF Generation** | DomPDF or Snappy | — | OldInvoice PDF export |
 | **Queue** | Laravel Horizon + Redis | — | Async TTN submission jobs |
 | **Testing** | PHPUnit + Pest (backend), Vitest (frontend) | — | Mandatory test coverage |
 | **CI/CD** | GitHub Actions | — | Lint, test, deploy pipeline |
@@ -67,14 +67,14 @@ The platform is designed as a **database-per-tenant** SaaS architecture, ensurin
 ```
 ARCHITECTURE: Database-per-Tenant
 ├── Central Database (landlord): tenants, domains, plans, billing
-├── Tenant Database (per client): invoices, products, customers, inventory
+├── Tenant Database (per client): oldinvoices, products, customers, inventory
 └── Each tenant gets: {tenant_id}_erp_db
 ```
 
 - **Tenant Identification:** Subdomain-based (e.g., `company-x.smarterp.tn`)
 - **Tenant Creation:** Creates a new PostgreSQL database, runs tenant-specific migrations
 - **Shared Resources:** Plans, system configuration stored in central DB
-- **Isolated Resources:** All business data (invoices, products, customers) in tenant DB
+- **Isolated Resources:** All business data (oldinvoices, products, customers) in tenant DB
 
 ---
 
@@ -82,14 +82,14 @@ ARCHITECTURE: Database-per-Tenant
 
 ### 3.1 TEIF XML Structure (v1.8.8)
 
-The **Tunisian Electronic Invoice Format (TEIF)** is the mandatory XML structure for all electronic invoices transmitted through the TTN El Fatoora platform. The root element is `<TEIF>`.
+The **Tunisian Electronic OldInvoice Format (TEIF)** is the mandatory XML structure for all electronic oldinvoices transmitted through the TTN El Fatoora platform. The root element is `<TEIF>`.
 
 #### 3.1.1 Root Element
 
 ```xml
 <TEIF controlingAgency="TTN" version="1.8.8">
-  <InvoiceHeader>...</InvoiceHeader>
-  <InvoiceBody>...</InvoiceBody>
+  <OldInvoiceHeader>...</OldInvoiceHeader>
+  <OldInvoiceBody>...</OldInvoiceBody>
   <AdditionnalDocuments>...</AdditionnalDocuments>   <!-- optional -->
   <ds:Signature>...</ds:Signature>                    <!-- Supplier signature (SigFrs) -->
   <RefTtnVal>...</RefTtnVal>                          <!-- Added by TTN after validation -->
@@ -103,13 +103,13 @@ The **Tunisian Electronic Invoice Format (TEIF)** is the mandatory XML structure
 | `version` | YES | `1.8.1` through `1.8.8` (use `1.8.8`) |
 | `controlingAgency` | YES | `TTN` or `Tunisie TradeNet` |
 
-#### 3.1.2 InvoiceHeader
+#### 3.1.2 OldInvoiceHeader
 
 ```xml
-<InvoiceHeader>
+<OldInvoiceHeader>
   <MessageSenderIdentifier type="I-01">0736202XAM000</MessageSenderIdentifier>
   <MessageRecieverIdentifier type="I-01">0914089JAM000</MessageRecieverIdentifier>
-</InvoiceHeader>
+</OldInvoiceHeader>
 ```
 
 **Partner Identifier Types:**
@@ -124,10 +124,10 @@ The **Tunisian Electronic Invoice Format (TEIF)** is the mandatory XML structure
 > `[0-9]{7}[ABCDEFGHJKLMNPQRSTVWXYZ][ABDNP][CMNP][0]{3}`  
 > Example valid MF: `0736202XAM000`
 
-#### 3.1.3 InvoiceBody Structure
+#### 3.1.3 OldInvoiceBody Structure
 
 ```xml
-<InvoiceBody>
+<OldInvoiceBody>
   <Bgm>                        <!-- Document identification -->
   <Dtm>                        <!-- Dates -->
   <PartnerSection>             <!-- Seller & Buyer details -->
@@ -136,10 +136,10 @@ The **Tunisian Electronic Invoice Format (TEIF)** is the mandatory XML structure
   <Ftx>                        <!-- Free text (optional) -->
   <SpecialConditions>          <!-- Special conditions (optional) -->
   <LinSection>                 <!-- Line items (REQUIRED) -->
-  <InvoiceMoa>                 <!-- Invoice-level amounts (REQUIRED) -->
-  <InvoiceTax>                 <!-- Invoice-level taxes (REQUIRED) -->
-  <InvoiceAlc>                 <!-- Allowances/charges (optional) -->
-</InvoiceBody>
+  <OldInvoiceMoa>                 <!-- OldInvoice-level amounts (REQUIRED) -->
+  <OldInvoiceTax>                 <!-- OldInvoice-level taxes (REQUIRED) -->
+  <OldInvoiceAlc>                 <!-- Allowances/charges (optional) -->
+</OldInvoiceBody>
 ```
 
 #### 3.1.4 Bgm (Document Identification)
@@ -155,12 +155,12 @@ The **Tunisian Electronic Invoice Format (TEIF)** is the mandatory XML structure
 **Document Type Codes:**
 | Code | Description (French) | Description (English) |
 |------|---------------------|----------------------|
-| `I-11` | Facture | Invoice |
-| `I-12` | Facture rectificative | Corrective invoice |
+| `I-11` | Facture | OldInvoice |
+| `I-12` | Facture rectificative | Corrective oldinvoice |
 | `I-13` | Avoir | Credit note |
 | `I-14` | Note de débit | Debit note |
-| `I-15` | Facture proforma | Proforma invoice |
-| `I-16` | Facture d'acompte | Advance invoice |
+| `I-15` | Facture proforma | Proforma oldinvoice |
+| `I-16` | Facture d'acompte | Advance oldinvoice |
 
 #### 3.1.5 Dtm (Dates)
 
@@ -175,7 +175,7 @@ The **Tunisian Electronic Invoice Format (TEIF)** is the mandatory XML structure
 **Date Function Codes:**
 | Code | Description |
 |------|-------------|
-| `I-31` | Invoice date |
+| `I-31` | OldInvoice date |
 | `I-32` | Due date |
 | `I-33` | Delivery date |
 | `I-34` | Order date |
@@ -193,8 +193,8 @@ Each partner has a `functionCode`:
 |------|------|
 | `I-61` | Buyer (Acheteur) |
 | `I-62` | Seller/Supplier (Vendeur) — **subject to MF validation** |
-| `I-63` | Invoicee |
-| `I-64` | Invoiced party |
+| `I-63` | OldInvoicee |
+| `I-64` | OldInvoiced party |
 | `I-65` | Delivery party |
 | `I-66` | Payer |
 | `I-67` | Payee |
@@ -297,19 +297,19 @@ Each `<Lin>` contains:
 | `I-173` | Unit price | Line |
 | `I-174` | Discount amount | Line |
 | `I-175` | Charge amount | Line |
-| `I-176` | Total net amount (HT) | Invoice |
-| `I-177` | Taxable amount per tax rate | Invoice Tax |
-| `I-178` | Tax amount per tax rate | Invoice Tax |
-| `I-179` | Total gross amount | Invoice |
-| `I-180` | Total amount due (TTC) | Invoice |
-| `I-181` | Total TVA amount | Invoice |
-| `I-182` | Total net amount before discount | Invoice |
+| `I-176` | Total net amount (HT) | OldInvoice |
+| `I-177` | Taxable amount per tax rate | OldInvoice Tax |
+| `I-178` | Tax amount per tax rate | OldInvoice Tax |
+| `I-179` | Total gross amount | OldInvoice |
+| `I-180` | Total amount due (TTC) | OldInvoice |
+| `I-181` | Total TVA amount | OldInvoice |
+| `I-182` | Total net amount before discount | OldInvoice |
 | `I-183` | Line unit price amount | Line |
-| `I-184` | Advance payment amount | Invoice |
-| `I-185` | Remaining amount due | Invoice |
-| `I-186` | Allowance total | Invoice |
-| `I-187` | Charge total | Invoice |
-| `I-188` | Rounding adjustment | Invoice |
+| `I-184` | Advance payment amount | OldInvoice |
+| `I-185` | Remaining amount due | OldInvoice |
+| `I-186` | Allowance total | OldInvoice |
+| `I-187` | Charge total | OldInvoice |
+| `I-188` | Rounding adjustment | OldInvoice |
 
 **Monetary Format:**
 ```
@@ -322,10 +322,10 @@ Examples: "2.000", "0.240", "2.540"
 
 > **CRITICAL:** All monetary amounts in TND MUST use exactly 3 decimal places. The PostgreSQL column type MUST be `NUMERIC(20,3)`.
 
-#### 3.1.10 InvoiceMoa (Invoice-Level Amounts)
+#### 3.1.10 OldInvoiceMoa (OldInvoice-Level Amounts)
 
 ```xml
-<InvoiceMoa>
+<OldInvoiceMoa>
   <AmountDetails>
     <Moa amountTypeCode="I-179" currencyCodeList="ISO_4217">
       <Amount currencyIdentifier="TND">2000000</Amount>
@@ -338,16 +338,16 @@ Examples: "2.000", "0.240", "2.540"
     </Moa>
   </AmountDetails>
   <!-- I-176: Total HT, I-182: Total net before discount, I-181: Total TVA -->
-</InvoiceMoa>
+</OldInvoiceMoa>
 ```
 
 > **NOTE:** `I-180` (Total TTC) SHOULD include `<AmountDescription>` — the amount spelled out in words in French.
 
-#### 3.1.11 InvoiceTax (Invoice-Level Taxes)
+#### 3.1.11 OldInvoiceTax (OldInvoice-Level Taxes)
 
 ```xml
-<InvoiceTax>
-  <InvoiceTaxDetails>
+<OldInvoiceTax>
+  <OldInvoiceTaxDetails>
     <Tax>
       <TaxTypeName code="I-1601">droit de timbre</TaxTypeName>
       <TaxDetails><TaxRate>0</TaxRate></TaxDetails>
@@ -357,8 +357,8 @@ Examples: "2.000", "0.240", "2.540"
         <Amount currencyIdentifier="TND">0.300</Amount>
       </Moa>
     </AmountDetails>
-  </InvoiceTaxDetails>
-  <InvoiceTaxDetails>
+  </OldInvoiceTaxDetails>
+  <OldInvoiceTaxDetails>
     <Tax>
       <TaxTypeName code="I-1602">TVA</TaxTypeName>
       <TaxDetails><TaxRate>12.0</TaxRate></TaxDetails>
@@ -373,8 +373,8 @@ Examples: "2.000", "0.240", "2.540"
         <Amount currencyIdentifier="TND">0.240</Amount>
       </Moa>
     </AmountDetails>
-  </InvoiceTaxDetails>
-</InvoiceTax>
+  </OldInvoiceTaxDetails>
+</OldInvoiceTax>
 ```
 
 ### 3.2 XAdES-BES Digital Signature Workflow
@@ -385,8 +385,8 @@ The TEIF document requires **two digital signatures**: one from the **supplier**
 
 ```
 TEIF Document
-├── InvoiceHeader
-├── InvoiceBody
+├── OldInvoiceHeader
+├── OldInvoiceBody
 ├── ds:Signature [Id="SigFrs"]       ← Supplier signs FIRST
 │   ├── ds:SignedInfo
 │   │   ├── CanonicalizationMethod: Exclusive C14N
@@ -473,7 +473,7 @@ The system MUST implement this exact sequence:
 
 ### 3.3 CEV QR Code (Cachet Électronique Visible)
 
-The CEV is a QR code returned by TTN after invoice validation. It is stored in the `<RefTtnVal>` block.
+The CEV is a QR code returned by TTN after oldinvoice validation. It is stored in the `<RefTtnVal>` block.
 
 #### 3.3.1 RefTtnVal Structure
 
@@ -496,9 +496,9 @@ The CEV is a QR code returned by TTN after invoice validation. It is stored in t
 #### 3.3.2 CEV Implementation Tasks
 
 - [ ] Decode `ReferenceCEV` from Base64 to PNG binary
-- [ ] Store the QR code image associated with the invoice
-- [ ] Display the QR code on the PDF invoice printout
-- [ ] Display the QR code in the invoice detail view in the UI
+- [ ] Store the QR code image associated with the oldinvoice
+- [ ] Display the QR code on the PDF oldinvoice printout
+- [ ] Display the QR code in the oldinvoice detail view in the UI
 - [ ] The QR code links to a TTN verification URL containing the `ReferenceTTN`
 
 ### 3.4 TTN Submission Workflow
@@ -506,7 +506,7 @@ The CEV is a QR code returned by TTN after invoice validation. It is stored in t
 ```
 ┌──────────────┐    ┌───────────────┐    ┌──────────────┐    ┌───────────────┐
 │  1. Create   │───▶│ 2. Validate   │───▶│ 3. Sign XML  │───▶│ 4. Submit to  │
-│   Invoice    │    │   TEIF XML    │    │  (XAdES-BES) │    │   TTN API     │
+│   OldInvoice    │    │   TEIF XML    │    │  (XAdES-BES) │    │   TTN API     │
 └──────────────┘    └───────────────┘    └──────────────┘    └───────┬───────┘
                                                                      │
 ┌──────────────┐    ┌───────────────┐    ┌──────────────┐            │
@@ -515,7 +515,7 @@ The CEV is a QR code returned by TTN after invoice validation. It is stored in t
 └──────────────┘    └───────────────┘    └──────────────┘
 ```
 
-**Invoice Status State Machine:**
+**OldInvoice Status State Machine:**
 ```
 DRAFT → VALIDATED → SIGNED → SUBMITTED → ACCEPTED → ARCHIVED
                                       └→ REJECTED → DRAFT (correction cycle)
@@ -558,7 +558,7 @@ DRAFT → VALIDATED → SIGNED → SUBMITTED → ACCEPTED → ARCHIVED
 - [ ] Postal account details (CCP number)
 - [ ] Default TVA rate setting
 - [ ] Timbre Fiscal configuration (enable/disable, fixed amount)
-- [ ] Invoice numbering format configuration (prefix, counter, format pattern)
+- [ ] OldInvoice numbering format configuration (prefix, counter, format pattern)
 - [ ] Digital certificate management (upload `.p12`, set passphrase, view expiry)
 - [ ] Default payment terms template
 
@@ -575,7 +575,7 @@ DRAFT → VALIDATED → SIGNED → SUBMITTED → ACCEPTED → ARCHIVED
   - Category type, person type, tax office, legal form
   - Bank details (optional)
 - [ ] Edit customer
-- [ ] Delete customer (soft delete, check for linked invoices)
+- [ ] Delete customer (soft delete, check for linked oldinvoices)
 - [ ] Import customers from CSV
 - [ ] Export customers to CSV/Excel
 
@@ -600,7 +600,7 @@ DRAFT → VALIDATED → SIGNED → SUBMITTED → ACCEPTED → ARCHIVED
   - Track inventory (boolean)
   - Minimum stock alert threshold
 - [ ] Edit product
-- [ ] Delete product (soft delete, check for linked invoice lines)
+- [ ] Delete product (soft delete, check for linked oldinvoice lines)
 - [ ] Import products from CSV
 - [ ] Export products to CSV/Excel
 
@@ -608,7 +608,7 @@ DRAFT → VALIDATED → SIGNED → SUBMITTED → ACCEPTED → ARCHIVED
 
 - [ ] Dashboard showing current stock levels per product
 - [ ] Stock movement log (IN, OUT, ADJUSTMENT)
-- [ ] Automatic stock deduction when invoice is validated
+- [ ] Automatic stock deduction when oldinvoice is validated
 - [ ] Automatic stock restoration when credit note is issued
 - [ ] Low stock alert notifications (when qty < threshold)
 - [ ] Stock valuation report (quantity × unit cost)
@@ -617,11 +617,11 @@ DRAFT → VALIDATED → SIGNED → SUBMITTED → ACCEPTED → ARCHIVED
 
 ### 4.6 Module: Invoicing (Core)
 
-#### 4.6.1 Invoice Creation
-- [ ] Invoice creation form with:
+#### 4.6.1 OldInvoice Creation
+- [ ] OldInvoice creation form with:
   - Auto-generated document identifier (configurable format)
   - Document type selector (Facture, Avoir, Note de débit, Proforma, Acompte)
-  - Invoice date (default: today, format stored as `ddMMyy`)
+  - OldInvoice date (default: today, format stored as `ddMMyy`)
   - Due date
   - Billing period (optional, `ddMMyy-ddMMyy`)
   - Customer selector (from customer module)
@@ -629,7 +629,7 @@ DRAFT → VALIDATED → SIGNED → SUBMITTED → ACCEPTED → ARCHIVED
   - Special conditions (optional free text, max 200 chars each)
   - Free text notes (optional, max 500 chars)
 
-#### 4.6.2 Invoice Line Items
+#### 4.6.2 OldInvoice Line Items
 - [ ] Add line items:
   - Product/service selector (from catalog) or manual entry
   - Quantity + unit of measure
@@ -642,7 +642,7 @@ DRAFT → VALIDATED → SIGNED → SUBMITTED → ACCEPTED → ARCHIVED
 - [ ] Remove line items
 - [ ] Sub-line support (nested items)
 
-#### 4.6.3 Invoice Calculations Engine
+#### 4.6.3 OldInvoice Calculations Engine
 
 ```
 FOR EACH line_item:
@@ -667,7 +667,7 @@ ALL amounts stored as NUMERIC(20,3) — 3 decimal places for TND millimes.
 - [ ] Generate amount in words (French): e.g., "DEUX DINARS ET CINQ CENT QUARANTE MILLIMES"
 - [ ] Tax summary grouping: group taxes by rate, show taxable base + tax amount per rate
 
-#### 4.6.4 Invoice Status Management
+#### 4.6.4 OldInvoice Status Management
 - [ ] **DRAFT**: Editable, not yet validated
 - [ ] **VALIDATED**: Locked for editing, XML generated, ready for signing
 - [ ] **SIGNED**: XAdES-BES signature applied
@@ -676,26 +676,26 @@ ALL amounts stored as NUMERIC(20,3) — 3 decimal places for TND millimes.
 - [ ] **REJECTED**: TTN returned error, allow correction → back to DRAFT
 - [ ] **ARCHIVED**: Finalized, read-only, retained per fiscal requirements
 
-#### 4.6.5 Invoice Actions
+#### 4.6.5 OldInvoice Actions
 - [ ] Save as draft
 - [ ] Validate (lock + generate TEIF XML)
 - [ ] Sign (apply XAdES-BES digital signature)
 - [ ] Submit to TTN (async via queue job)
 - [ ] Download PDF (with CEV QR code if accepted)
 - [ ] Download signed XML
-- [ ] Duplicate invoice (create new draft from existing)
-- [ ] Create credit note from invoice
-- [ ] Print invoice
-- [ ] Email invoice to customer (PDF attachment)
+- [ ] Duplicate oldinvoice (create new draft from existing)
+- [ ] Create credit note from oldinvoice
+- [ ] Print oldinvoice
+- [ ] Email oldinvoice to customer (PDF attachment)
 
 ### 4.7 Module: Payment Tracking
 
-- [ ] Record payments against invoices
+- [ ] Record payments against oldinvoices
 - [ ] Payment methods: bank transfer (RIB), postal payment (CCP), cash, check
 - [ ] Partial payment support
 - [ ] Payment status: unpaid, partially paid, fully paid, overdue
 - [ ] Auto-calculate remaining balance
-- [ ] Overdue invoice alerts
+- [ ] Overdue oldinvoice alerts
 - [ ] Payment receipt generation
 
 ### 4.8 Module: Reporting & Dashboard
@@ -703,8 +703,8 @@ ALL amounts stored as NUMERIC(20,3) — 3 decimal places for TND millimes.
 #### 4.8.1 Dashboard
 - [ ] Total revenue (current month, current year)
 - [ ] Outstanding receivables
-- [ ] Overdue invoices count + total
-- [ ] Recent invoices list
+- [ ] Overdue oldinvoices count + total
+- [ ] Recent oldinvoices list
 - [ ] Low stock alerts
 - [ ] TTN submission status summary (pending, accepted, rejected)
 - [ ] Revenue chart (monthly bar chart, last 12 months)
@@ -713,7 +713,7 @@ ALL amounts stored as NUMERIC(20,3) — 3 decimal places for TND millimes.
 - [ ] Sales report by period (filterable by date range, customer, product)
 - [ ] TVA declaration report (grouped by TVA rate, shows taxable base + tax)
 - [ ] Timbre Fiscal report
-- [ ] Customer statement (all invoices + payments for a customer)
+- [ ] Customer statement (all oldinvoices + payments for a customer)
 - [ ] Product sales report
 - [ ] Aging report (receivables by age: 0-30, 31-60, 61-90, 90+ days)
 - [ ] Export all reports to PDF and Excel
@@ -760,7 +760,7 @@ CREATE TABLE domains (
 CREATE TABLE plans (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name            VARCHAR(50) NOT NULL,               -- Free, Basic, Pro
-    max_invoices_per_month INTEGER,
+    max_oldinvoices_per_month INTEGER,
     max_users       INTEGER,
     max_products    INTEGER,
     has_ttn_integration BOOLEAN NOT NULL DEFAULT false,
@@ -818,13 +818,13 @@ CREATE TABLE company_settings (
     bank_name               VARCHAR(70),
     bank_branch_code        VARCHAR(17),
     postal_account          VARCHAR(20),                  -- CCP number
-    -- Invoice defaults
+    -- OldInvoice defaults
     default_tva_rate        NUMERIC(5,2) NOT NULL DEFAULT 19.00,
     timbre_fiscal_enabled   BOOLEAN NOT NULL DEFAULT true,
     timbre_fiscal_amount    NUMERIC(20,3) NOT NULL DEFAULT 0.600, -- TND
-    invoice_prefix          VARCHAR(20) NOT NULL DEFAULT 'INV',
-    invoice_counter         INTEGER NOT NULL DEFAULT 1,
-    invoice_format          VARCHAR(100) NOT NULL DEFAULT '{prefix}-{YYYY}-{counter}',
+    oldinvoice_prefix          VARCHAR(20) NOT NULL DEFAULT 'INV',
+    oldinvoice_counter         INTEGER NOT NULL DEFAULT 1,
+    oldinvoice_format          VARCHAR(100) NOT NULL DEFAULT '{prefix}-{YYYY}-{counter}',
     -- Certificate
     certificate_path        VARCHAR(500),                 -- Path to .p12 file (encrypted)
     certificate_passphrase  VARCHAR(500),                 -- Encrypted passphrase
@@ -906,8 +906,8 @@ CREATE TABLE stock_movements (
     product_id      UUID NOT NULL REFERENCES products(id),
     movement_type   VARCHAR(20) NOT NULL,                 -- IN, OUT, ADJUSTMENT
     quantity         NUMERIC(20,3) NOT NULL,
-    reference_type  VARCHAR(50),                          -- invoice, credit_note, manual
-    reference_id    UUID,                                 -- FK to invoices if applicable
+    reference_type  VARCHAR(50),                          -- oldinvoice, credit_note, manual
+    reference_id    UUID,                                 -- FK to oldinvoices if applicable
     reason          VARCHAR(500),
     performed_by    UUID REFERENCES users(id),
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
@@ -918,25 +918,25 @@ CREATE INDEX idx_stock_movements_created ON stock_movements(created_at);
 
 -- ===================== INVOICES =====================
 
-CREATE TABLE invoices (
+CREATE TABLE oldinvoices (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     -- Document identification (Bgm)
-    document_identifier     VARCHAR(70) NOT NULL UNIQUE,    -- Invoice number
+    document_identifier     VARCHAR(70) NOT NULL UNIQUE,    -- OldInvoice number
     document_type_code      VARCHAR(4) NOT NULL DEFAULT 'I-11',
         -- I-11=Facture, I-12=Rectificative, I-13=Avoir, I-14=Note débit,
         -- I-15=Proforma, I-16=Acompte
     document_type_label     VARCHAR(35) NOT NULL DEFAULT 'Facture',
     -- References
-    parent_invoice_id       UUID REFERENCES invoices(id),   -- For credit notes / corrections
+    parent_oldinvoice_id       UUID REFERENCES oldinvoices(id),   -- For credit notes / corrections
     -- Dates (Dtm)
-    invoice_date            DATE NOT NULL,                   -- I-31 (stored as date, formatted ddMMyy for XML)
+    oldinvoice_date            DATE NOT NULL,                   -- I-31 (stored as date, formatted ddMMyy for XML)
     due_date                DATE,                            -- I-32
     delivery_date           DATE,                            -- I-33
     billing_period_start    DATE,                            -- I-36 start
     billing_period_end      DATE,                            -- I-36 end
     -- Parties
     customer_id             UUID NOT NULL REFERENCES customers(id),
-    -- Amounts (InvoiceMoa) — all NUMERIC(20,3) for TND
+    -- Amounts (OldInvoiceMoa) — all NUMERIC(20,3) for TND
     total_ht                NUMERIC(20,3) NOT NULL DEFAULT 0,    -- I-176: Total net (HT)
     total_net_before_disc   NUMERIC(20,3) NOT NULL DEFAULT 0,    -- I-182: Net before discounts
     total_gross             NUMERIC(20,3) NOT NULL DEFAULT 0,    -- I-179: Gross total
@@ -974,17 +974,17 @@ CREATE TABLE invoices (
     deleted_at              TIMESTAMP
 );
 
-CREATE INDEX idx_invoices_status ON invoices(status);
-CREATE INDEX idx_invoices_customer ON invoices(customer_id);
-CREATE INDEX idx_invoices_date ON invoices(invoice_date);
-CREATE INDEX idx_invoices_document_type ON invoices(document_type_code);
+CREATE INDEX idx_oldinvoices_status ON oldinvoices(status);
+CREATE INDEX idx_oldinvoices_customer ON oldinvoices(customer_id);
+CREATE INDEX idx_oldinvoices_date ON oldinvoices(oldinvoice_date);
+CREATE INDEX idx_oldinvoices_document_type ON oldinvoices(document_type_code);
 
 -- ===================== INVOICE LINE ITEMS =====================
 
-CREATE TABLE invoice_lines (
+CREATE TABLE oldinvoice_lines (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    invoice_id          UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
-    parent_line_id      UUID REFERENCES invoice_lines(id),  -- For sub-lines
+    oldinvoice_id          UUID NOT NULL REFERENCES oldinvoices(id) ON DELETE CASCADE,
+    parent_line_id      UUID REFERENCES oldinvoice_lines(id),  -- For sub-lines
     line_number         INTEGER NOT NULL,
     -- Product reference
     product_id          UUID REFERENCES products(id),
@@ -1010,13 +1010,13 @@ CREATE TABLE invoice_lines (
     updated_at          TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_invoice_lines_invoice ON invoice_lines(invoice_id);
+CREATE INDEX idx_oldinvoice_lines_oldinvoice ON oldinvoice_lines(oldinvoice_id);
 
 -- ===================== INVOICE TAX SUMMARY =====================
 
-CREATE TABLE invoice_tax_lines (
+CREATE TABLE oldinvoice_tax_lines (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    invoice_id      UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+    oldinvoice_id      UUID NOT NULL REFERENCES oldinvoices(id) ON DELETE CASCADE,
     tax_type_code   VARCHAR(6) NOT NULL,              -- I-1601, I-1602, I-1603
     tax_type_name   VARCHAR(200) NOT NULL,            -- "droit de timbre", "TVA"
     tax_rate        NUMERIC(5,2) NOT NULL,
@@ -1025,13 +1025,13 @@ CREATE TABLE invoice_tax_lines (
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_invoice_tax_lines_invoice ON invoice_tax_lines(invoice_id);
+CREATE INDEX idx_oldinvoice_tax_lines_oldinvoice ON oldinvoice_tax_lines(oldinvoice_id);
 
 -- ===================== PAYMENTS =====================
 
 CREATE TABLE payments (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    invoice_id      UUID NOT NULL REFERENCES invoices(id),
+    oldinvoice_id      UUID NOT NULL REFERENCES oldinvoices(id),
     payment_date    DATE NOT NULL,
     amount          NUMERIC(20,3) NOT NULL,            -- TND
     payment_method  VARCHAR(30) NOT NULL,
@@ -1045,13 +1045,13 @@ CREATE TABLE payments (
     updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_payments_invoice ON payments(invoice_id);
+CREATE INDEX idx_payments_oldinvoice ON payments(oldinvoice_id);
 
--- ===================== INVOICE ALLOWANCES (Invoice-level) =====================
+-- ===================== INVOICE ALLOWANCES (OldInvoice-level) =====================
 
-CREATE TABLE invoice_allowances (
+CREATE TABLE oldinvoice_allowances (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    invoice_id          UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+    oldinvoice_id          UUID NOT NULL REFERENCES oldinvoices(id) ON DELETE CASCADE,
     allowance_code      VARCHAR(6) NOT NULL,           -- I-151 to I-155
     description         VARCHAR(200),
     amount              NUMERIC(20,3) NOT NULL,
@@ -1064,7 +1064,7 @@ CREATE TABLE audit_logs (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id         UUID REFERENCES users(id),
     action          VARCHAR(50) NOT NULL,               -- create, update, delete, sign, submit, etc.
-    auditable_type  VARCHAR(100) NOT NULL,              -- e.g., App\Models\Invoice
+    auditable_type  VARCHAR(100) NOT NULL,              -- e.g., App\Models\OldInvoice
     auditable_id    UUID NOT NULL,
     old_values      JSONB,
     new_values      JSONB,
@@ -1081,7 +1081,7 @@ CREATE INDEX idx_audit_logs_created ON audit_logs(created_at);
 
 CREATE TABLE ttn_submission_logs (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    invoice_id      UUID NOT NULL REFERENCES invoices(id),
+    oldinvoice_id      UUID NOT NULL REFERENCES oldinvoices(id),
     attempt_number  INTEGER NOT NULL DEFAULT 1,
     request_xml     TEXT,                               -- XML sent to TTN
     response_xml    TEXT,                               -- XML received from TTN
@@ -1092,7 +1092,7 @@ CREATE TABLE ttn_submission_logs (
     responded_at    TIMESTAMP
 );
 
-CREATE INDEX idx_ttn_logs_invoice ON ttn_submission_logs(invoice_id);
+CREATE INDEX idx_ttn_logs_oldinvoice ON ttn_submission_logs(oldinvoice_id);
 ```
 
 ### 5.3 Entity Relationship Summary
@@ -1101,18 +1101,18 @@ CREATE INDEX idx_ttn_logs_invoice ON ttn_submission_logs(invoice_id);
 tenants (central) ─────1:N───── domains (central)
 tenants (central) ─────N:1───── plans (central)
 
-users ─────────────────1:N───── invoices (created_by)
+users ─────────────────1:N───── oldinvoices (created_by)
 users ─────────────────1:N───── audit_logs
-customers ─────────────1:N───── invoices
-invoices ──────────────1:N───── invoice_lines
-invoices ──────────────1:N───── invoice_tax_lines
-invoices ──────────────1:N───── invoice_allowances
-invoices ──────────────1:N───── payments
-invoices ──────────────1:N───── ttn_submission_logs
-invoices ──────────────1:1───── invoices (parent for credit notes)
-products ──────────────1:N───── invoice_lines
+customers ─────────────1:N───── oldinvoices
+oldinvoices ──────────────1:N───── oldinvoice_lines
+oldinvoices ──────────────1:N───── oldinvoice_tax_lines
+oldinvoices ──────────────1:N───── oldinvoice_allowances
+oldinvoices ──────────────1:N───── payments
+oldinvoices ──────────────1:N───── ttn_submission_logs
+oldinvoices ──────────────1:1───── oldinvoices (parent for credit notes)
+products ──────────────1:N───── oldinvoice_lines
 products ──────────────1:N───── stock_movements
-invoice_lines ─────────1:N───── invoice_lines (sub-lines via parent_line_id)
+oldinvoice_lines ─────────1:N───── oldinvoice_lines (sub-lines via parent_line_id)
 ```
 
 ---
@@ -1170,26 +1170,26 @@ ROUTES:
   POST   /inventory/adjust              → Inventory/Adjust
   GET    /inventory/{product_id}/history → Inventory/History
 
-  -- Invoices
-  GET    /invoices                       → Invoices/Index
-  GET    /invoices/create                → Invoices/Create
-  POST   /invoices                       → Invoices/Store
-  GET    /invoices/{id}                  → Invoices/Show
-  GET    /invoices/{id}/edit             → Invoices/Edit
-  PUT    /invoices/{id}                  → Invoices/Update
-  DELETE /invoices/{id}                  → Invoices/Destroy
-  POST   /invoices/{id}/validate        → Invoices/Validate
-  POST   /invoices/{id}/sign            → Invoices/Sign
-  POST   /invoices/{id}/submit-ttn      → Invoices/SubmitToTTN
-  GET    /invoices/{id}/pdf             → Invoices/DownloadPDF
-  GET    /invoices/{id}/xml             → Invoices/DownloadXML
-  POST   /invoices/{id}/duplicate       → Invoices/Duplicate
-  POST   /invoices/{id}/credit-note     → Invoices/CreateCreditNote
-  POST   /invoices/{id}/email           → Invoices/EmailToCustomer
+  -- OldInvoices
+  GET    /oldinvoices                       → OldInvoices/Index
+  GET    /oldinvoices/create                → OldInvoices/Create
+  POST   /oldinvoices                       → OldInvoices/Store
+  GET    /oldinvoices/{id}                  → OldInvoices/Show
+  GET    /oldinvoices/{id}/edit             → OldInvoices/Edit
+  PUT    /oldinvoices/{id}                  → OldInvoices/Update
+  DELETE /oldinvoices/{id}                  → OldInvoices/Destroy
+  POST   /oldinvoices/{id}/validate        → OldInvoices/Validate
+  POST   /oldinvoices/{id}/sign            → OldInvoices/Sign
+  POST   /oldinvoices/{id}/submit-ttn      → OldInvoices/SubmitToTTN
+  GET    /oldinvoices/{id}/pdf             → OldInvoices/DownloadPDF
+  GET    /oldinvoices/{id}/xml             → OldInvoices/DownloadXML
+  POST   /oldinvoices/{id}/duplicate       → OldInvoices/Duplicate
+  POST   /oldinvoices/{id}/credit-note     → OldInvoices/CreateCreditNote
+  POST   /oldinvoices/{id}/email           → OldInvoices/EmailToCustomer
 
   -- Payments
-  GET    /invoices/{id}/payments         → Payments/Index
-  POST   /invoices/{id}/payments         → Payments/Store
+  GET    /oldinvoices/{id}/payments         → Payments/Index
+  POST   /oldinvoices/{id}/payments         → Payments/Store
   DELETE /payments/{id}                  → Payments/Destroy
 
   -- Reports
@@ -1213,7 +1213,7 @@ ROUTES:
 ```php
 // Pseudocode for TTN service interface
 interface TTNServiceInterface {
-    public function buildTeifXml(Invoice $invoice): string;
+    public function buildTeifXml(OldInvoice $oldinvoice): string;
     public function validateTeifXml(string $xml): ValidationResult;
     public function signTeifXml(string $xml, Certificate $cert): string;
     public function submitToTTN(string $signedXml): TTNResponse;
@@ -1226,13 +1226,13 @@ interface TTNServiceInterface {
 
 | Error Scenario | Action |
 |----------------|--------|
-| XML validation failure | Return validation errors, keep invoice in DRAFT |
+| XML validation failure | Return validation errors, keep oldinvoice in DRAFT |
 | Certificate expired | Block signing, alert admin, log error |
 | Certificate chain invalid | Block signing, show certificate management page |
 | TTN API timeout (30s) | Queue for retry (max 3 attempts, exponential backoff) |
-| TTN API 4xx error | Parse error response, update invoice to REJECTED, log details |
+| TTN API 4xx error | Parse error response, update oldinvoice to REJECTED, log details |
 | TTN API 5xx error | Queue for retry with exponential backoff |
-| TTN rejects invoice | Set status to REJECTED, store error, allow user correction |
+| TTN rejects oldinvoice | Set status to REJECTED, store error, allow user correction |
 | Network failure | Queue for retry, notify user |
 
 ---
@@ -1282,7 +1282,7 @@ interface TTNServiceInterface {
 - [ ] Create `CompanySetting` Eloquent model
 - [ ] Create `SettingsController` with `edit()` and `update()` actions
 - [ ] Create React form page `Settings/Edit.tsx` with sections:
-  - Company info, address, contact, bank, invoice config, tax config
+  - Company info, address, contact, bank, oldinvoice config, tax config
 - [ ] Implement file upload for company logo
 - [ ] Implement Matricule Fiscale validation in form request
 - [ ] Create seeder with default company settings on tenant creation
@@ -1322,26 +1322,26 @@ interface TTNServiceInterface {
 
 ### Phase 3: Invoicing Engine (Weeks 5-7)
 
-#### Phase 3A: Invoice CRUD
-- [ ] Create tenant migrations: `invoices`, `invoice_lines`, `invoice_tax_lines`, `invoice_allowances`
-- [ ] Create Eloquent models: `Invoice`, `InvoiceLine`, `InvoiceTaxLine`, `InvoiceAllowance`
+#### Phase 3A: OldInvoice CRUD
+- [ ] Create tenant migrations: `oldinvoices`, `oldinvoice_lines`, `oldinvoice_tax_lines`, `oldinvoice_allowances`
+- [ ] Create Eloquent models: `OldInvoice`, `OldInvoiceLine`, `OldInvoiceTaxLine`, `OldInvoiceAllowance`
 - [ ] Define model relationships (hasMany, belongsTo)
-- [ ] Create `InvoiceController` with all actions
+- [ ] Create `OldInvoiceController` with all actions
 - [ ] Create React pages:
-  - `Invoices/Index.tsx` (list + status filter + date range + customer filter)
-  - `Invoices/Create.tsx` (dynamic form with line items)
-  - `Invoices/Edit.tsx` (only for DRAFT status)
-  - `Invoices/Show.tsx` (read-only view with all details + actions)
+  - `OldInvoices/Index.tsx` (list + status filter + date range + customer filter)
+  - `OldInvoices/Create.tsx` (dynamic form with line items)
+  - `OldInvoices/Edit.tsx` (only for DRAFT status)
+  - `OldInvoices/Show.tsx` (read-only view with all details + actions)
 - [ ] Implement dynamic line item form (add/remove/reorder)
 - [ ] Implement product autocomplete in line items
 - [ ] Auto-fill unit price and TVA rate from product catalog
-- [ ] Implement auto-numbering per `invoice_format` setting
+- [ ] Implement auto-numbering per `oldinvoice_format` setting
 
 #### Phase 3B: Calculation Engine
-- [ ] Create `App\Services\InvoiceCalculationService`
+- [ ] Create `App\Services\OldInvoiceCalculationService`
 - [ ] Implement line-level calculation: `net = qty × price - discount`
 - [ ] Implement TVA calculation per line
-- [ ] Implement invoice totals calculation (HT, TVA, Timbre, TTC)
+- [ ] Implement oldinvoice totals calculation (HT, TVA, Timbre, TTC)
 - [ ] Implement tax summary grouping by rate
 - [ ] Implement amount-in-words converter (French) for TND
   - Example: `2.540` → `"DEUX DINARS ET CINQ CENT QUARANTE MILLIMES"`
@@ -1352,7 +1352,7 @@ interface TTNServiceInterface {
 #### Phase 3C: TEIF XML Generator
 - [ ] Create `App\Services\TeifXmlBuilder` service
 - [ ] Implement root `<TEIF>` element with version and agency attributes
-- [ ] Implement `<InvoiceHeader>` builder (sender/receiver MF)
+- [ ] Implement `<OldInvoiceHeader>` builder (sender/receiver MF)
 - [ ] Implement `<Bgm>` builder (document ID, type code)
 - [ ] Implement `<Dtm>` builder (format dates as `ddMMyy`, `ddMMyyHHmm`)
 - [ ] Implement `<PartnerSection>` builder:
@@ -1360,19 +1360,19 @@ interface TTNServiceInterface {
   - Buyer (I-64) with all references and contacts
 - [ ] Implement `<PytSection>` builder (payment terms, bank details)
 - [ ] Implement `<LinSection>` builder (all line items with tax and amounts)
-- [ ] Implement `<InvoiceMoa>` builder (all invoice-level amounts)
-- [ ] Implement `<InvoiceTax>` builder (tax summary per rate + timbre fiscal)
-- [ ] Implement `<InvoiceAlc>` builder (allowances/charges if any)
+- [ ] Implement `<OldInvoiceMoa>` builder (all oldinvoice-level amounts)
+- [ ] Implement `<OldInvoiceTax>` builder (tax summary per rate + timbre fiscal)
+- [ ] Implement `<OldInvoiceAlc>` builder (allowances/charges if any)
 - [ ] Validate generated XML against XSD schema
 - [ ] Create unit tests with expected XML output
 - [ ] Test: generate XML → validate against `facture_INVOIC_V1.8.8_withoutSig_xsd`
 
-#### Phase 3D: Invoice Status Machine
+#### Phase 3D: OldInvoice Status Machine
 - [ ] Implement status transitions with Laravel model events
-- [ ] Validate → lock invoice, generate XML, store in `teif_xml` column
+- [ ] Validate → lock oldinvoice, generate XML, store in `teif_xml` column
 - [ ] Reject transition from non-DRAFT to edit
-- [ ] Implement duplicate invoice action
-- [ ] Implement credit note creation from invoice
+- [ ] Implement duplicate oldinvoice action
+- [ ] Implement credit note creation from oldinvoice
 - [ ] Add status badges in UI (color-coded)
 - [ ] Test: full lifecycle DRAFT → VALIDATED → SIGNED → SUBMITTED → ACCEPTED
 
@@ -1414,18 +1414,18 @@ interface TTNServiceInterface {
 - [ ] Implement signed XML submission
 - [ ] Implement response parsing (success + RefTtnVal extraction)
 - [ ] Implement error response parsing
-- [ ] Create `App\Jobs\SubmitInvoiceToTTN` queued job
+- [ ] Create `App\Jobs\SubmitOldInvoiceToTTN` queued job
 - [ ] Implement retry logic (3 attempts, exponential backoff: 30s, 120s, 300s)
 - [ ] Log all requests/responses in `ttn_submission_logs` table
-- [ ] Update invoice status based on TTN response
+- [ ] Update oldinvoice status based on TTN response
 - [ ] Extract and store CEV QR code on success
 - [ ] Test: mock TTN API → verify full submission flow
 
 #### Phase 4D: CEV QR Code Handling
 - [ ] Decode Base64 `ReferenceCEV` to PNG binary
 - [ ] Store QR image file in tenant storage
-- [ ] Display QR code in invoice detail view
-- [ ] Embed QR code in PDF invoice
+- [ ] Display QR code in oldinvoice detail view
+- [ ] Embed QR code in PDF oldinvoice
 - [ ] Display TTN reference number alongside QR code
 - [ ] Test: verify QR code display in UI and PDF
 
@@ -1435,9 +1435,9 @@ interface TTNServiceInterface {
 - [ ] Create tenant migration for `payments` table
 - [ ] Create `Payment` Eloquent model
 - [ ] Create `PaymentController`
-- [ ] Implement payment recording form in invoice detail view
+- [ ] Implement payment recording form in oldinvoice detail view
 - [ ] Auto-calculate remaining balance
-- [ ] Update invoice payment status (unpaid, partial, paid)
+- [ ] Update oldinvoice payment status (unpaid, partial, paid)
 - [ ] Create payment receipt PDF
 - [ ] Test: record payments → verify balance calculation
 
@@ -1445,13 +1445,13 @@ interface TTNServiceInterface {
 - [ ] Create tenant migration for `stock_movements` table
 - [ ] Create `StockMovement` model
 - [ ] Create `InventoryController`
-- [ ] Implement automatic stock deduction on invoice validation
+- [ ] Implement automatic stock deduction on oldinvoice validation
 - [ ] Implement automatic stock restoration on credit note
 - [ ] Create inventory dashboard page (`Inventory/Index.tsx`)
 - [ ] Implement manual stock adjustment
 - [ ] Implement low stock alert logic
 - [ ] Create stock movement history view
-- [ ] Test: invoice validation → verify stock deduction
+- [ ] Test: oldinvoice validation → verify stock deduction
 
 ### Phase 6: Reporting & Dashboard (Weeks 13-14)
 
@@ -1460,8 +1460,8 @@ interface TTNServiceInterface {
 - [ ] Create `Dashboard/Index.tsx` with:
   - Revenue cards (month, year)
   - Outstanding receivables card
-  - Overdue invoices card
-  - Recent invoices list
+  - Overdue oldinvoices card
+  - Recent oldinvoices list
   - Low stock alerts
   - TTN status summary
   - Monthly revenue chart (using recharts or chart.js)
@@ -1481,12 +1481,12 @@ interface TTNServiceInterface {
 
 ### Phase 7: PDF Generation & Polish (Weeks 15-16)
 
-#### Phase 7A: Invoice PDF
-- [ ] Design invoice PDF template (Blade or React-PDF)
+#### Phase 7A: OldInvoice PDF
+- [ ] Design oldinvoice PDF template (Blade or React-PDF)
 - [ ] Include: company logo, company info, customer info, line items table
 - [ ] Include: tax summary, totals, amount in words
 - [ ] Include: payment terms, bank details
-- [ ] Include: CEV QR code (if invoice is accepted by TTN)
+- [ ] Include: CEV QR code (if oldinvoice is accepted by TTN)
 - [ ] Include: TTN reference number
 - [ ] Implement PDF download endpoint
 - [ ] Implement email sending with PDF attachment
@@ -1515,7 +1515,7 @@ interface TTNServiceInterface {
 - [ ] Write frontend component tests (Vitest + Testing Library)
 - [ ] Write E2E tests for critical flows (Cypress or Playwright)
 - [ ] Achieve minimum 80% code coverage
-- [ ] Manual QA: test full invoice lifecycle with TTN sandbox
+- [ ] Manual QA: test full oldinvoice lifecycle with TTN sandbox
 
 #### Phase 8B: Deployment
 - [ ] Set up production server (Ubuntu 22.04 + Nginx + PHP-FPM)
@@ -1550,7 +1550,7 @@ interface TTNServiceInterface {
 | Validation | Use Form Request classes, NEVER inline validation |
 | Services | Business logic in Service classes, NOT in controllers |
 | Controllers | Thin controllers — delegate to services |
-| Naming | Models: singular PascalCase (`Invoice`), Tables: plural snake_case (`invoices`) |
+| Naming | Models: singular PascalCase (`OldInvoice`), Tables: plural snake_case (`oldinvoices`) |
 | Money | ALWAYS use `NUMERIC(20,3)` — NEVER use `float` for monetary values |
 | Dates | Store as `DATE` or `TIMESTAMP`, format `ddMMyy` only when generating XML |
 | UUIDs | Use UUIDs for all primary keys (PostgreSQL `gen_random_uuid()`) |
@@ -1566,7 +1566,7 @@ interface TTNServiceInterface {
 | State | Use React hooks (`useState`, `useReducer`) for local state |
 | Forms | Use Inertia.js `useForm` hook for form submissions |
 | Types | Define TypeScript interfaces for all props, API responses, form data |
-| File Naming | PascalCase for components (`InvoiceForm.tsx`), camelCase for utilities |
+| File Naming | PascalCase for components (`OldInvoiceForm.tsx`), camelCase for utilities |
 | Folder Structure | Group by feature/module under `resources/js/Pages/{Module}/` |
 | Imports | Absolute imports using `@/` alias for `resources/js/` |
 
@@ -1579,7 +1579,7 @@ BACKEND:
     - TeifValidationException (XML fails XSD validation)
     - SignatureException (certificate or signing failure)
     - TTNSubmissionException (TTN API errors)
-    - InvoiceStateException (invalid status transition)
+    - OldInvoiceStateException (invalid status transition)
   - Log ALL TTN-related errors with full request/response
   - Return user-friendly error messages via Inertia flash
   - NEVER expose stack traces in production
@@ -1606,7 +1606,7 @@ smart-erp-lite/
 ├── app/
 │   ├── Enums/
 │   │   ├── DocumentTypeCode.php
-│   │   ├── InvoiceStatus.php
+│   │   ├── OldInvoiceStatus.php
 │   │   ├── IdentifierType.php
 │   │   ├── TaxTypeCode.php
 │   │   └── AmountTypeCode.php
@@ -1614,13 +1614,13 @@ smart-erp-lite/
 │   │   ├── TeifValidationException.php
 │   │   ├── SignatureException.php
 │   │   ├── TTNSubmissionException.php
-│   │   └── InvoiceStateException.php
+│   │   └── OldInvoiceStateException.php
 │   ├── Http/
 │   │   ├── Controllers/
 │   │   │   ├── Auth/
 │   │   │   ├── CustomerController.php
 │   │   │   ├── DashboardController.php
-│   │   │   ├── InvoiceController.php
+│   │   │   ├── OldInvoiceController.php
 │   │   │   ├── InventoryController.php
 │   │   │   ├── PaymentController.php
 │   │   │   ├── ProductController.php
@@ -1630,19 +1630,19 @@ smart-erp-lite/
 │   │   │   └── HandleInertiaRequests.php
 │   │   └── Requests/
 │   │       ├── StoreCustomerRequest.php
-│   │       ├── StoreInvoiceRequest.php
+│   │       ├── StoreOldInvoiceRequest.php
 │   │       ├── StoreProductRequest.php
 │   │       └── UpdateCompanySettingsRequest.php
 │   ├── Jobs/
-│   │   └── SubmitInvoiceToTTN.php
+│   │   └── SubmitOldInvoiceToTTN.php
 │   ├── Models/
 │   │   ├── AuditLog.php
 │   │   ├── CompanySetting.php
 │   │   ├── Customer.php
-│   │   ├── Invoice.php
-│   │   ├── InvoiceAllowance.php
-│   │   ├── InvoiceLine.php
-│   │   ├── InvoiceTaxLine.php
+│   │   ├── OldInvoice.php
+│   │   ├── OldInvoiceAllowance.php
+│   │   ├── OldInvoiceLine.php
+│   │   ├── OldInvoiceTaxLine.php
 │   │   ├── Payment.php
 │   │   ├── Product.php
 │   │   ├── StockMovement.php
@@ -1650,11 +1650,11 @@ smart-erp-lite/
 │   │   └── TTNSubmissionLog.php
 │   ├── Policies/
 │   │   ├── CustomerPolicy.php
-│   │   ├── InvoicePolicy.php
+│   │   ├── OldInvoicePolicy.php
 │   │   └── ProductPolicy.php
 │   └── Services/
-│       ├── InvoiceCalculationService.php
-│       ├── InvoiceNumberingService.php
+│       ├── OldInvoiceCalculationService.php
+│       ├── OldInvoiceNumberingService.php
 │       ├── AmountInWordsService.php
 │       ├── MatriculeFiscaleValidator.php
 │       ├── TeifXmlBuilder.php
@@ -1673,10 +1673,10 @@ smart-erp-lite/
 │   │       ├── create_customers_table.php
 │   │       ├── create_products_table.php
 │   │       ├── create_stock_movements_table.php
-│   │       ├── create_invoices_table.php
-│   │       ├── create_invoice_lines_table.php
-│   │       ├── create_invoice_tax_lines_table.php
-│   │       ├── create_invoice_allowances_table.php
+│   │       ├── create_oldinvoices_table.php
+│   │       ├── create_oldinvoice_lines_table.php
+│   │       ├── create_oldinvoice_tax_lines_table.php
+│   │       ├── create_oldinvoice_allowances_table.php
 │   │       ├── create_payments_table.php
 │   │       ├── create_audit_logs_table.php
 │   │       └── create_ttn_submission_logs_table.php
@@ -1689,7 +1689,7 @@ smart-erp-lite/
 │       ├── types/
 │       │   ├── index.d.ts     # Global TypeScript types
 │       │   ├── customer.ts
-│       │   ├── invoice.ts
+│       │   ├── oldinvoice.ts
 │       │   ├── product.ts
 │       │   └── company.ts
 │       ├── Components/
@@ -1702,7 +1702,7 @@ smart-erp-lite/
 │       │   │   ├── Badge.tsx
 │       │   │   ├── Toast.tsx
 │       │   │   └── Pagination.tsx
-│       │   ├── InvoiceLineForm.tsx
+│       │   ├── OldInvoiceLineForm.tsx
 │       │   └── QRCodeDisplay.tsx
 │       ├── Layouts/
 │       │   ├── AuthenticatedLayout.tsx
@@ -1728,7 +1728,7 @@ smart-erp-lite/
 │           ├── Inventory/
 │           │   ├── Index.tsx
 │           │   └── History.tsx
-│           ├── Invoices/
+│           ├── OldInvoices/
 │           │   ├── Index.tsx
 │           │   ├── Create.tsx
 │           │   ├── Edit.tsx
@@ -1744,11 +1744,11 @@ smart-erp-lite/
 ├── tests/
 │   ├── Feature/
 │   │   ├── CustomerTest.php
-│   │   ├── InvoiceTest.php
+│   │   ├── OldInvoiceTest.php
 │   │   ├── ProductTest.php
 │   │   └── TTNSubmissionTest.php
 │   └── Unit/
-│       ├── InvoiceCalculationServiceTest.php
+│       ├── OldInvoiceCalculationServiceTest.php
 │       ├── TeifXmlBuilderTest.php
 │       ├── XadesSignatureServiceTest.php
 │       ├── MatriculeFiscaleValidatorTest.php
@@ -1768,8 +1768,8 @@ smart-erp-lite/
 |------|--------|---------|
 | `I-61` | Acheteur | Buyer |
 | `I-62` | Vendeur (Fournisseur) | Seller (Supplier) — **MF validated** |
-| `I-63` | Facturé | Invoicee |
-| `I-64` | Destinataire de la facture | Invoiced party |
+| `I-63` | Facturé | OldInvoicee |
+| `I-64` | Destinataire de la facture | OldInvoiced party |
 | `I-65` | Livré à | Delivery party |
 | `I-66` | Payeur | Payer |
 | `I-67` | Bénéficiaire | Payee |
@@ -1788,18 +1788,18 @@ smart-erp-lite/
 
 | Code | French | English |
 |------|--------|---------|
-| `I-11` | Facture | Invoice |
-| `I-12` | Facture rectificative | Corrective invoice |
+| `I-11` | Facture | OldInvoice |
+| `I-12` | Facture rectificative | Corrective oldinvoice |
 | `I-13` | Avoir | Credit note |
 | `I-14` | Note de débit | Debit note |
-| `I-15` | Facture proforma | Proforma invoice |
-| `I-16` | Facture d'acompte | Advance invoice |
+| `I-15` | Facture proforma | Proforma oldinvoice |
+| `I-16` | Facture d'acompte | Advance oldinvoice |
 
 ### 9.4 Date Function Codes
 
 | Code | Description | Format |
 |------|-------------|--------|
-| `I-31` | Invoice date | `ddMMyy` |
+| `I-31` | OldInvoice date | `ddMMyy` |
 | `I-32` | Due date | `ddMMyy` |
 | `I-33` | Delivery date | `ddMMyy` |
 | `I-34` | Order date | `ddMMyy` |
@@ -1826,19 +1826,19 @@ smart-erp-lite/
 | `I-173` | Prix unitaire | Unit price | Line |
 | `I-174` | Montant remise | Discount amount | Line |
 | `I-175` | Montant charge | Charge amount | Line |
-| `I-176` | Total HT | Total excl. tax | Invoice |
+| `I-176` | Total HT | Total excl. tax | OldInvoice |
 | `I-177` | Base imposable | Taxable base | Tax |
 | `I-178` | Montant taxe | Tax amount | Tax |
-| `I-179` | Total brut | Total gross | Invoice |
-| `I-180` | Total TTC | Total incl. tax | Invoice |
-| `I-181` | Total TVA | Total VAT | Invoice |
-| `I-182` | Total net avant remise | Net before discount | Invoice |
+| `I-179` | Total brut | Total gross | OldInvoice |
+| `I-180` | Total TTC | Total incl. tax | OldInvoice |
+| `I-181` | Total TVA | Total VAT | OldInvoice |
+| `I-182` | Total net avant remise | Net before discount | OldInvoice |
 | `I-183` | Prix unitaire ligne | Line unit price | Line |
-| `I-184` | Acompte | Advance payment | Invoice |
-| `I-185` | Reste à payer | Remaining balance | Invoice |
-| `I-186` | Total remises | Total allowances | Invoice |
-| `I-187` | Total charges | Total charges | Invoice |
-| `I-188` | Arrondi | Rounding | Invoice |
+| `I-184` | Acompte | Advance payment | OldInvoice |
+| `I-185` | Reste à payer | Remaining balance | OldInvoice |
+| `I-186` | Total remises | Total allowances | OldInvoice |
+| `I-187` | Total charges | Total charges | OldInvoice |
+| `I-188` | Arrondi | Rounding | OldInvoice |
 
 ### 9.7 Payment Terms Type Codes
 
@@ -1921,7 +1921,7 @@ smart-erp-lite/
 | `I-84` | Contract number |
 | `I-85` | Customs declaration number |
 | `I-86` | Transport document number |
-| `I-87` | Previous invoice reference |
+| `I-87` | Previous oldinvoice reference |
 | `I-88` | TTN reference |
 | `I-89` | Other external reference |
 | `I-811` | Category type |

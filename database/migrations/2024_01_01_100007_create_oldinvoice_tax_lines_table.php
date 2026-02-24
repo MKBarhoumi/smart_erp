@@ -10,9 +10,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('invoice_tax_lines', function (Blueprint $table) {
+        Schema::create('oldinvoice_tax_lines', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('invoice_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('oldinvoice_id')->constrained()->cascadeOnDelete();
             $table->string('tax_type_code')->comment('I-1601, I-1602, I-1603');
             $table->string('tax_type_name');
             $table->decimal('tax_rate', 5, 2);
@@ -20,12 +20,12 @@ return new class extends Migration
             $table->decimal('tax_amount', 20, 3)->default(0);
             $table->timestamp('created_at')->nullable();
 
-            $table->index(['invoice_id', 'tax_type_code']);
+            $table->index(['oldinvoice_id', 'tax_type_code']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('invoice_tax_lines');
+        Schema::dropIfExists('oldinvoice_tax_lines');
     }
 };

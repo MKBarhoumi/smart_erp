@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\InvoiceStatus;
+use App\Enums\OldInvoiceStatus;
 use App\Models\Customer;
-use App\Models\Invoice;
+use App\Models\OldInvoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -23,23 +23,23 @@ class ReportController extends Controller
     {
         $year = $request->integer('year', (int) now()->format('Y'));
 
-        $monthlyRevenue = Invoice::whereYear('invoice_date', $year)
-            ->whereNotIn('status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])
-            ->selectRaw("EXTRACT(MONTH FROM invoice_date) as month, SUM(total_ht) as total_ht, SUM(total_tva) as total_tva, SUM(total_ttc) as total_ttc, COUNT(*) as invoice_count")
-            ->groupByRaw("EXTRACT(MONTH FROM invoice_date)")
+        $monthlyRevenue = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->selectRaw("EXTRACT(MONTH FROM oldinvoice_date) as month, SUM(total_ht) as total_ht, SUM(total_tva) as total_tva, SUM(total_ttc) as total_ttc, COUNT(*) as oldinvoice_count")
+            ->groupByRaw("EXTRACT(MONTH FROM oldinvoice_date)")
             ->orderBy('month')
             ->get();
 
-        $yearlyTotal = Invoice::whereYear('invoice_date', $year)
-            ->whereNotIn('status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])
-            ->selectRaw("SUM(total_ht) as total_ht, SUM(total_tva) as total_tva, SUM(total_ttc) as total_ttc, SUM(timbre_fiscal) as total_timbre, COUNT(*) as invoice_count")
+        $yearlyTotal = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->selectRaw("SUM(total_ht) as total_ht, SUM(total_tva) as total_tva, SUM(total_ttc) as total_ttc, SUM(timbre_fiscal) as total_timbre, COUNT(*) as oldinvoice_count")
             ->first();
 
         return Inertia::render('Reports/Revenue', [
             'year' => $year,
             'monthlyRevenue' => $monthlyRevenue,
             'yearlyTotal' => $yearlyTotal,
-            'availableYears' => Invoice::selectRaw("DISTINCT EXTRACT(YEAR FROM invoice_date) as year")
+            'availableYears' => OldInvoice::selectRaw("DISTINCT EXTRACT(YEAR FROM oldinvoice_date) as year")
                 ->orderByDesc('year')
                 ->pluck('year'),
         ]);
@@ -53,26 +53,26 @@ class ReportController extends Controller
         $startMonth = ($quarter - 1) * 3 + 1;
         $endMonth = $quarter * 3;
 
-        $taxSummary = DB::table('invoice_tax_lines')
-            ->join('invoices', 'invoice_tax_lines.invoice_id', '=', 'invoices.id')
-            ->whereYear('invoices.invoice_date', $year)
-            ->whereRaw("EXTRACT(MONTH FROM invoices.invoice_date) BETWEEN ? AND ?", [$startMonth, $endMonth])
-            ->whereNotIn('invoices.status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])
-            ->whereNull('invoices.deleted_at')
+        $taxSummary = DB::table('oldinvoice_tax_lines')
+            ->join('oldinvoices', 'oldinvoice_tax_lines.oldinvoice_id', '=', 'oldinvoices.id')
+            ->whereYear('oldinvoices.oldinvoice_date', $year)
+            ->whereRaw("EXTRACT(MONTH FROM oldinvoices.oldinvoice_date) BETWEEN ? AND ?", [$startMonth, $endMonth])
+            ->whereNotIn('oldinvoices.status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->whereNull('oldinvoices.deleted_at')
             ->selectRaw("
-                invoice_tax_lines.tax_type_code,
-                invoice_tax_lines.tax_type_name,
-                invoice_tax_lines.tax_rate,
-                SUM(invoice_tax_lines.taxable_amount) as total_taxable,
-                SUM(invoice_tax_lines.tax_amount) as total_tax
+                oldinvoice_tax_lines.tax_type_code,
+                oldinvoice_tax_lines.tax_type_name,
+                oldinvoice_tax_lines.tax_rate,
+                SUM(oldinvoice_tax_lines.taxable_amount) as total_taxable,
+                SUM(oldinvoice_tax_lines.tax_amount) as total_tax
             ")
-            ->groupBy('invoice_tax_lines.tax_type_code', 'invoice_tax_lines.tax_type_name', 'invoice_tax_lines.tax_rate')
-            ->orderBy('invoice_tax_lines.tax_rate')
+            ->groupBy('oldinvoice_tax_lines.tax_type_code', 'oldinvoice_tax_lines.tax_type_name', 'oldinvoice_tax_lines.tax_rate')
+            ->orderBy('oldinvoice_tax_lines.tax_rate')
             ->get();
 
-        $totalTimbre = Invoice::whereYear('invoice_date', $year)
-            ->whereRaw("EXTRACT(MONTH FROM invoice_date) BETWEEN ? AND ?", [$startMonth, $endMonth])
-            ->whereNotIn('status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])
+        $totalTimbre = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereRaw("EXTRACT(MONTH FROM oldinvoice_date) BETWEEN ? AND ?", [$startMonth, $endMonth])
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
             ->sum('timbre_fiscal');
 
         return Inertia::render('Reports/TaxSummary', [
@@ -86,17 +86,17 @@ class ReportController extends Controller
     public function customerAging(): Response
     {
         $customers = Customer::withSum(
-            ['invoices' => fn ($q) => $q->whereNotIn('status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])],
+            ['oldinvoices' => fn ($q) => $q->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])],
             'total_ttc'
         )
             ->addSelect([
                 'paid_total' => DB::table('payments')
-                    ->join('invoices', 'payments.invoice_id', '=', 'invoices.id')
-                    ->whereColumn('invoices.customer_id', 'customers.id')
-                    ->whereNull('invoices.deleted_at')
+                    ->join('oldinvoices', 'payments.oldinvoice_id', '=', 'oldinvoices.id')
+                    ->whereColumn('oldinvoices.customer_id', 'customers.id')
+                    ->whereNull('oldinvoices.deleted_at')
                     ->selectRaw('COALESCE(SUM(payments.amount), 0)'),
             ])
-            ->orderByDesc('invoices_sum_total_ttc')
+            ->orderByDesc('oldinvoices_sum_total_ttc')
             ->paginate(20);
 
         return Inertia::render('Reports/CustomerAging', [
@@ -106,29 +106,29 @@ class ReportController extends Controller
 
     public function customerStatement(Request $request, Customer $customer): Response
     {
-        $invoices = Invoice::where('customer_id', $customer->id)
-            ->whereNotIn('status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])
+        $oldinvoices = OldInvoice::where('customer_id', $customer->id)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
             ->with('payments')
-            ->orderByDesc('invoice_date')
+            ->orderByDesc('oldinvoice_date')
             ->paginate(25);
 
-        $totals = Invoice::where('customer_id', $customer->id)
-            ->whereNotIn('status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])
-            ->selectRaw("SUM(total_ttc) as total_invoiced, COUNT(*) as invoice_count")
+        $totals = OldInvoice::where('customer_id', $customer->id)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->selectRaw("SUM(total_ttc) as total_oldinvoiced, COUNT(*) as oldinvoice_count")
             ->first();
 
         $totalPaid = DB::table('payments')
-            ->join('invoices', 'payments.invoice_id', '=', 'invoices.id')
-            ->where('invoices.customer_id', $customer->id)
-            ->whereNull('invoices.deleted_at')
+            ->join('oldinvoices', 'payments.oldinvoice_id', '=', 'oldinvoices.id')
+            ->where('oldinvoices.customer_id', $customer->id)
+            ->whereNull('oldinvoices.deleted_at')
             ->sum('payments.amount');
 
         return Inertia::render('Reports/CustomerStatement', [
             'customer' => $customer,
-            'invoices' => $invoices,
+            'oldinvoices' => $oldinvoices,
             'totals' => $totals,
             'totalPaid' => number_format((float) $totalPaid, 3, '.', ''),
-            'balance' => number_format(((float) ($totals->total_invoiced ?? 0)) - (float) $totalPaid, 3, '.', ''),
+            'balance' => number_format(((float) ($totals->total_oldinvoiced ?? 0)) - (float) $totalPaid, 3, '.', ''),
         ]);
     }
 
@@ -136,23 +136,23 @@ class ReportController extends Controller
     {
         $year = $request->integer('year', (int) now()->format('Y'));
 
-        $monthlyTimbre = Invoice::whereYear('invoice_date', $year)
-            ->whereNotIn('status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])
+        $monthlyTimbre = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
             ->where('timbre_fiscal', '>', 0)
-            ->selectRaw("EXTRACT(MONTH FROM invoice_date) as month, SUM(timbre_fiscal) as total_timbre, COUNT(*) as invoice_count")
-            ->groupByRaw("EXTRACT(MONTH FROM invoice_date)")
+            ->selectRaw("EXTRACT(MONTH FROM oldinvoice_date) as month, SUM(timbre_fiscal) as total_timbre, COUNT(*) as oldinvoice_count")
+            ->groupByRaw("EXTRACT(MONTH FROM oldinvoice_date)")
             ->orderBy('month')
             ->get();
 
-        $yearlyTotal = Invoice::whereYear('invoice_date', $year)
-            ->whereNotIn('status', [InvoiceStatus::DRAFT->value, InvoiceStatus::REJECTED->value])
+        $yearlyTotal = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
             ->sum('timbre_fiscal');
 
         return Inertia::render('Reports/Timbre', [
             'year' => $year,
             'monthlyTimbre' => $monthlyTimbre,
             'yearlyTotal' => number_format((float) $yearlyTotal, 3, '.', ''),
-            'availableYears' => Invoice::selectRaw("DISTINCT EXTRACT(YEAR FROM invoice_date) as year")
+            'availableYears' => OldInvoice::selectRaw("DISTINCT EXTRACT(YEAR FROM oldinvoice_date) as year")
                 ->orderByDesc('year')
                 ->pluck('year'),
         ]);

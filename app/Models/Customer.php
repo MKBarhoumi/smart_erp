@@ -50,11 +50,11 @@ class Customer extends Model
     }
 
     /**
-     * @return HasMany<Invoice, $this>
+     * @return HasMany<OldInvoice, $this>
      */
-    public function invoices(): HasMany
+    public function oldinvoices(): HasMany
     {
-        return $this->hasMany(Invoice::class);
+        return $this->hasMany(OldInvoice::class);
     }
 
     /**

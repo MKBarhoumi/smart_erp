@@ -83,11 +83,11 @@ class XadesSignatureServiceTest extends TestCase
         return <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <TEIF controlingAgency="TTN" version="1.8.8">
-  <InvoiceHeader>
+  <OldInvoiceHeader>
     <MessageSenderIdentifier type="I-01">0736202XAM000</MessageSenderIdentifier>
     <MessageRecieverIdentifier type="I-01">0914089JAM000</MessageRecieverIdentifier>
-  </InvoiceHeader>
-  <InvoiceBody>
+  </OldInvoiceHeader>
+  <OldInvoiceBody>
     <Bgm>
       <DocumentIdentifier>FA-2026-0001</DocumentIdentifier>
       <DocumentType code="I-11">Facture</DocumentType>
@@ -95,14 +95,14 @@ class XadesSignatureServiceTest extends TestCase
     <Dtm>
       <DateText format="ddMMyy" functionCode="I-31">130226</DateText>
     </Dtm>
-    <InvoiceMoa>
+    <OldInvoiceMoa>
       <AmountDetails>
         <Moa amountTypeCode="I-180" currencyCodeList="ISO_4217">
           <Amount currencyIdentifier="TND">120.000</Amount>
         </Moa>
       </AmountDetails>
-    </InvoiceMoa>
-  </InvoiceBody>
+    </OldInvoiceMoa>
+  </OldInvoiceBody>
 </TEIF>
 XML;
     }
@@ -249,8 +249,8 @@ XML;
         $signedXml = $this->service->sign($original);
 
         // The original content should still be present
-        $this->assertStringContainsString('InvoiceHeader', $signedXml);
-        $this->assertStringContainsString('InvoiceBody', $signedXml);
+        $this->assertStringContainsString('OldInvoiceHeader', $signedXml);
+        $this->assertStringContainsString('OldInvoiceBody', $signedXml);
         $this->assertStringContainsString('FA-2026-0001', $signedXml);
         $this->assertStringContainsString('0736202XAM000', $signedXml);
     }
@@ -269,10 +269,10 @@ XML;
         $this->service->sign('This is not valid XML');
     }
 
-    public function test_sign_throws_on_missing_invoice_body(): void
+    public function test_sign_throws_on_missing_oldinvoice_body(): void
     {
         $this->expectException(SignatureException::class);
-        $this->service->sign('<?xml version="1.0"?><TEIF><InvoiceHeader></InvoiceHeader></TEIF>');
+        $this->service->sign('<?xml version="1.0"?><TEIF><OldInvoiceHeader></OldInvoiceHeader></TEIF>');
     }
 
     public function test_verify_throws_on_invalid_xml(): void

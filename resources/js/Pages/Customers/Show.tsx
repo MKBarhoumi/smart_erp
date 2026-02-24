@@ -1,11 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/Components/ui/Button';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Customer, Invoice } from '@/types';
+import type { Customer, OldInvoice } from '@/types';
 
 interface Props {
     customer: Customer & {
-        invoices: Invoice[];
+        oldinvoices: OldInvoice[];
     };
 }
 
@@ -53,20 +53,20 @@ export default function Show({ customer }: Props) {
                     </div>
                 </div>
 
-                {/* Invoices */}
+                {/* OldInvoices */}
                 <div className="rounded-lg bg-white p-6 shadow">
-                    <h2 className="mb-4 text-lg font-semibold">Recent Invoices</h2>
-                    {customer.invoices.length === 0 ? (
-                        <p className="text-sm text-gray-500">No invoices.</p>
+                    <h2 className="mb-4 text-lg font-semibold">Recent OldInvoices</h2>
+                    {customer.oldinvoices.length === 0 ? (
+                        <p className="text-sm text-gray-500">No oldinvoices.</p>
                     ) : (
                         <div className="space-y-2">
-                            {customer.invoices.map((inv) => (
+                            {customer.oldinvoices.map((inv) => (
                                 <Link
                                     key={inv.id}
-                                    href={`/invoices/${inv.id}`}
+                                    href={`/oldinvoices/${inv.id}`}
                                     className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50"
                                 >
-                                    <span className="font-medium">{inv.invoice_number}</span>
+                                    <span className="font-medium">{inv.oldinvoice_number}</span>
                                     <span>{Number(inv.total_ttc).toFixed(3)} TND</span>
                                 </Link>
                             ))}

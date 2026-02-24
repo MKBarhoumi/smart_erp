@@ -8,7 +8,7 @@ use App\Enums\DocumentTypeCode;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreInvoiceRequest extends FormRequest
+class UpdateOldInvoiceRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -23,16 +23,17 @@ class StoreInvoiceRequest extends FormRequest
         return [
             'customer_id' => ['required', 'uuid', 'exists:customers,id'],
             'document_type_code' => ['required', Rule::enum(DocumentTypeCode::class)],
-            'invoice_date' => ['required', 'date'],
-            'due_date' => ['nullable', 'date', 'after_or_equal:invoice_date'],
+            'oldinvoice_date' => ['required', 'date'],
+            'due_date' => ['nullable', 'date', 'after_or_equal:oldinvoice_date'],
             'billing_period_start' => ['nullable', 'date'],
             'billing_period_end' => ['nullable', 'date', 'after_or_equal:billing_period_start'],
-            'parent_invoice_id' => ['nullable', 'uuid', 'exists:invoices,id'],
+            'parent_oldinvoice_id' => ['nullable', 'uuid', 'exists:oldinvoices,id'],
             'timbre_fiscal' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:1000'],
 
             // Lines
             'lines' => ['required', 'array', 'min:1'],
+            'lines.*.id' => ['nullable', 'uuid'],
             'lines.*.product_id' => ['nullable', 'uuid', 'exists:products,id'],
             'lines.*.item_code' => ['required', 'string', 'max:50'],
             'lines.*.item_description' => ['required', 'string', 'max:500'],
@@ -51,8 +52,8 @@ class StoreInvoiceRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'lines.required' => 'At least one invoice line is required.',
-            'lines.min' => 'At least one invoice line is required.',
+            'lines.required' => 'At least one oldinvoice line is required.',
+            'lines.min' => 'At least one oldinvoice line is required.',
             'lines.*.quantity.gt' => 'Quantity must be greater than zero.',
         ];
     }

@@ -8,23 +8,23 @@ interface Props extends PageProps {
         outstanding_balance: string;
         total_customers: number;
         total_products: number;
-        invoices_this_month: number;
-        pending_invoices: number;
+        oldinvoices_this_month: number;
+        pending_oldinvoices: number;
     };
-    recentInvoices: Array<{
+    recentOldInvoices: Array<{
         id: string;
-        invoice_number: string;
+        oldinvoice_number: string;
         customer: { id: string; name: string } | null;
         total_ttc: string;
         status: string;
-        invoice_date: string;
+        oldinvoice_date: string;
     }>;
     revenueChart: Record<string, string>;
     statusDistribution: Record<string, number>;
     topCustomers: Array<{
         id: string;
         name: string;
-        invoices_sum_total_ttc: string | null;
+        oldinvoices_sum_total_ttc: string | null;
     }>;
     lowStockProducts: Array<{
         id: string;
@@ -58,10 +58,10 @@ export default function Dashboard({
         outstanding_balance: '0.000',
         total_customers: 0,
         total_products: 0,
-        invoices_this_month: 0,
-        pending_invoices: 0,
+        oldinvoices_this_month: 0,
+        pending_oldinvoices: 0,
     },
-    recentInvoices = [],
+    recentOldInvoices = [],
     revenueChart = {},
     topCustomers = [],
     lowStockProducts = [],
@@ -77,24 +77,24 @@ export default function Dashboard({
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <StatCard label="Monthly Revenue" value={formatTND(stats.monthly_revenue)} color="blue" />
                     <StatCard label="Outstanding Balance" value={formatTND(stats.outstanding_balance)} color="red" />
-                    <StatCard label="Invoices This Month" value={String(stats.invoices_this_month)} color="green" />
-                    <StatCard label="Pending Drafts" value={String(stats.pending_invoices)} color="yellow" />
+                    <StatCard label="OldInvoices This Month" value={String(stats.oldinvoices_this_month)} color="green" />
+                    <StatCard label="Pending Drafts" value={String(stats.pending_oldinvoices)} color="yellow" />
                     <StatCard label="Customers" value={String(stats.total_customers)} color="indigo" />
                     <StatCard label="Products" value={String(stats.total_products)} color="purple" />
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-2">
-                    {/* Recent Invoices */}
+                    {/* Recent OldInvoices */}
                     <div className="rounded-lg bg-white p-6 shadow">
-                        <h2 className="mb-4 text-lg font-semibold text-gray-900">Recent Invoices</h2>
+                        <h2 className="mb-4 text-lg font-semibold text-gray-900">Recent OldInvoices</h2>
                         <div className="space-y-3">
-                            {recentInvoices.length === 0 && (
-                                <p className="text-sm text-gray-500">No invoices yet.</p>
+                            {recentOldInvoices.length === 0 && (
+                                <p className="text-sm text-gray-500">No oldinvoices yet.</p>
                             )}
-                            {recentInvoices.map((inv) => (
+                            {recentOldInvoices.map((inv) => (
                                 <div key={inv.id} className="flex items-center justify-between rounded-lg border p-3">
                                     <div>
-                                        <p className="font-medium text-gray-900">{inv.invoice_number}</p>
+                                        <p className="font-medium text-gray-900">{inv.oldinvoice_number}</p>
                                         <p className="text-sm text-gray-500">{inv.customer?.name ?? '—'}</p>
                                     </div>
                                     <div className="text-right">
@@ -124,7 +124,7 @@ export default function Dashboard({
                                         <span className="font-medium text-gray-900">{cust.name}</span>
                                     </div>
                                     <span className="font-medium text-gray-700">
-                                        {formatTND(cust.invoices_sum_total_ttc ?? '0')}
+                                        {formatTND(cust.oldinvoices_sum_total_ttc ?? '0')}
                                     </span>
                                 </div>
                             ))}

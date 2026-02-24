@@ -46,7 +46,7 @@ class CustomerTest extends TestCase
         $this->assertInstanceOf(\App\Enums\IdentifierType::class, $customer->identifier_type);
     }
 
-    public function test_customer_has_many_invoices(): void
+    public function test_customer_has_many_oldinvoices(): void
     {
         $customer = Customer::create([
             'name' => 'Test',
@@ -54,8 +54,8 @@ class CustomerTest extends TestCase
             'identifier_value' => '1234567A/B/M/000',
         ]);
 
-        $this->assertCount(0, $customer->invoices);
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $customer->invoices);
+        $this->assertCount(0, $customer->oldinvoices);
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $customer->oldinvoices);
     }
 
     public function test_customer_can_be_updated(): void

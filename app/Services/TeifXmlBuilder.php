@@ -8,7 +8,7 @@ use App\Enums\AmountTypeCode;
 use App\Enums\TaxTypeCode;
 use App\Exceptions\TeifValidationException;
 use App\Models\CompanySetting;
-use App\Models\Invoice;
+use App\Models\OldInvoice;
 use DOMDocument;
 use DOMElement;
 
@@ -26,13 +26,13 @@ class TeifXmlBuilder
     }
 
     /**
-     * Build the complete TEIF XML document for an invoice.
+     * Build the complete TEIF XML document for an oldinvoice.
      *
      * @throws TeifValidationException
      */
-    public function build(Invoice $invoice): string
+    public function build(OldInvoice $oldinvoice): string
     {
-        $invoice->loadMissing(['customer', 'lines', 'taxLines', 'allowances']);
+        $oldinvoice->loadMissing(['customer', 'lines', 'taxLines', 'allowances']);
 
         $settings = CompanySetting::firstOrFail();
 
@@ -44,8 +44,8 @@ class TeifXmlBuilder
         $this->root->setAttribute('version', '1.8.8');
         $this->dom->appendChild($this->root);
 
-        $this->buildInvoiceHeader($invoice, $settings);
-        $this->buildInvoiceBody($invoice, $settings);
+        $this->buildOldInvoiceHeader($oldinvoice, $settings);
+        $this->buildOldInvoiceBody($oldinvoice, $settings);
 
         $xml = $this->dom->saveXML();
         if ($xml === false) {
@@ -55,9 +55,9 @@ class TeifXmlBuilder
         return $xml;
     }
 
-    private function buildInvoiceHeader(Invoice $invoice, CompanySetting $settings): void
+    private function buildOldInvoiceHeader(OldInvoice $oldinvoice, CompanySetting $settings): void
     {
-        $header = $this->dom->createElement('InvoiceHeader');
+        $header = $this->dom->createElement('OldInvoiceHeader');
 
         $sender = $this->dom->createElement('MessageSenderIdentifier', $settings->matricule_fiscal);
         $sender->setAttribute('type', 'I-01');
@@ -65,44 +65,44 @@ class TeifXmlBuilder
 
         $receiver = $this->dom->createElement(
             'MessageRecieverIdentifier',
-            $invoice->customer->identifier_value
+            $oldinvoice->customer->identifier_value
         );
-        $receiver->setAttribute('type', $invoice->customer->identifier_type->value);
+        $receiver->setAttribute('type', $oldinvoice->customer->identifier_type->value);
         $header->appendChild($receiver);
 
         $this->root->appendChild($header);
     }
 
-    private function buildInvoiceBody(Invoice $invoice, CompanySetting $settings): void
+    private function buildOldInvoiceBody(OldInvoice $oldinvoice, CompanySetting $settings): void
     {
-        $body = $this->dom->createElement('InvoiceBody');
+        $body = $this->dom->createElement('OldInvoiceBody');
 
-        $this->buildBgm($body, $invoice);
-        $this->buildDtm($body, $invoice);
-        $this->buildPartnerSection($body, $invoice, $settings);
-        $this->buildPytSection($body, $invoice, $settings);
-        $this->buildLinSection($body, $invoice);
-        $this->buildInvoiceMoa($body, $invoice);
-        $this->buildInvoiceTax($body, $invoice);
+        $this->buildBgm($body, $oldinvoice);
+        $this->buildDtm($body, $oldinvoice);
+        $this->buildPartnerSection($body, $oldinvoice, $settings);
+        $this->buildPytSection($body, $oldinvoice, $settings);
+        $this->buildLinSection($body, $oldinvoice);
+        $this->buildOldInvoiceMoa($body, $oldinvoice);
+        $this->buildOldInvoiceTax($body, $oldinvoice);
 
         $this->root->appendChild($body);
     }
 
-    private function buildBgm(DOMElement $parent, Invoice $invoice): void
+    private function buildBgm(DOMElement $parent, OldInvoice $oldinvoice): void
     {
         $bgm = $this->dom->createElement('Bgm');
 
-        $docId = $this->dom->createElement('DocumentIdentifier', $invoice->document_identifier);
+        $docId = $this->dom->createElement('DocumentIdentifier', $oldinvoice->document_identifier);
         $bgm->appendChild($docId);
 
-        $docType = $this->dom->createElement('DocumentType', $invoice->document_type_code->label());
-        $docType->setAttribute('code', $invoice->document_type_code->value);
+        $docType = $this->dom->createElement('DocumentType', $oldinvoice->document_type_code->label());
+        $docType->setAttribute('code', $oldinvoice->document_type_code->value);
         $bgm->appendChild($docType);
 
-        if ($invoice->parent_invoice_id) {
+        if ($oldinvoice->parent_oldinvoice_id) {
             $refs = $this->dom->createElement('DocumentReferences');
             $ref = $this->dom->createElement('Reference');
-            $refId = $this->dom->createElement('ReferenceIdentifier', $invoice->parentInvoice?->document_identifier ?? '');
+            $refId = $this->dom->createElement('ReferenceIdentifier', $oldinvoice->parentOldInvoice?->document_identifier ?? '');
             $refId->setAttribute('refID', 'I-87');
             $ref->appendChild($refId);
             $refs->appendChild($ref);
@@ -112,27 +112,27 @@ class TeifXmlBuilder
         $parent->appendChild($bgm);
     }
 
-    private function buildDtm(DOMElement $parent, Invoice $invoice): void
+    private function buildDtm(DOMElement $parent, OldInvoice $oldinvoice): void
     {
         $dtm = $this->dom->createElement('Dtm');
 
-        $invoiceDate = $this->dom->createElement('DateText', $invoice->invoice_date->format('dmy'));
-        $invoiceDate->setAttribute('format', 'ddMMyy');
-        $invoiceDate->setAttribute('functionCode', 'I-31');
-        $dtm->appendChild($invoiceDate);
+        $oldinvoiceDate = $this->dom->createElement('DateText', $oldinvoice->oldinvoice_date->format('dmy'));
+        $oldinvoiceDate->setAttribute('format', 'ddMMyy');
+        $oldinvoiceDate->setAttribute('functionCode', 'I-31');
+        $dtm->appendChild($oldinvoiceDate);
 
-        if ($invoice->billing_period_start && $invoice->billing_period_end) {
+        if ($oldinvoice->billing_period_start && $oldinvoice->billing_period_end) {
             $period = $this->dom->createElement(
                 'DateText',
-                $invoice->billing_period_start->format('dmy') . '-' . $invoice->billing_period_end->format('dmy')
+                $oldinvoice->billing_period_start->format('dmy') . '-' . $oldinvoice->billing_period_end->format('dmy')
             );
             $period->setAttribute('format', 'ddMMyy-ddMMyy');
             $period->setAttribute('functionCode', 'I-36');
             $dtm->appendChild($period);
         }
 
-        if ($invoice->due_date) {
-            $dueDate = $this->dom->createElement('DateText', $invoice->due_date->format('dmy'));
+        if ($oldinvoice->due_date) {
+            $dueDate = $this->dom->createElement('DateText', $oldinvoice->due_date->format('dmy'));
             $dueDate->setAttribute('format', 'ddMMyy');
             $dueDate->setAttribute('functionCode', 'I-32');
             $dtm->appendChild($dueDate);
@@ -141,7 +141,7 @@ class TeifXmlBuilder
         $parent->appendChild($dtm);
     }
 
-    private function buildPartnerSection(DOMElement $parent, Invoice $invoice, CompanySetting $settings): void
+    private function buildPartnerSection(DOMElement $parent, OldInvoice $oldinvoice, CompanySetting $settings): void
     {
         $section = $this->dom->createElement('PartnerSection');
 
@@ -167,7 +167,7 @@ class TeifXmlBuilder
         ]);
 
         // Buyer (I-61)
-        $customer = $invoice->customer;
+        $customer = $oldinvoice->customer;
         $this->buildPartner($section, 'I-61', $customer->name, $customer->identifier_value, [
             'address_description' => $customer->address_description,
             'street' => $customer->street,
@@ -265,7 +265,7 @@ class TeifXmlBuilder
         $parent->appendChild($partner);
     }
 
-    private function buildPytSection(DOMElement $parent, Invoice $invoice, CompanySetting $settings): void
+    private function buildPytSection(DOMElement $parent, OldInvoice $oldinvoice, CompanySetting $settings): void
     {
         if (empty($settings->bank_rib) && empty($settings->postal_account)) {
             return;
@@ -312,11 +312,11 @@ class TeifXmlBuilder
         $parent->appendChild($pyt);
     }
 
-    private function buildLinSection(DOMElement $parent, Invoice $invoice): void
+    private function buildLinSection(DOMElement $parent, OldInvoice $oldinvoice): void
     {
         $linSection = $this->dom->createElement('LinSection');
 
-        foreach ($invoice->lines as $line) {
+        foreach ($oldinvoice->lines as $line) {
             $lin = $this->dom->createElement('Lin');
 
             $lin->appendChild($this->dom->createElement('ItemIdentifier', (string) $line->line_number));
@@ -356,46 +356,46 @@ class TeifXmlBuilder
         $parent->appendChild($linSection);
     }
 
-    private function buildInvoiceMoa(DOMElement $parent, Invoice $invoice): void
+    private function buildOldInvoiceMoa(DOMElement $parent, OldInvoice $oldinvoice): void
     {
-        $invoiceMoa = $this->dom->createElement('InvoiceMoa');
+        $oldinvoiceMoa = $this->dom->createElement('OldInvoiceMoa');
 
         // I-179: Total gross
-        $this->appendAmountDetails($invoiceMoa, AmountTypeCode::TOTAL_GROSS->value, $invoice->total_gross);
+        $this->appendAmountDetails($oldinvoiceMoa, AmountTypeCode::TOTAL_GROSS->value, $oldinvoice->total_gross);
         // I-182: Total net before discount
-        $this->appendAmountDetails($invoiceMoa, AmountTypeCode::TOTAL_NET_BEFORE_DISC->value, $invoice->total_net_before_disc);
+        $this->appendAmountDetails($oldinvoiceMoa, AmountTypeCode::TOTAL_NET_BEFORE_DISC->value, $oldinvoice->total_net_before_disc);
         // I-176: Total HT
-        $this->appendAmountDetails($invoiceMoa, AmountTypeCode::TOTAL_HT->value, $invoice->total_ht);
+        $this->appendAmountDetails($oldinvoiceMoa, AmountTypeCode::TOTAL_HT->value, $oldinvoice->total_ht);
         // I-181: Total TVA
-        $this->appendAmountDetails($invoiceMoa, AmountTypeCode::TOTAL_TVA->value, $invoice->total_tva);
+        $this->appendAmountDetails($oldinvoiceMoa, AmountTypeCode::TOTAL_TVA->value, $oldinvoice->total_tva);
 
         // I-180: Total TTC with amount description in French
         $amountDetails = $this->dom->createElement('AmountDetails');
         $moa = $this->dom->createElement('Moa');
         $moa->setAttribute('amountTypeCode', AmountTypeCode::TOTAL_TTC->value);
         $moa->setAttribute('currencyCodeList', 'ISO_4217');
-        $amount = $this->dom->createElement('Amount', $this->formatAmount($invoice->total_ttc));
+        $amount = $this->dom->createElement('Amount', $this->formatAmount($oldinvoice->total_ttc));
         $amount->setAttribute('currencyIdentifier', 'TND');
         $moa->appendChild($amount);
 
-        $description = $this->amountInWords->convert($this->formatAmount($invoice->total_ttc));
+        $description = $this->amountInWords->convert($this->formatAmount($oldinvoice->total_ttc));
         $descElem = $this->dom->createElement('AmountDescription', $description);
         $descElem->setAttribute('lang', 'fr');
         $moa->appendChild($descElem);
 
         $amountDetails->appendChild($moa);
-        $invoiceMoa->appendChild($amountDetails);
+        $oldinvoiceMoa->appendChild($amountDetails);
 
-        $parent->appendChild($invoiceMoa);
+        $parent->appendChild($oldinvoiceMoa);
     }
 
-    private function buildInvoiceTax(DOMElement $parent, Invoice $invoice): void
+    private function buildOldInvoiceTax(DOMElement $parent, OldInvoice $oldinvoice): void
     {
-        $invoiceTax = $this->dom->createElement('InvoiceTax');
+        $oldinvoiceTax = $this->dom->createElement('OldInvoiceTax');
 
         // Timbre Fiscal
-        if (bccomp((string) $invoice->timbre_fiscal, '0.000', 3) > 0) {
-            $taxDetails = $this->dom->createElement('InvoiceTaxDetails');
+        if (bccomp((string) $oldinvoice->timbre_fiscal, '0.000', 3) > 0) {
+            $taxDetails = $this->dom->createElement('OldInvoiceTaxDetails');
             $tax = $this->dom->createElement('Tax');
             $taxName = $this->dom->createElement('TaxTypeName', TaxTypeCode::DROIT_TIMBRE->label());
             $taxName->setAttribute('code', TaxTypeCode::DROIT_TIMBRE->value);
@@ -405,13 +405,13 @@ class TeifXmlBuilder
             $tax->appendChild($td);
             $taxDetails->appendChild($tax);
 
-            $this->appendAmountDetails($taxDetails, AmountTypeCode::TAX_AMOUNT->value, $invoice->timbre_fiscal);
-            $invoiceTax->appendChild($taxDetails);
+            $this->appendAmountDetails($taxDetails, AmountTypeCode::TAX_AMOUNT->value, $oldinvoice->timbre_fiscal);
+            $oldinvoiceTax->appendChild($taxDetails);
         }
 
         // TVA by rate
-        foreach ($invoice->taxLines as $taxLine) {
-            $taxDetails = $this->dom->createElement('InvoiceTaxDetails');
+        foreach ($oldinvoice->taxLines as $taxLine) {
+            $taxDetails = $this->dom->createElement('OldInvoiceTaxDetails');
             $tax = $this->dom->createElement('Tax');
             $taxName = $this->dom->createElement('TaxTypeName', $taxLine->tax_type_name);
             $taxName->setAttribute('code', $taxLine->tax_type_code);
@@ -426,10 +426,10 @@ class TeifXmlBuilder
             // I-178: Tax amount
             $this->appendAmountDetails($taxDetails, AmountTypeCode::TAX_AMOUNT->value, $taxLine->tax_amount);
 
-            $invoiceTax->appendChild($taxDetails);
+            $oldinvoiceTax->appendChild($taxDetails);
         }
 
-        $parent->appendChild($invoiceTax);
+        $parent->appendChild($oldinvoiceTax);
     }
 
     private function appendMoaDetails(DOMElement $parent, string $amountTypeCode, string|int|float $amount): void

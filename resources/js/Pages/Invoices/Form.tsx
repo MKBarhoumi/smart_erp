@@ -17,14 +17,14 @@ interface LineData {
     tva_rate: string;
 }
 
-interface InvoiceFormData {
+interface OldInvoiceFormData {
     customer_id: string;
     document_type_code: string;
-    invoice_date: string;
+    oldinvoice_date: string;
     due_date: string;
     billing_period_start: string;
     billing_period_end: string;
-    parent_invoice_id: string;
+    parent_oldinvoice_id: string;
     timbre_fiscal: string;
     notes: string;
     lines: LineData[];
@@ -40,13 +40,13 @@ interface Product {
     is_subject_to_timbre: boolean;
 }
 
-import type { Invoice } from '@/types';
+import type { OldInvoice } from '@/types';
 
 interface Props {
     customers: Array<{ id: string; name: string; identifier_value: string }>;
     products: Product[];
     documentTypes: Array<{ value: string; label: string }>;
-    invoice?: Partial<Invoice>;
+    oldinvoice?: Partial<OldInvoice>;
     isEdit?: boolean;
 }
 
@@ -62,19 +62,19 @@ const emptyLine: LineData = {
     tva_rate: '19',
 };
 
-export default function InvoiceForm({ customers, products, documentTypes, invoice, isEdit = false }: Props) {
-    const { data, setData, post, put, processing, errors } = useForm<InvoiceFormData>({
-        customer_id: invoice?.customer_id ?? '',
-        document_type_code: invoice?.document_type_code ?? 'I-11',
-        invoice_date: invoice?.invoice_date ?? new Date().toISOString().split('T')[0],
-        due_date: invoice?.due_date ?? '',
-        billing_period_start: invoice?.billing_period_start ?? '',
-        billing_period_end: invoice?.billing_period_end ?? '',
-        parent_invoice_id: invoice?.parent_invoice_id ?? '',
-        timbre_fiscal: invoice?.timbre_fiscal ?? '1.000',
-        notes: invoice?.notes ?? '',
-        lines: invoice?.lines?.length
-            ? invoice.lines.map((l) => ({
+export default function OldInvoiceForm({ customers, products, documentTypes, oldinvoice, isEdit = false }: Props) {
+    const { data, setData, post, put, processing, errors } = useForm<OldInvoiceFormData>({
+        customer_id: oldinvoice?.customer_id ?? '',
+        document_type_code: oldinvoice?.document_type_code ?? 'I-11',
+        oldinvoice_date: oldinvoice?.oldinvoice_date ?? new Date().toISOString().split('T')[0],
+        due_date: oldinvoice?.due_date ?? '',
+        billing_period_start: oldinvoice?.billing_period_start ?? '',
+        billing_period_end: oldinvoice?.billing_period_end ?? '',
+        parent_oldinvoice_id: oldinvoice?.parent_oldinvoice_id ?? '',
+        timbre_fiscal: oldinvoice?.timbre_fiscal ?? '1.000',
+        notes: oldinvoice?.notes ?? '',
+        lines: oldinvoice?.lines?.length
+            ? oldinvoice.lines.map((l) => ({
                 product_id: l.product_id ?? '',
                 item_code: l.item_code ?? '',
                 item_description: l.item_description ?? '',
@@ -138,23 +138,23 @@ export default function InvoiceForm({ customers, products, documentTypes, invoic
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        if (isEdit && invoice?.id) {
-            put(`/invoices/${invoice.id}`);
+        if (isEdit && oldinvoice?.id) {
+            put(`/oldinvoices/${oldinvoice.id}`);
         } else {
-            post('/invoices');
+            post('/oldinvoices');
         }
     };
 
     return (
         <AuthenticatedLayout>
-            <Head title={isEdit ? 'Edit Invoice' : 'New Invoice'} />
+            <Head title={isEdit ? 'Edit OldInvoice' : 'New OldInvoice'} />
 
             <form onSubmit={submit} className="space-y-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-gray-900">
-                        {isEdit ? `Edit: ${invoice?.invoice_number}` : 'New Invoice'}
+                        {isEdit ? `Edit: ${oldinvoice?.oldinvoice_number}` : 'New OldInvoice'}
                     </h1>
-                    <Link href="/invoices"><Button variant="ghost" type="button">Back</Button></Link>
+                    <Link href="/oldinvoices"><Button variant="ghost" type="button">Back</Button></Link>
                 </div>
 
                 {/* Header */}
@@ -176,7 +176,7 @@ export default function InvoiceForm({ customers, products, documentTypes, invoic
                             onChange={(e) => setData('document_type_code', e.target.value)}
                             error={errors.document_type_code}
                         />
-                        <Input label="Invoice Date" type="date" value={data.invoice_date} onChange={(e) => setData('invoice_date', e.target.value)} error={errors.invoice_date} required />
+                        <Input label="OldInvoice Date" type="date" value={data.oldinvoice_date} onChange={(e) => setData('oldinvoice_date', e.target.value)} error={errors.oldinvoice_date} required />
                         <Input label="Due Date" type="date" value={data.due_date} onChange={(e) => setData('due_date', e.target.value)} error={errors.due_date} />
                         <Input label="Stamp Duty (TND)" type="number" step="0.001" value={data.timbre_fiscal} onChange={(e) => setData('timbre_fiscal', e.target.value)} error={errors.timbre_fiscal} />
                     </div>
@@ -185,7 +185,7 @@ export default function InvoiceForm({ customers, products, documentTypes, invoic
                 {/* Lines */}
                 <div className="rounded-lg bg-white p-6 shadow">
                     <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Invoice Lines</h2>
+                        <h2 className="text-lg font-semibold">OldInvoice Lines</h2>
                         <Button type="button" size="sm" onClick={addLine}>+ Add Line</Button>
                     </div>
 
@@ -252,9 +252,9 @@ export default function InvoiceForm({ customers, products, documentTypes, invoic
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3">
-                    <Link href="/invoices"><Button variant="secondary" type="button">Cancel</Button></Link>
+                    <Link href="/oldinvoices"><Button variant="secondary" type="button">Cancel</Button></Link>
                     <Button type="submit" loading={processing}>
-                        {isEdit ? 'Update' : 'Create Invoice'}
+                        {isEdit ? 'Update' : 'Create OldInvoice'}
                     </Button>
                 </div>
             </form>

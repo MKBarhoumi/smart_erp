@@ -17,7 +17,7 @@ class TTNSubmissionLog extends Model
     protected $table = 'ttn_submission_logs';
 
     protected $fillable = [
-        'invoice_id',
+        'oldinvoice_id',
         'attempt_number',
         'request_xml',
         'response_xml',
@@ -40,10 +40,10 @@ class TTNSubmissionLog extends Model
     }
 
     /**
-     * @return BelongsTo<Invoice, $this>
+     * @return BelongsTo<OldInvoice, $this>
      */
-    public function invoice(): BelongsTo
+    public function oldinvoice(): BelongsTo
     {
-        return $this->belongsTo(Invoice::class);
+        return $this->belongsTo(OldInvoice::class);
     }
 }

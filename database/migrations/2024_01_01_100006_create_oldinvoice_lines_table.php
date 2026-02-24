@@ -10,9 +10,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('invoice_lines', function (Blueprint $table) {
+        Schema::create('oldinvoice_lines', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('invoice_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('oldinvoice_id')->constrained()->cascadeOnDelete();
             $table->uuid('parent_line_id')->nullable();
             $table->foreignUuid('product_id')->nullable()->constrained()->nullOnDelete();
             $table->integer('line_number');
@@ -30,13 +30,13 @@ return new class extends Migration
             $table->decimal('line_total', 20, 3)->default(0);
             $table->timestamps();
 
-            $table->foreign('parent_line_id')->references('id')->on('invoice_lines')->nullOnDelete();
-            $table->index(['invoice_id', 'line_number']);
+            $table->foreign('parent_line_id')->references('id')->on('oldinvoice_lines')->nullOnDelete();
+            $table->index(['oldinvoice_id', 'line_number']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('invoice_lines');
+        Schema::dropIfExists('oldinvoice_lines');
     }
 };

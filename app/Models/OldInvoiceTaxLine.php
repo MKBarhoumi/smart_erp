@@ -8,14 +8,20 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class InvoiceTaxLine extends Model
+class OldInvoiceTaxLine extends Model
 {
     use HasUuids;
+    
+    /**
+     * @var string
+     */
+    protected $table = 'oldinvoice_tax_lines';
+    
 
     public $timestamps = false;
 
     protected $fillable = [
-        'invoice_id',
+        'oldinvoice_id',
         'tax_type_code',
         'tax_type_name',
         'tax_rate',
@@ -24,10 +30,10 @@ class InvoiceTaxLine extends Model
     ];
 
     /**
-     * @return BelongsTo<Invoice, $this>
+     * @return BelongsTo<OldInvoice, $this>
      */
-    public function invoice(): BelongsTo
+    public function oldinvoice(): BelongsTo
     {
-        return $this->belongsTo(Invoice::class);
+        return $this->belongsTo(OldInvoice::class);
     }
 }

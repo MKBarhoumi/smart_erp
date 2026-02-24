@@ -39,8 +39,8 @@ class UpdateCompanySettingsRequest extends FormRequest
             'bank_name' => ['nullable', 'string', 'max:100'],
             'bank_branch_code' => ['nullable', 'string', 'max:10'],
             'postal_account' => ['nullable', 'string', 'max:30'],
-            'invoice_prefix' => ['nullable', 'string', 'max:10'],
-            'invoice_number_format' => ['nullable', 'string', 'max:50'],
+            'oldinvoice_prefix' => ['nullable', 'string', 'max:10'],
+            'oldinvoice_number_format' => ['nullable', 'string', 'max:50'],
             'default_timbre_fiscal' => ['nullable', 'numeric', 'min:0'],
         ];
     }

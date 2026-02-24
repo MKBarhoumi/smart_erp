@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Invoice;
+use App\Models\OldInvoice;
 use Barryvdh\DomPDF\Facade\Pdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 /**
- * Generates PDF invoices with QR code for CEV.
+ * Generates PDF oldinvoices with QR code for CEV.
  */
-class InvoicePdfService
+class OldInvoicePdfService
 {
     public function __construct(
         private readonly AmountInWordsService $amountInWords,
@@ -19,11 +19,11 @@ class InvoicePdfService
     }
 
     /**
-     * Generate a PDF for the given invoice.
+     * Generate a PDF for the given oldinvoice.
      */
-    public function generate(Invoice $invoice): string
+    public function generate(OldInvoice $oldinvoice): string
     {
-        $invoice->loadMissing([
+        $oldinvoice->loadMissing([
             'customer',
             'lines',
             'taxLines',
@@ -31,23 +31,23 @@ class InvoicePdfService
             'payments',
         ]);
 
-        $settings = $invoice->companySetting ?? \App\Models\CompanySetting::firstOrFail();
+        $settings = $oldinvoice->companySetting ?? \App\Models\CompanySetting::firstOrFail();
 
         $qrCode = null;
-        if (!empty($invoice->cev_qr_content)) {
+        if (!empty($oldinvoice->cev_qr_content)) {
             $qrCode = base64_encode(
                 QrCode::format('svg')
                     ->size(120)
-                    ->generate($invoice->cev_qr_content)
+                    ->generate($oldinvoice->cev_qr_content)
             );
         }
 
         $amountInWords = $this->amountInWords->convert(
-            number_format((float) $invoice->total_ttc, 3, '.', '')
+            number_format((float) $oldinvoice->total_ttc, 3, '.', '')
         );
 
-        $pdf = Pdf::loadView('pdf.invoice', [
-            'invoice' => $invoice,
+        $pdf = Pdf::loadView('pdf.oldinvoice', [
+            'oldinvoice' => $oldinvoice,
             'company' => $settings,
             'settings' => $settings,
             'qrCode' => $qrCode,
@@ -62,10 +62,10 @@ class InvoicePdfService
     /**
      * Generate and save PDF to storage, return path.
      */
-    public function generateAndStore(Invoice $invoice): string
+    public function generateAndStore(OldInvoice $oldinvoice): string
     {
-        $pdfContent = $this->generate($invoice);
-        $filename = "invoices/{$invoice->invoice_number}.pdf";
+        $pdfContent = $this->generate($oldinvoice);
+        $filename = "oldinvoices/{$oldinvoice->oldinvoice_number}.pdf";
 
         \Illuminate\Support\Facades\Storage::disk('local')->put($filename, $pdfContent);
 

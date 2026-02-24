@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Invoice;
-use App\Models\InvoiceLine;
+use App\Models\OldInvoice;
+use App\Models\OldInvoiceLine;
 
-class InvoiceCalculationService
+class OldInvoiceCalculationService
 {
     /**
-     * Calculate all totals for an invoice based on its line items.
+     * Calculate all totals for an oldinvoice based on its line items.
      *
      * @return array{
      *   total_ht: string,
@@ -26,7 +26,7 @@ class InvoiceCalculationService
      *   lines: array<int, array{line_number: int, line_net_amount: string, tva_amount: string, discount_amount: string, line_total: string}>
      * }
      */
-    public function calculateTotals(Invoice $invoice, string $timbreFiscalAmount = '0.000', bool $timbreEnabled = false): array
+    public function calculateTotals(OldInvoice $oldinvoice, string $timbreFiscalAmount = '0.000', bool $timbreEnabled = false): array
     {
         $totalHt = '0.000';
         $totalNetBeforeDisc = '0.000';
@@ -36,7 +36,7 @@ class InvoiceCalculationService
         $taxSummary = [];
         $lineResults = [];
 
-        foreach ($invoice->lines as $line) {
+        foreach ($oldinvoice->lines as $line) {
             $lineCalc = $this->calculateLine($line);
             $lineResults[] = [
                 'line_number' => $line->line_number,
@@ -89,7 +89,7 @@ class InvoiceCalculationService
      *
      * @return array{line_net_amount: string, tva_amount: string, discount_amount: string}
      */
-    public function calculateLine(InvoiceLine $line): array
+    public function calculateLine(OldInvoiceLine $line): array
     {
         $grossAmount = bcmul($line->quantity, $line->unit_price, 3);
         $discountAmount = '0.000';

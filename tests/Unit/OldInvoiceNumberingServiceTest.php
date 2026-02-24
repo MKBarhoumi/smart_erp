@@ -5,20 +5,20 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Models\CompanySetting;
-use App\Services\InvoiceNumberingService;
+use App\Services\OldInvoiceNumberingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class InvoiceNumberingServiceTest extends TestCase
+class OldInvoiceNumberingServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private InvoiceNumberingService $service;
+    private OldInvoiceNumberingService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new InvoiceNumberingService();
+        $this->service = new OldInvoiceNumberingService();
     }
 
     public function test_returns_default_when_no_settings(): void
@@ -36,9 +36,9 @@ class InvoiceNumberingServiceTest extends TestCase
             'category_type' => 'A',
             'person_type' => 'M',
             'city' => 'Tunis',
-            'invoice_prefix' => 'FAC',
-            'next_invoice_counter' => 1,
-            'invoice_number_format' => '{prefix}-{counter}',
+            'oldinvoice_prefix' => 'FAC',
+            'next_oldinvoice_counter' => 1,
+            'oldinvoice_number_format' => '{prefix}-{counter}',
         ]);
 
         $number = $this->service->generateNextNumber();
@@ -54,9 +54,9 @@ class InvoiceNumberingServiceTest extends TestCase
             'category_type' => 'A',
             'person_type' => 'M',
             'city' => 'Tunis',
-            'invoice_prefix' => 'FAC',
-            'next_invoice_counter' => 42,
-            'invoice_number_format' => '{prefix}/{YYYY}/{MM}/{counter}',
+            'oldinvoice_prefix' => 'FAC',
+            'next_oldinvoice_counter' => 42,
+            'oldinvoice_number_format' => '{prefix}/{YYYY}/{MM}/{counter}',
         ]);
 
         $number = $this->service->generateNextNumber();
@@ -74,9 +74,9 @@ class InvoiceNumberingServiceTest extends TestCase
             'category_type' => 'A',
             'person_type' => 'M',
             'city' => 'Tunis',
-            'invoice_prefix' => 'INV',
-            'next_invoice_counter' => 7,
-            'invoice_number_format' => '{prefix}-{YY}-{counter}',
+            'oldinvoice_prefix' => 'INV',
+            'next_oldinvoice_counter' => 7,
+            'oldinvoice_number_format' => '{prefix}-{YY}-{counter}',
         ]);
 
         $number = $this->service->generateNextNumber();
@@ -93,14 +93,14 @@ class InvoiceNumberingServiceTest extends TestCase
             'category_type' => 'A',
             'person_type' => 'M',
             'city' => 'Tunis',
-            'invoice_prefix' => 'FAC',
-            'next_invoice_counter' => 1,
-            'invoice_number_format' => '{prefix}-{counter}',
+            'oldinvoice_prefix' => 'FAC',
+            'next_oldinvoice_counter' => 1,
+            'oldinvoice_number_format' => '{prefix}-{counter}',
         ]);
 
         $this->service->generateNextNumber();
 
-        $this->assertEquals(2, CompanySetting::first()->next_invoice_counter);
+        $this->assertEquals(2, CompanySetting::first()->next_oldinvoice_counter);
     }
 
     public function test_sequential_numbers_increment(): void
@@ -111,9 +111,9 @@ class InvoiceNumberingServiceTest extends TestCase
             'category_type' => 'A',
             'person_type' => 'M',
             'city' => 'Tunis',
-            'invoice_prefix' => 'FAC',
-            'next_invoice_counter' => 1,
-            'invoice_number_format' => '{prefix}-{counter}',
+            'oldinvoice_prefix' => 'FAC',
+            'next_oldinvoice_counter' => 1,
+            'oldinvoice_number_format' => '{prefix}-{counter}',
         ]);
 
         $first = $this->service->generateNextNumber();
@@ -133,9 +133,9 @@ class InvoiceNumberingServiceTest extends TestCase
             'category_type' => 'A',
             'person_type' => 'M',
             'city' => 'Tunis',
-            'invoice_prefix' => 'X',
-            'next_invoice_counter' => 999,
-            'invoice_number_format' => '{prefix}{counter}',
+            'oldinvoice_prefix' => 'X',
+            'next_oldinvoice_counter' => 999,
+            'oldinvoice_number_format' => '{prefix}{counter}',
         ]);
 
         $this->assertEquals('X0999', $this->service->generateNextNumber());

@@ -4,14 +4,14 @@ namespace Database\Seeders;
 
 use App\Enums\DocumentTypeCode;
 use App\Enums\IdentifierType;
-use App\Enums\InvoiceStatus;
+use App\Enums\OldInvoiceStatus;
 use App\Models\AuditLog;
 use App\Models\CompanySetting;
 use App\Models\Customer;
-use App\Models\Invoice;
-use App\Models\InvoiceAllowance;
-use App\Models\InvoiceLine;
-use App\Models\InvoiceTaxLine;
+use App\Models\OldInvoice;
+use App\Models\OldInvoiceAllowance;
+use App\Models\OldInvoiceLine;
+use App\Models\OldInvoiceTaxLine;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\StockMovement;
@@ -100,24 +100,24 @@ class QuickRandomSeeder extends Seeder
 
         // 2. Create Users (10 users with different roles)
         $users = $this->createUsers();
-
+ 
         // 3. Create Customers (15 realistic Tunisian companies)
         $customers = $this->createCustomers();
 
         // 4. Create Products (25 realistic products)
-        $products = $this->createProducts();
+          $products = $this->createProducts();
 
-        // 5. Create Invoices with lines and tax lines (30 invoices)
-        $invoices = $this->createInvoicesWithDetails($users, $customers, $products);
-
-        // 6. Create Payments (20 payments)
-        $this->createPayments($users, $invoices);
+      // 5. Create OldInvoices with lines and tax lines (30 oldinvoices)
+        $oldinvoices = $this->createOldInvoicesWithDetails($users, $customers, $products);
+ 
+       // 6. Create Payments (20 payments)
+        $this->createPayments($users, $oldinvoices);
 
         // 7. Create Stock Movements (40 movements)
-        $this->createStockMovements($users, $products, $invoices);
+        $this->createStockMovements($users, $products, $oldinvoices);
 
         // 8. Create Audit Logs (30 logs)
-        $this->createAuditLogs($users, $customers, $invoices);
+        $this->createAuditLogs($users, $customers, $oldinvoices); 
     }
 
     private function createCompanySettings(): void
@@ -142,9 +142,9 @@ class QuickRandomSeeder extends Seeder
             'bank_rib' => '07040001001001234567',
             'bank_name' => 'BIAT',
             'bank_branch_code' => '040',
-            'invoice_prefix' => 'FA',
-            'invoice_number_format' => '{prefix}/{YYYY}/{counter}',
-            'next_invoice_counter' => 1,
+            'oldinvoice_prefix' => 'FA',
+            'oldinvoice_number_format' => '{prefix}/{YYYY}/{counter}',
+            'next_oldinvoice_counter' => 1,
             'default_timbre_fiscal' => '1.000',
         ]);
     }
@@ -226,34 +226,34 @@ class QuickRandomSeeder extends Seeder
         return $products;
     }
 
-    private function createInvoicesWithDetails($users, $customers, $products): \Illuminate\Support\Collection
+    private function createOldInvoicesWithDetails($users, $customers, $products): \Illuminate\Support\Collection
     {
-        $invoices = collect();
+        $oldinvoices = collect();
         $statuses = [
-            InvoiceStatus::DRAFT,
-            InvoiceStatus::VALIDATED,
-            InvoiceStatus::SIGNED,
-            InvoiceStatus::SUBMITTED,
-            InvoiceStatus::ACCEPTED,
-            InvoiceStatus::REJECTED,
+            OldInvoiceStatus::DRAFT,
+            OldInvoiceStatus::VALIDATED,
+            OldInvoiceStatus::SIGNED,
+            OldInvoiceStatus::SUBMITTED,
+            OldInvoiceStatus::ACCEPTED,
+            OldInvoiceStatus::REJECTED,
         ];
 
         for ($i = 1; $i <= 30; $i++) {
             $customer = $customers->random();
             $user = $users->random();
             $status = $statuses[array_rand($statuses)];
-            $invoiceDate = fake()->dateTimeBetween('-6 months', 'now');
-            $dueDate = (clone $invoiceDate)->modify('+30 days');
+            $oldinvoiceDate = fake()->dateTimeBetween('-6 months', 'now');
+            $dueDate = (clone $oldinvoiceDate)->modify('+30 days');
 
-            // Create invoice
-            $invoice = Invoice::create([
+            // Create oldinvoice
+            $oldinvoice = OldInvoice::create([
                 'customer_id' => $customer->id,
                 'created_by' => $user->id,
-                'invoice_number' => 'FA/' . date('Y') . '/' . str_pad((string) $i, 5, '0', STR_PAD_LEFT),
+                'oldinvoice_number' => 'FA/' . date('Y') . '/' . str_pad((string) $i, 5, '0', STR_PAD_LEFT),
                 'document_identifier' => 'DOC/' . date('Y') . '/' . Str::uuid()->toString(),
                 'document_type_code' => DocumentTypeCode::FACTURE,
                 'status' => $status,
-                'invoice_date' => $invoiceDate->format('Y-m-d'),
+                'oldinvoice_date' => $oldinvoiceDate->format('Y-m-d'),
                 'due_date' => $dueDate->format('Y-m-d'),
                 'notes' => fake()->boolean(30) ? fake()->sentence() : null,
                 'total_gross' => '0.000',
@@ -265,11 +265,11 @@ class QuickRandomSeeder extends Seeder
                 'total_ttc' => '0.000',
             ]);
 
-            if ($status === InvoiceStatus::ACCEPTED) {
-                $invoice->ref_ttn_val = 'TTN-' . fake()->numerify('##########');
-                $invoice->accepted_at = now();
-            } elseif ($status === InvoiceStatus::REJECTED) {
-                $invoice->rejection_reason = fake()->randomElement([
+            if ($status === OldInvoiceStatus::ACCEPTED) {
+                $oldinvoice->ref_ttn_val = 'TTN-' . fake()->numerify('##########');
+                $oldinvoice->accepted_at = now();
+            } elseif ($status === OldInvoiceStatus::REJECTED) {
+                $oldinvoice->rejection_reason = fake()->randomElement([
                     'Erreur dans le matricule fiscal',
                     'Montant incorrect',
                     'Document incomplet',
@@ -277,7 +277,7 @@ class QuickRandomSeeder extends Seeder
                 ]);
             }
 
-            // Create 2-5 invoice lines
+            // Create 2-5 oldinvoice lines
             $lineCount = rand(2, 5);
             $totalGross = '0.000';
             $totalDiscount = '0.000';
@@ -296,8 +296,8 @@ class QuickRandomSeeder extends Seeder
                 $tvaAmount = bcmul($lineNet, bcdiv((string) $tvaRate, '100', 4), 3);
                 $lineTotal = bcadd($lineNet, $tvaAmount, 3);
 
-                InvoiceLine::create([
-                    'invoice_id' => $invoice->id,
+                OldInvoiceLine::create([
+                    'oldinvoice_id' => $oldinvoice->id,
                     'product_id' => $product->id,
                     'line_number' => $l,
                     'item_code' => $product->code,
@@ -330,8 +330,8 @@ class QuickRandomSeeder extends Seeder
             // Create tax lines
             $totalTVA = '0.000';
             foreach ($taxTotals as $rate => $amounts) {
-                InvoiceTaxLine::create([
-                    'invoice_id' => $invoice->id,
+                OldInvoiceTaxLine::create([
+                    'oldinvoice_id' => $oldinvoice->id,
                     'tax_type_code' => 'I-1601',
                     'tax_type_name' => 'TVA',
                     'tax_rate' => $rate,
@@ -342,15 +342,15 @@ class QuickRandomSeeder extends Seeder
             }
 
             // Calculate timbre (1 TND if any product subject to timbre)
-            $hasTimbre = InvoiceLine::where('invoice_id', $invoice->id)
+            $hasTimbre = OldInvoiceLine::where('oldinvoice_id', $oldinvoice->id)
                 ->whereHas('product', fn ($q) => $q->where('is_subject_to_timbre', true))
                 ->exists();
             $timbre = $hasTimbre ? '1.000' : '0.000';
 
             $totalTTC = bcadd(bcadd($totalHT, $totalTVA, 3), $timbre, 3);
 
-            // Update invoice totals
-            $invoice->update([
+            // Update oldinvoice totals
+            $oldinvoice->update([
                 'total_gross' => $totalGross,
                 'total_discount' => $totalDiscount,
                 'total_net_before_disc' => $totalGross,
@@ -360,14 +360,14 @@ class QuickRandomSeeder extends Seeder
                 'total_ttc' => $totalTTC,
             ]);
 
-            // Add allowance/charge for some invoices
+            // Add allowance/charge for some oldinvoices
             if (fake()->boolean(30)) {
                 $allowanceType = fake()->randomElement(['allowance', 'charge']);
                 $allowanceRate = fake()->randomElement([2, 3, 5]);
                 $allowanceAmount = bcmul($totalHT, bcdiv((string) $allowanceRate, '100', 4), 3);
 
-                InvoiceAllowance::create([
-                    'invoice_id' => $invoice->id,
+                OldInvoiceAllowance::create([
+                    'oldinvoice_id' => $oldinvoice->id,
                     'type' => $allowanceType,
                     'reason' => $allowanceType === 'allowance' ? 'Remise commerciale' : 'Frais de transport',
                     'rate' => $allowanceRate,
@@ -375,36 +375,36 @@ class QuickRandomSeeder extends Seeder
                 ]);
             }
 
-            $invoices->push($invoice);
+            $oldinvoices->push($oldinvoice);
         }
 
-        return $invoices;
+        return $oldinvoices;
     }
 
-    private function createPayments($users, $invoices): void
+    private function createPayments($users, $oldinvoices): void
     {
-        // Create payments only for validated/accepted invoices
-        $eligibleInvoices = $invoices->filter(function ($invoice) {
-            return in_array($invoice->status, [
-                InvoiceStatus::VALIDATED,
-                InvoiceStatus::SIGNED,
-                InvoiceStatus::SUBMITTED,
-                InvoiceStatus::ACCEPTED,
+        // Create payments only for validated/accepted oldinvoices
+        $eligibleOldInvoices = $oldinvoices->filter(function ($oldinvoice) {
+            return in_array($oldinvoice->status, [
+                OldInvoiceStatus::VALIDATED,
+                OldInvoiceStatus::SIGNED,
+                OldInvoiceStatus::SUBMITTED,
+                OldInvoiceStatus::ACCEPTED,
             ]);
         });
 
         for ($i = 0; $i < 20; $i++) {
-            if ($eligibleInvoices->isEmpty()) break;
+            if ($eligibleOldInvoices->isEmpty()) break;
 
-            $invoice = $eligibleInvoices->random();
-            $totalTTC = (float) $invoice->total_ttc;
+            $oldinvoice = $eligibleOldInvoices->random();
+            $totalTTC = (float) $oldinvoice->total_ttc;
             $paymentPercent = fake()->randomElement([30, 50, 70, 100]);
             $amount = round($totalTTC * ($paymentPercent / 100), 3);
 
             Payment::create([
-                'invoice_id' => $invoice->id,
+                'oldinvoice_id' => $oldinvoice->id,
                 'created_by' => $users->random()->id,
-                'payment_date' => fake()->dateTimeBetween($invoice->invoice_date, 'now')->format('Y-m-d'),
+                'payment_date' => fake()->dateTimeBetween($oldinvoice->oldinvoice_date, 'now')->format('Y-m-d'),
                 'amount' => number_format($amount, 3, '.', ''),
                 'method' => fake()->randomElement(['cash', 'bank_transfer', 'cheque', 'effect']),
                 'reference' => fake()->randomElement([
@@ -418,7 +418,7 @@ class QuickRandomSeeder extends Seeder
         }
     }
 
-    private function createStockMovements($users, $products, $invoices): void
+    private function createStockMovements($users, $products, $oldinvoices): void
     {
         $trackableProducts = $products->filter(fn ($p) => $p->track_inventory);
 
@@ -443,7 +443,7 @@ class QuickRandomSeeder extends Seeder
 
             StockMovement::create([
                 'product_id' => $product->id,
-                'invoice_id' => $movementType === 'out' ? $invoices->random()->id : null,
+                'oldinvoice_id' => $movementType === 'out' ? $oldinvoices->random()->id : null,
                 'type' => $movementType,
                 'quantity' => number_format($quantity, 3, '.', ''),
                 'stock_before' => number_format($stockBefore, 3, '.', ''),
@@ -462,16 +462,16 @@ class QuickRandomSeeder extends Seeder
         }
     }
 
-    private function createAuditLogs($users, $customers, $invoices): void
+    private function createAuditLogs($users, $customers, $oldinvoices): void
     {
         $actions = ['created', 'updated', 'deleted', 'validated', 'signed', 'submitted'];
 
         for ($i = 0; $i < 30; $i++) {
-            $auditableType = fake()->randomElement(['Invoice', 'Customer', 'Product', 'Payment']);
+            $auditableType = fake()->randomElement(['OldInvoice', 'Customer', 'Product', 'Payment']);
             $auditable = match ($auditableType) {
-                'Invoice' => $invoices->random(),
+                'OldInvoice' => $oldinvoices->random(),
                 'Customer' => $customers->random(),
-                default => $invoices->random(),
+                default => $oldinvoices->random(),
             };
 
             AuditLog::create([

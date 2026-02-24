@@ -10,20 +10,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('invoices', function (Blueprint $table) {
+        Schema::create('oldinvoices', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('customer_id')->constrained()->restrictOnDelete();
             $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
-            $table->uuid('parent_invoice_id')->nullable();
+            $table->uuid('parent_oldinvoice_id')->nullable();
 
             // Document identification
-            $table->string('invoice_number')->unique();
+            $table->string('oldinvoice_number')->unique();
             $table->string('document_identifier')->unique();
             $table->string('document_type_code')->comment('I-11 to I-16');
             $table->string('status')->default('draft');
 
             // Dates
-            $table->date('invoice_date');
+            $table->date('oldinvoice_date');
             $table->date('due_date')->nullable();
             $table->date('billing_period_start')->nullable();
             $table->date('billing_period_end')->nullable();
@@ -49,14 +49,14 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('parent_invoice_id')->references('id')->on('invoices')->nullOnDelete();
+            $table->foreign('parent_oldinvoice_id')->references('id')->on('oldinvoices')->nullOnDelete();
             $table->index('status');
-            $table->index('invoice_date');
+            $table->index('oldinvoice_date');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('invoices');
+        Schema::dropIfExists('oldinvoices');
     }
 };

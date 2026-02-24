@@ -19,7 +19,7 @@ export function Badge({ variant = 'default', children }: BadgeProps) {
   );
 }
 
-export function InvoiceStatusBadge({ status }: { status: string }) {
+export function OldInvoiceStatusBadge({ status }: { status: string }) {
   const statusMap: Record<string, { variant: BadgeProps['variant']; label: string }> = {
     draft: { variant: 'default', label: 'Draft' },
     validated: { variant: 'info', label: 'Validated' },

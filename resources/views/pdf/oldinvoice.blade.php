@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Facture {{ $invoice->invoice_number }}</title>
+    <title>Facture {{ $oldinvoice->oldinvoice_number }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #333; line-height: 1.4; }
@@ -12,8 +12,8 @@
         .header-left { width: 60%; }
         .header-right { width: 35%; text-align: right; }
         .company-name { font-size: 18px; font-weight: bold; color: #1a56db; margin-bottom: 5px; }
-        .invoice-title { font-size: 22px; font-weight: bold; margin-bottom: 4px; }
-        .invoice-number { font-size: 14px; color: #666; margin-bottom: 10px; }
+        .oldinvoice-title { font-size: 22px; font-weight: bold; margin-bottom: 4px; }
+        .oldinvoice-number { font-size: 14px; color: #666; margin-bottom: 10px; }
         .status-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
         .status-accepted { background: #d1fae5; color: #065f46; }
         .status-validated { background: #dbeafe; color: #1e40af; }
@@ -73,11 +73,11 @@
                     @if($company->email)<p>{{ $company->email }}</p>@endif
                 </td>
                 <td style="width: 40%; border: none; padding: 0; vertical-align: top; text-align: right;">
-                    <div class="invoice-title">FACTURE</div>
-                    <div class="invoice-number">N° {{ $invoice->invoice_number }}</div>
-                    <span class="status-badge status-{{ $invoice->status->value }}">{{ $invoice->status->label() }}</span>
-                    @if($invoice->ref_ttn_val)
-                        <p style="margin-top: 8px; font-size: 9px; color: #888;">Réf. TTN: {{ $invoice->ref_ttn_val }}</p>
+                    <div class="oldinvoice-title">FACTURE</div>
+                    <div class="oldinvoice-number">N° {{ $oldinvoice->oldinvoice_number }}</div>
+                    <span class="status-badge status-{{ $oldinvoice->status->value }}">{{ $oldinvoice->status->label() }}</span>
+                    @if($oldinvoice->ref_ttn_val)
+                        <p style="margin-top: 8px; font-size: 9px; color: #888;">Réf. TTN: {{ $oldinvoice->ref_ttn_val }}</p>
                     @endif
                 </td>
             </tr>
@@ -88,17 +88,17 @@
             <tr>
                 <td style="border: none; padding: 4px 10px; background: #f9fafb; border-radius: 4px;">
                     <span style="font-size: 8px; text-transform: uppercase; color: #888;">Date facture</span><br>
-                    <strong>{{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d/m/Y') }}</strong>
+                    <strong>{{ \Carbon\Carbon::parse($oldinvoice->oldinvoice_date)->format('d/m/Y') }}</strong>
                 </td>
-                @if($invoice->due_date)
+                @if($oldinvoice->due_date)
                 <td style="border: none; padding: 4px 10px; background: #f9fafb; border-radius: 4px;">
                     <span style="font-size: 8px; text-transform: uppercase; color: #888;">Échéance</span><br>
-                    <strong>{{ \Carbon\Carbon::parse($invoice->due_date)->format('d/m/Y') }}</strong>
+                    <strong>{{ \Carbon\Carbon::parse($oldinvoice->due_date)->format('d/m/Y') }}</strong>
                 </td>
                 @endif
                 <td style="border: none; padding: 4px 10px; background: #f9fafb; border-radius: 4px;">
                     <span style="font-size: 8px; text-transform: uppercase; color: #888;">Type</span><br>
-                    <strong>{{ $invoice->document_type_code->label() }}</strong>
+                    <strong>{{ $oldinvoice->document_type_code->label() }}</strong>
                 </td>
             </tr>
         </table>
@@ -114,13 +114,13 @@
                 </td>
                 <td style="width: 50%; border: none; padding: 0; vertical-align: top;">
                     <div class="info-box-title">CLIENT</div>
-                    <p class="name">{{ $invoice->customer->name }}</p>
-                    @if($invoice->customer->address_street)
-                        <p>{{ $invoice->customer->address_street }}, {{ $invoice->customer->address_postal_code }} {{ $invoice->customer->address_city }}</p>
+                    <p class="name">{{ $oldinvoice->customer->name }}</p>
+                    @if($oldinvoice->customer->address_street)
+                        <p>{{ $oldinvoice->customer->address_street }}, {{ $oldinvoice->customer->address_postal_code }} {{ $oldinvoice->customer->address_city }}</p>
                     @endif
-                    <p>{{ $invoice->customer->identifier_type->value }}: {{ $invoice->customer->identifier_value }}</p>
-                    @if($invoice->customer->matricule_fiscale)
-                        <p>MF: {{ $invoice->customer->matricule_fiscale }}</p>
+                    <p>{{ $oldinvoice->customer->identifier_type->value }}: {{ $oldinvoice->customer->identifier_value }}</p>
+                    @if($oldinvoice->customer->matricule_fiscale)
+                        <p>MF: {{ $oldinvoice->customer->matricule_fiscale }}</p>
                     @endif
                 </td>
             </tr>
@@ -142,7 +142,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($invoice->lines as $index => $line)
+                @foreach($oldinvoice->lines as $index => $line)
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td class="code">{{ $line->item_code }}</td>
@@ -160,12 +160,12 @@
 
         {{-- TOTALS --}}
         <table style="width: 280px; margin-left: auto; border: none;">
-            <tr><td style="border:none; padding:4px 8px; color:#666;">Total HT</td><td style="border:none; padding:4px 8px; text-align:right; font-family:monospace;">{{ number_format((float)$invoice->total_ht, 3, '.', '') }} TND</td></tr>
-            <tr><td style="border:none; padding:4px 8px; color:#666;">Total TVA</td><td style="border:none; padding:4px 8px; text-align:right; font-family:monospace;">{{ number_format((float)$invoice->total_tva, 3, '.', '') }} TND</td></tr>
-            <tr><td style="border:none; padding:4px 8px; color:#666;">Timbre fiscal</td><td style="border:none; padding:4px 8px; text-align:right; font-family:monospace;">{{ number_format((float)$invoice->timbre_fiscal, 3, '.', '') }} TND</td></tr>
+            <tr><td style="border:none; padding:4px 8px; color:#666;">Total HT</td><td style="border:none; padding:4px 8px; text-align:right; font-family:monospace;">{{ number_format((float)$oldinvoice->total_ht, 3, '.', '') }} TND</td></tr>
+            <tr><td style="border:none; padding:4px 8px; color:#666;">Total TVA</td><td style="border:none; padding:4px 8px; text-align:right; font-family:monospace;">{{ number_format((float)$oldinvoice->total_tva, 3, '.', '') }} TND</td></tr>
+            <tr><td style="border:none; padding:4px 8px; color:#666;">Timbre fiscal</td><td style="border:none; padding:4px 8px; text-align:right; font-family:monospace;">{{ number_format((float)$oldinvoice->timbre_fiscal, 3, '.', '') }} TND</td></tr>
             <tr class="grand-total">
                 <td style="border:none; padding:6px 8px; font-size:14px; font-weight:bold; border-top:2px solid #1e40af; color:#1e40af;">Total TTC</td>
-                <td style="border:none; padding:6px 8px; text-align:right; font-family:monospace; font-size:14px; font-weight:bold; border-top:2px solid #1e40af; color:#1e40af;">{{ number_format((float)$invoice->total_ttc, 3, '.', '') }} TND</td>
+                <td style="border:none; padding:6px 8px; text-align:right; font-family:monospace; font-size:14px; font-weight:bold; border-top:2px solid #1e40af; color:#1e40af;">{{ number_format((float)$oldinvoice->total_ttc, 3, '.', '') }} TND</td>
             </tr>
         </table>
 
@@ -177,7 +177,7 @@
         @endif
 
         {{-- TAX SUMMARY --}}
-        @if($invoice->taxLines->count() > 0)
+        @if($oldinvoice->taxLines->count() > 0)
         <div class="tax-summary">
             <h3>Résumé fiscal</h3>
             <table>
@@ -190,7 +190,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($invoice->taxLines as $taxLine)
+                    @foreach($oldinvoice->taxLines as $taxLine)
                     <tr>
                         <td>{{ $taxLine->tax_type_code }}</td>
                         <td class="right">{{ number_format((float)$taxLine->tax_rate, 2) }}%</td>
@@ -214,10 +214,10 @@
         @endif
 
         {{-- NOTES --}}
-        @if($invoice->notes)
+        @if($oldinvoice->notes)
         <div class="notes">
             <h4>Notes</h4>
-            <p>{{ $invoice->notes }}</p>
+            <p>{{ $oldinvoice->notes }}</p>
         </div>
         @endif
 

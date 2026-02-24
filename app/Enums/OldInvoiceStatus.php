@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum InvoiceStatus: string
+enum OldInvoiceStatus: string
 {
     case DRAFT = 'draft';
     case VALIDATED = 'validated';

@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\DocumentTypeCode;
-use App\Enums\InvoiceStatus;
-use App\Exceptions\InvoiceStateException;
+use App\Enums\OldInvoiceStatus;
+use App\Exceptions\OldInvoiceStateException;
 use App\Exceptions\SignatureException;
 use App\Exceptions\TeifValidationException;
 use App\Exceptions\TTNSubmissionException;
-use App\Http\Requests\StoreInvoiceRequest;
+use App\Http\Requests\StoreOldInvoiceRequest;
 use App\Models\Customer;
-use App\Models\Invoice;
+use App\Models\OldInvoice;
 use App\Models\Product;
-use App\Services\InvoiceCalculationService;
-use App\Services\InvoiceNumberingService;
-use App\Services\InvoicePdfService;
+use App\Services\OldInvoiceCalculationService;
+use App\Services\OldInvoiceNumberingService;
+use App\Services\OldInvoicePdfService;
 use App\Services\TeifXmlBuilder;
 use App\Services\TTNApiClient;
 use App\Services\XadesSignatureService;
@@ -26,38 +26,38 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class InvoiceController extends Controller
+class OldInvoiceController extends Controller
 {
     public function __construct(
-        private readonly InvoiceCalculationService $calculator,
-        private readonly InvoiceNumberingService $numbering,
+        private readonly OldInvoiceCalculationService $calculator,
+        private readonly OldInvoiceNumberingService $numbering,
         private readonly TeifXmlBuilder $xmlBuilder,
         private readonly XadesSignatureService $signatureService,
         private readonly TTNApiClient $ttnClient,
-        private readonly InvoicePdfService $pdfService,
+        private readonly OldInvoicePdfService $pdfService,
     ) {
     }
 
     public function index(): Response
     {
-        $invoices = Invoice::with('customer:id,name')
+        $oldinvoices = OldInvoice::with('customer:id,name')
             ->when(request('search'), function ($query, $search) {
-                $query->where('invoice_number', 'like', "%{$search}%")
+                $query->where('oldinvoice_number', 'like', "%{$search}%")
                     ->orWhereHas('customer', fn ($q) => $q->where('name', 'like', "%{$search}%"));
             })
             ->when(request('status'), function ($query, $status) {
                 $query->where('status', $status);
             })
-            ->when(request('date_from'), fn ($q, $d) => $q->where('invoice_date', '>=', $d))
-            ->when(request('date_to'), fn ($q, $d) => $q->where('invoice_date', '<=', $d))
-            ->latest('invoice_date')
+            ->when(request('date_from'), fn ($q, $d) => $q->where('oldinvoice_date', '>=', $d))
+            ->when(request('date_to'), fn ($q, $d) => $q->where('oldinvoice_date', '<=', $d))
+            ->latest('oldinvoice_date')
             ->paginate(15)
             ->withQueryString();
 
-        return Inertia::render('Invoices/Index', [
-            'invoices' => $invoices,
+        return Inertia::render('OldInvoices/Index', [
+            'oldinvoices' => $oldinvoices,
             'filters' => request()->only('search', 'status', 'date_from', 'date_to'),
-            'statuses' => collect(InvoiceStatus::cases())->map(fn ($s) => [
+            'statuses' => collect(OldInvoiceStatus::cases())->map(fn ($s) => [
                 'value' => $s->value,
                 'label' => $s->label(),
             ]),
@@ -66,7 +66,7 @@ class InvoiceController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Invoices/Create', [
+        return Inertia::render('OldInvoices/Create', [
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'identifier_value']),
             'products' => Product::where('is_active', true)->orderBy('name')->get([
                 'id', 'code', 'name', 'unit_price', 'unit_of_measure', 'tva_rate', 'is_subject_to_timbre',
@@ -78,34 +78,34 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function store(StoreInvoiceRequest $request): RedirectResponse
+    public function store(StoreOldInvoiceRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
         return DB::transaction(function () use ($validated, $request) {
-            // Generate invoice number
-            $invoiceNumber = $this->numbering->generateNextNumber();
+            // Generate oldinvoice number
+            $oldinvoiceNumber = $this->numbering->generateNextNumber();
 
-            // Create invoice
-            $invoice = Invoice::create([
+            // Create oldinvoice
+            $oldinvoice = OldInvoice::create([
                 'customer_id' => $validated['customer_id'],
                 'created_by' => $request->user()->id,
-                'invoice_number' => $invoiceNumber,
-                'document_identifier' => $invoiceNumber,
+                'oldinvoice_number' => $oldinvoiceNumber,
+                'document_identifier' => $oldinvoiceNumber,
                 'document_type_code' => $validated['document_type_code'],
-                'status' => InvoiceStatus::DRAFT->value,
-                'invoice_date' => $validated['invoice_date'],
+                'status' => OldInvoiceStatus::DRAFT->value,
+                'oldinvoice_date' => $validated['oldinvoice_date'],
                 'due_date' => $validated['due_date'] ?? null,
                 'billing_period_start' => $validated['billing_period_start'] ?? null,
                 'billing_period_end' => $validated['billing_period_end'] ?? null,
-                'parent_invoice_id' => $validated['parent_invoice_id'] ?? null,
+                'parent_oldinvoice_id' => $validated['parent_oldinvoice_id'] ?? null,
                 'timbre_fiscal' => $validated['timbre_fiscal'] ?? '0.000',
                 'notes' => $validated['notes'] ?? null,
             ]);
 
             // Create lines
             foreach ($validated['lines'] as $index => $lineData) {
-                $invoice->lines()->create([
+                $oldinvoice->lines()->create([
                     'product_id' => $lineData['product_id'] ?? null,
                     'line_number' => $index + 1,
                     'item_code' => $lineData['item_code'],
@@ -120,10 +120,10 @@ class InvoiceController extends Controller
             }
 
             // Calculate totals
-            $totals = $this->calculator->calculateTotals($invoice);
+            $totals = $this->calculator->calculateTotals($oldinvoice);
 
-            // Update invoice amounts
-            $invoice->update([
+            // Update oldinvoice amounts
+            $oldinvoice->update([
                 'total_gross' => $totals['total_gross'],
                 'total_discount' => $totals['total_discount'],
                 'total_net_before_disc' => $totals['total_net_before_disc'],
@@ -134,7 +134,7 @@ class InvoiceController extends Controller
 
             // Update line calculated amounts
             foreach ($totals['lines'] as $lineResult) {
-                $invoice->lines()
+                $oldinvoice->lines()
                     ->where('line_number', $lineResult['line_number'])
                     ->update([
                         'discount_amount' => $lineResult['discount_amount'],
@@ -146,7 +146,7 @@ class InvoiceController extends Controller
 
             // Create tax summary lines
             foreach ($totals['tax_summary'] as $taxSummary) {
-                $invoice->taxLines()->create([
+                $oldinvoice->taxLines()->create([
                     'tax_type_code' => $taxSummary['tax_type_code'],
                     'tax_type_name' => $taxSummary['tax_type_name'],
                     'tax_rate' => $taxSummary['tax_rate'],
@@ -155,39 +155,39 @@ class InvoiceController extends Controller
                 ]);
             }
 
-            return redirect()->route('invoices.show', $invoice)
-                ->with('success', 'Invoice created successfully.');
+            return redirect()->route('oldinvoices.show', $oldinvoice)
+                ->with('success', 'OldInvoice created successfully.');
         });
     }
 
-    public function show(Invoice $invoice): Response
+    public function show(OldInvoice $oldinvoice): Response
     {
-        $invoice->load([
+        $oldinvoice->load([
             'customer',
             'lines.product:id,code,name',
             'taxLines',
             'allowances',
             'payments.creator:id,name',
-            'parentInvoice:id,invoice_number',
+            'parentOldInvoice:id,oldinvoice_number',
             'creator:id,name',
         ]);
 
-        return Inertia::render('Invoices/Show', [
-            'invoice' => $invoice,
+        return Inertia::render('OldInvoices/Show', [
+            'oldinvoice' => $oldinvoice,
         ]);
     }
 
-    public function edit(Invoice $invoice)
+    public function edit(OldInvoice $oldinvoice)
     {
-        if (!$invoice->isEditable()) {
-            return redirect()->route('invoices.show', $invoice)
-                ->with('error', 'This invoice can no longer be edited.');
+        if (!$oldinvoice->isEditable()) {
+            return redirect()->route('oldinvoices.show', $oldinvoice)
+                ->with('error', 'This oldinvoice can no longer be edited.');
         }
 
-        $invoice->load(['lines', 'customer']);
+        $oldinvoice->load(['lines', 'customer']);
 
-        return Inertia::render('Invoices/Edit', [
-            'invoice' => $invoice,
+        return Inertia::render('OldInvoices/Edit', [
+            'oldinvoice' => $oldinvoice,
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'identifier_value']),
             'products' => Product::where('is_active', true)->orderBy('name')->get([
                 'id', 'code', 'name', 'unit_price', 'unit_of_measure', 'tva_rate', 'is_subject_to_timbre',
@@ -199,34 +199,34 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function update(StoreInvoiceRequest $request, Invoice $invoice): RedirectResponse
+    public function update(StoreOldInvoiceRequest $request, OldInvoice $oldinvoice): RedirectResponse
     {
-        if (!$invoice->isEditable()) {
-            return back()->with('error', 'This invoice can no longer be edited.');
+        if (!$oldinvoice->isEditable()) {
+            return back()->with('error', 'This oldinvoice can no longer be edited.');
         }
 
         $validated = $request->validated();
 
-        return DB::transaction(function () use ($validated, $invoice, $request) {
-            $invoice->update([
+        return DB::transaction(function () use ($validated, $oldinvoice, $request) {
+            $oldinvoice->update([
                 'customer_id' => $validated['customer_id'],
                 'document_type_code' => $validated['document_type_code'],
-                'invoice_date' => $validated['invoice_date'],
+                'oldinvoice_date' => $validated['oldinvoice_date'],
                 'due_date' => $validated['due_date'] ?? null,
                 'billing_period_start' => $validated['billing_period_start'] ?? null,
                 'billing_period_end' => $validated['billing_period_end'] ?? null,
-                'parent_invoice_id' => $validated['parent_invoice_id'] ?? null,
+                'parent_oldinvoice_id' => $validated['parent_oldinvoice_id'] ?? null,
                 'timbre_fiscal' => $validated['timbre_fiscal'] ?? '0.000',
                 'notes' => $validated['notes'] ?? null,
             ]);
 
             // Delete old lines and tax lines
-            $invoice->lines()->delete();
-            $invoice->taxLines()->delete();
+            $oldinvoice->lines()->delete();
+            $oldinvoice->taxLines()->delete();
 
             // Recreate lines
             foreach ($validated['lines'] as $index => $lineData) {
-                $invoice->lines()->create([
+                $oldinvoice->lines()->create([
                     'product_id' => $lineData['product_id'] ?? null,
                     'line_number' => $index + 1,
                     'item_code' => $lineData['item_code'],
@@ -241,10 +241,10 @@ class InvoiceController extends Controller
             }
 
             // Recalculate
-            $invoice->refresh();
-            $totals = $this->calculator->calculateTotals($invoice);
+            $oldinvoice->refresh();
+            $totals = $this->calculator->calculateTotals($oldinvoice);
 
-            $invoice->update([
+            $oldinvoice->update([
                 'total_gross' => $totals['total_gross'],
                 'total_discount' => $totals['total_discount'],
                 'total_net_before_disc' => $totals['total_net_before_disc'],
@@ -254,7 +254,7 @@ class InvoiceController extends Controller
             ]);
 
             foreach ($totals['lines'] as $lineResult) {
-                $invoice->lines()
+                $oldinvoice->lines()
                     ->where('line_number', $lineResult['line_number'])
                     ->update([
                         'discount_amount' => $lineResult['discount_amount'],
@@ -265,7 +265,7 @@ class InvoiceController extends Controller
             }
 
             foreach ($totals['tax_summary'] as $taxSummary) {
-                $invoice->taxLines()->create([
+                $oldinvoice->taxLines()->create([
                     'tax_type_code' => $taxSummary['tax_type_code'],
                     'tax_type_name' => $taxSummary['tax_type_name'],
                     'tax_rate' => $taxSummary['tax_rate'],
@@ -274,136 +274,136 @@ class InvoiceController extends Controller
                 ]);
             }
 
-            return redirect()->route('invoices.show', $invoice)
-                ->with('success', 'Invoice updated successfully.');
+            return redirect()->route('oldinvoices.show', $oldinvoice)
+                ->with('success', 'OldInvoice updated successfully.');
         });
     }
 
-    public function destroy(Invoice $invoice): RedirectResponse
+    public function destroy(OldInvoice $oldinvoice): RedirectResponse
     {
-        if (!$invoice->isEditable()) {
-            return back()->with('error', 'This invoice can no longer be deleted.');
+        if (!$oldinvoice->isEditable()) {
+            return back()->with('error', 'This oldinvoice can no longer be deleted.');
         }
 
-        $invoice->delete();
+        $oldinvoice->delete();
 
-        return redirect()->route('invoices.index')
-            ->with('success', 'Invoice deleted successfully.');
+        return redirect()->route('oldinvoices.index')
+            ->with('success', 'OldInvoice deleted successfully.');
     }
 
     /**
-     * Validate invoice (DRAFT → VALIDATED).
+     * Validate oldinvoice (DRAFT → VALIDATED).
      */
-    public function validateInvoice(Invoice $invoice): RedirectResponse
+    public function validateOldInvoice(OldInvoice $oldinvoice): RedirectResponse
     {
         try {
-            $invoice->transitionTo(InvoiceStatus::VALIDATED);
-        } catch (InvoiceStateException $e) {
+            $oldinvoice->transitionTo(OldInvoiceStatus::VALIDATED);
+        } catch (OldInvoiceStateException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Invoice validated successfully.');
+        return back()->with('success', 'OldInvoice validated successfully.');
     }
 
     /**
-     * Sign invoice with XAdES-BES (VALIDATED → SIGNED).
+     * Sign oldinvoice with XAdES-BES (VALIDATED → SIGNED).
      */
-    public function sign(Invoice $invoice): RedirectResponse
+    public function sign(OldInvoice $oldinvoice): RedirectResponse
     {
         try {
             // Build TEIF XML
-            $unsignedXml = $this->xmlBuilder->build($invoice);
+            $unsignedXml = $this->xmlBuilder->build($oldinvoice);
 
             // Sign XML
             $signedXml = $this->signatureService->sign($unsignedXml);
 
-            $invoice->update(['signed_xml' => $signedXml]);
-            $invoice->transitionTo(InvoiceStatus::SIGNED);
+            $oldinvoice->update(['signed_xml' => $signedXml]);
+            $oldinvoice->transitionTo(OldInvoiceStatus::SIGNED);
         } catch (TeifValidationException|SignatureException $e) {
             return back()->with('error', 'Signature error: ' . $e->getMessage());
-        } catch (InvoiceStateException $e) {
+        } catch (OldInvoiceStateException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Invoice signed successfully.');
+        return back()->with('success', 'OldInvoice signed successfully.');
     }
 
     /**
      * Submit to TTN (SIGNED → SUBMITTED).
      */
-    public function submit(Invoice $invoice): RedirectResponse
+    public function submit(OldInvoice $oldinvoice): RedirectResponse
     {
-        if (empty($invoice->signed_xml)) {
-            return back()->with('error', 'The invoice must be signed before submission.');
+        if (empty($oldinvoice->signed_xml)) {
+            return back()->with('error', 'The oldinvoice must be signed before submission.');
         }
 
         try {
-            $result = $this->ttnClient->submit($invoice, $invoice->signed_xml);
+            $result = $this->ttnClient->submit($oldinvoice, $oldinvoice->signed_xml);
 
-            $invoice->update([
+            $oldinvoice->update([
                 'ref_ttn_val' => $result['ref_ttn_val'],
                 'cev_qr_content' => $result['cev'],
                 'submitted_at' => now(),
             ]);
 
-            $invoice->transitionTo(InvoiceStatus::SUBMITTED);
+            $oldinvoice->transitionTo(OldInvoiceStatus::SUBMITTED);
 
             // If we got an immediate acceptance
             if (strtolower($result['status']) === 'accepted') {
-                $invoice->update(['accepted_at' => now()]);
-                $invoice->transitionTo(InvoiceStatus::ACCEPTED);
+                $oldinvoice->update(['accepted_at' => now()]);
+                $oldinvoice->transitionTo(OldInvoiceStatus::ACCEPTED);
 
-                return back()->with('success', 'Invoice submitted and accepted by TTN.');
+                return back()->with('success', 'OldInvoice submitted and accepted by TTN.');
             }
         } catch (TTNSubmissionException $e) {
             return back()->with('error', 'TTN Error: ' . $e->getMessage());
-        } catch (InvoiceStateException $e) {
+        } catch (OldInvoiceStateException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Invoice submitted to TTN successfully.');
+        return back()->with('success', 'OldInvoice submitted to TTN successfully.');
     }
 
     /**
      * Download PDF.
      */
-    public function downloadPdf(Invoice $invoice): HttpResponse
+    public function downloadPdf(OldInvoice $oldinvoice): HttpResponse
     {
-        $pdfContent = $this->pdfService->generate($invoice);
+        $pdfContent = $this->pdfService->generate($oldinvoice);
 
         return response($pdfContent, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "attachment; filename=\"{$invoice->invoice_number}.pdf\"",
+            'Content-Disposition' => "attachment; filename=\"{$oldinvoice->oldinvoice_number}.pdf\"",
         ]);
     }
 
     /**
      * Download signed XML.
      */
-    public function downloadXml(Invoice $invoice): RedirectResponse|HttpResponse
+    public function downloadXml(OldInvoice $oldinvoice): RedirectResponse|HttpResponse
     {
-        if (empty($invoice->signed_xml)) {
+        if (empty($oldinvoice->signed_xml)) {
             return redirect()
                 ->back()
-                ->with('error', 'No signed XML available. Please sign the invoice first.');
+                ->with('error', 'No signed XML available. Please sign the oldinvoice first.');
         }
 
-        return response($invoice->signed_xml, 200, [
+        return response($oldinvoice->signed_xml, 200, [
             'Content-Type' => 'application/xml',
-            'Content-Disposition' => "attachment; filename=\"{$invoice->invoice_number}.xml\"",
+            'Content-Disposition' => "attachment; filename=\"{$oldinvoice->oldinvoice_number}.xml\"",
         ]);
     }
 
     /**
-     * Duplicate an invoice.
+     * Duplicate an oldinvoice.
      */
-    public function duplicate(Invoice $invoice): RedirectResponse
+    public function duplicate(OldInvoice $oldinvoice): RedirectResponse
     {
-        return DB::transaction(function () use ($invoice) {
+        return DB::transaction(function () use ($oldinvoice) {
             $newNumber = $this->numbering->generateNextNumber();
 
-            $newInvoice = $invoice->replicate([
-                'invoice_number',
+            $newOldInvoice = $oldinvoice->replicate([
+                'oldinvoice_number',
                 'document_identifier',
                 'status',
                 'ref_ttn_val',
@@ -414,22 +414,22 @@ class InvoiceController extends Controller
                 'rejection_reason',
             ]);
 
-            $newInvoice->invoice_number = $newNumber;
-            $newInvoice->document_identifier = $newNumber;
-            $newInvoice->status = InvoiceStatus::DRAFT->value;
-            $newInvoice->invoice_date = now()->toDateString();
-            $newInvoice->created_by = auth()->id();
-            $newInvoice->save();
+            $newOldInvoice->oldinvoice_number = $newNumber;
+            $newOldInvoice->document_identifier = $newNumber;
+            $newOldInvoice->status = OldInvoiceStatus::DRAFT->value;
+            $newOldInvoice->oldinvoice_date = now()->toDateString();
+            $newOldInvoice->created_by = auth()->id();
+            $newOldInvoice->save();
 
             // Copy lines
-            foreach ($invoice->lines as $line) {
-                $newLine = $line->replicate(['invoice_id']);
-                $newLine->invoice_id = $newInvoice->id;
+            foreach ($oldinvoice->lines as $line) {
+                $newLine = $line->replicate(['oldinvoice_id']);
+                $newLine->oldinvoice_id = $newOldInvoice->id;
                 $newLine->save();
             }
 
-            return redirect()->route('invoices.edit', $newInvoice)
-                ->with('success', 'Invoice duplicated as draft.');
+            return redirect()->route('oldinvoices.edit', $newOldInvoice)
+                ->with('success', 'OldInvoice duplicated as draft.');
         });
     }
 }

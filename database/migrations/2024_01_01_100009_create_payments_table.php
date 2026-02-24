@@ -12,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('invoice_id')->constrained()->restrictOnDelete();
+            $table->foreignUuid('oldinvoice_id')->constrained()->restrictOnDelete();
             $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
             $table->date('payment_date');
             $table->decimal('amount', 20, 3);

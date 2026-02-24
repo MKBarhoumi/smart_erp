@@ -62,8 +62,8 @@ class CustomerController extends Controller
 
     public function show(Customer $customer): Response
     {
-        $customer->load(['invoices' => function ($query) {
-            $query->latest('invoice_date')->take(20);
+        $customer->load(['oldinvoices' => function ($query) {
+            $query->latest('oldinvoice_date')->take(20);
         }]);
 
         return Inertia::render('Customers/Show', [
@@ -97,8 +97,8 @@ class CustomerController extends Controller
 
     public function destroy(Customer $customer): RedirectResponse
     {
-        if ($customer->invoices()->exists()) {
-            return back()->with('error', 'Cannot delete a customer with existing invoices.');
+        if ($customer->oldinvoices()->exists()) {
+            return back()->with('error', 'Cannot delete a customer with existing oldinvoices.');
         }
 
         $customer->delete();
