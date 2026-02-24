@@ -20,6 +20,11 @@ use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+/**
+ * @deprecated This test class was written for OldInvoice model.
+ * TeifXmlBuilder now only works with Invoice model.
+ * Use InvoiceTeifXmlBuilderTest for testing TeifXmlBuilder functionality.
+ */
 class TeifXmlBuilderTest extends TestCase
 {
     use RefreshDatabase;
@@ -31,6 +36,8 @@ class TeifXmlBuilderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        
+        $this->markTestSkipped('TeifXmlBuilder now uses Invoice model. See InvoiceTeifXmlBuilderTest for new tests.');
 
         $this->builder = new TeifXmlBuilder(new AmountInWordsService());
 

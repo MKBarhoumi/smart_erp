@@ -196,7 +196,7 @@ export interface PaginatedData<T> {
 }
 
 export interface PageProps {
-  [key: string]: any;
+  [key: string]: unknown;
   auth: {
     user: User;
   };

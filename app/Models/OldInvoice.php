@@ -82,7 +82,7 @@ class OldInvoice extends Model
      */
     public function lines(): HasMany
     {
-        return $this->hasMany(OldInvoiceLine::class)->orderBy('line_number');
+        return $this->hasMany(OldInvoiceLine::class, 'oldinvoice_id')->orderBy('line_number');
     }
 
     /**
@@ -90,7 +90,7 @@ class OldInvoice extends Model
      */
     public function taxLines(): HasMany
     {
-        return $this->hasMany(OldInvoiceTaxLine::class);
+        return $this->hasMany(OldInvoiceTaxLine::class, 'oldinvoice_id');
     }
 
     /**
@@ -98,7 +98,7 @@ class OldInvoice extends Model
      */
     public function allowances(): HasMany
     {
-        return $this->hasMany(OldInvoiceAllowance::class);
+        return $this->hasMany(OldInvoiceAllowance::class, 'oldinvoice_id');
     }
 
     /**
@@ -106,7 +106,7 @@ class OldInvoice extends Model
      */
     public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(Payment::class, 'oldinvoice_id');
     }
 
     /**
@@ -114,7 +114,7 @@ class OldInvoice extends Model
      */
     public function ttnLogs(): HasMany
     {
-        return $this->hasMany(TTNSubmissionLog::class);
+        return $this->hasMany(TTNSubmissionLog::class, 'oldinvoice_id');
     }
 
     /**

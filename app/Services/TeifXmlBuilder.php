@@ -1,474 +1,403 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Services;
 
-use App\Enums\AmountTypeCode;
-use App\Enums\TaxTypeCode;
-use App\Exceptions\TeifValidationException;
-use App\Models\CompanySetting;
-use App\Models\OldInvoice;
+use App\Models\Invoice;
 use DOMDocument;
 use DOMElement;
 
-/**
- * Generates TEIF XML v1.8.8 for Tunisia TradeNet El Fatoora.
- */
 class TeifXmlBuilder
 {
     private DOMDocument $dom;
-    private DOMElement $root;
+    private string $dsNs = 'http://www.w3.org/2000/09/xmldsig#';
 
-    public function __construct(
-        private readonly AmountInWordsService $amountInWords,
-    ) {
-    }
-
-    /**
-     * Build the complete TEIF XML document for an oldinvoice.
-     *
-     * @throws TeifValidationException
-     */
-    public function build(OldInvoice $oldinvoice): string
+    public function build(Invoice $invoice): string
     {
-        $oldinvoice->loadMissing(['customer', 'lines', 'taxLines', 'allowances']);
-
-        $settings = CompanySetting::firstOrFail();
-
         $this->dom = new DOMDocument('1.0', 'UTF-8');
         $this->dom->formatOutput = true;
 
-        $this->root = $this->dom->createElement('TEIF');
-        $this->root->setAttribute('controlingAgency', 'TTN');
-        $this->root->setAttribute('version', '1.8.8');
-        $this->dom->appendChild($this->root);
+        $root = $this->dom->createElement('TEIF');
+        $root->setAttribute('controlingAgency', $invoice->controlling_agency);
+        $root->setAttribute('version', $invoice->version);
+        $this->dom->appendChild($root);
 
-        $this->buildOldInvoiceHeader($oldinvoice, $settings);
-        $this->buildOldInvoiceBody($oldinvoice, $settings);
+        // InvoiceHeader
+        $root->appendChild($this->buildHeader($invoice));
 
-        $xml = $this->dom->saveXML();
-        if ($xml === false) {
-            throw new TeifValidationException('Failed to generate XML');
+        // InvoiceBody
+        $root->appendChild($this->buildBody($invoice));
+
+        // RefTtnVal (if present)
+        if ($invoice->ref_ttn_value) {
+            $root->appendChild($this->buildRefTtnVal($invoice));
         }
 
-        return $xml;
+        // Signatures (if present)
+        if (!empty($invoice->signatures)) {
+            foreach ($invoice->signatures as $sig) {
+                $root->appendChild($this->buildSignatureStub($sig));
+            }
+        }
+
+        return $this->dom->saveXML();
     }
 
-    private function buildOldInvoiceHeader(OldInvoice $oldinvoice, CompanySetting $settings): void
+    private function buildHeader(Invoice $invoice): DOMElement
     {
-        $header = $this->dom->createElement('OldInvoiceHeader');
+        $header = $this->dom->createElement('InvoiceHeader');
 
-        $sender = $this->dom->createElement('MessageSenderIdentifier', $settings->matricule_fiscal);
-        $sender->setAttribute('type', 'I-01');
+        $sender = $this->dom->createElement('MessageSenderIdentifier',
+                    htmlspecialchars($invoice->sender_identifier));
+        $sender->setAttribute('type', $invoice->sender_type);
         $header->appendChild($sender);
 
-        $receiver = $this->dom->createElement(
-            'MessageRecieverIdentifier',
-            $oldinvoice->customer->identifier_value
-        );
-        $receiver->setAttribute('type', $oldinvoice->customer->identifier_type->value);
+        $receiver = $this->dom->createElement('MessageRecieverIdentifier',
+                    htmlspecialchars($invoice->receiver_identifier));
+        if ($invoice->receiver_type) {
+            $receiver->setAttribute('type', $invoice->receiver_type);
+        }
         $header->appendChild($receiver);
 
-        $this->root->appendChild($header);
+        return $header;
     }
 
-    private function buildOldInvoiceBody(OldInvoice $oldinvoice, CompanySetting $settings): void
+    private function buildBody(Invoice $invoice): DOMElement
     {
-        $body = $this->dom->createElement('OldInvoiceBody');
+        $body = $this->dom->createElement('InvoiceBody');
 
-        $this->buildBgm($body, $oldinvoice);
-        $this->buildDtm($body, $oldinvoice);
-        $this->buildPartnerSection($body, $oldinvoice, $settings);
-        $this->buildPytSection($body, $oldinvoice, $settings);
-        $this->buildLinSection($body, $oldinvoice);
-        $this->buildOldInvoiceMoa($body, $oldinvoice);
-        $this->buildOldInvoiceTax($body, $oldinvoice);
-
-        $this->root->appendChild($body);
-    }
-
-    private function buildBgm(DOMElement $parent, OldInvoice $oldinvoice): void
-    {
+        // BGM
         $bgm = $this->dom->createElement('Bgm');
-
-        $docId = $this->dom->createElement('DocumentIdentifier', $oldinvoice->document_identifier);
+        $docId = $this->dom->createElement('DocumentIdentifier',
+                   htmlspecialchars($invoice->document_identifier));
         $bgm->appendChild($docId);
 
-        $docType = $this->dom->createElement('DocumentType', $oldinvoice->document_type_code->label());
-        $docType->setAttribute('code', $oldinvoice->document_type_code->value);
+        $docType = $this->dom->createElement('DocumentType',
+                     htmlspecialchars($invoice->document_type_name));
+        if ($invoice->document_type_code) {
+            $docType->setAttribute('code', $invoice->document_type_code);
+        }
         $bgm->appendChild($docType);
+        $body->appendChild($bgm);
 
-        if ($oldinvoice->parent_oldinvoice_id) {
-            $refs = $this->dom->createElement('DocumentReferences');
-            $ref = $this->dom->createElement('Reference');
-            $refId = $this->dom->createElement('ReferenceIdentifier', $oldinvoice->parentOldInvoice?->document_identifier ?? '');
-            $refId->setAttribute('refID', 'I-87');
-            $ref->appendChild($refId);
-            $refs->appendChild($ref);
-            $bgm->appendChild($refs);
+        // DTM
+        if (!empty($invoice->dates)) {
+            $dtm = $this->dom->createElement('Dtm');
+            foreach ($invoice->dates as $d) {
+                $dateText = $this->dom->createElement('DateText',
+                              htmlspecialchars($d['value']));
+                $dateText->setAttribute('functionCode', $d['function_code']);
+                $dateText->setAttribute('format', $d['format']);
+                $dtm->appendChild($dateText);
+            }
+            $body->appendChild($dtm);
         }
 
-        $parent->appendChild($bgm);
+        // PartnerSection
+        $body->appendChild($this->buildPartnerSection($invoice));
+
+        // PytSection
+        if (!empty($invoice->payment_section)) {
+            $body->appendChild($this->buildPaymentSection($invoice->payment_section));
+        }
+
+        // LinSection
+        $body->appendChild($this->buildLinSection($invoice));
+
+        // InvoiceMoa
+        $body->appendChild($this->buildInvoiceMoa($invoice->invoice_amounts));
+
+        // InvoiceTax
+        $body->appendChild($this->buildInvoiceTax($invoice));
+
+        return $body;
     }
 
-    private function buildDtm(DOMElement $parent, OldInvoice $oldinvoice): void
+    private function buildPartnerSection(Invoice $invoice): DOMElement
     {
-        $dtm = $this->dom->createElement('Dtm');
+        $partnerSection = $this->dom->createElement('PartnerSection');
+        foreach ($invoice->partners as $partner) {
+            $pd = $this->dom->createElement('PartnerDetails');
+            $pd->setAttribute('functionCode', $partner->function_code);
 
-        $oldinvoiceDate = $this->dom->createElement('DateText', $oldinvoice->oldinvoice_date->format('dmy'));
-        $oldinvoiceDate->setAttribute('format', 'ddMMyy');
-        $oldinvoiceDate->setAttribute('functionCode', 'I-31');
-        $dtm->appendChild($oldinvoiceDate);
+            $nad = $this->dom->createElement('Nad');
+            $pi = $this->dom->createElement('PartnerIdentifier',
+                    htmlspecialchars($partner->partner_identifier));
+            $pi->setAttribute('type', $partner->partner_identifier_type);
+            $nad->appendChild($pi);
 
-        if ($oldinvoice->billing_period_start && $oldinvoice->billing_period_end) {
-            $period = $this->dom->createElement(
-                'DateText',
-                $oldinvoice->billing_period_start->format('dmy') . '-' . $oldinvoice->billing_period_end->format('dmy')
-            );
-            $period->setAttribute('format', 'ddMMyy-ddMMyy');
-            $period->setAttribute('functionCode', 'I-36');
-            $dtm->appendChild($period);
-        }
+            if ($partner->partner_name) {
+                $pn = $this->dom->createElement('PartnerName',
+                        htmlspecialchars($partner->partner_name));
+                $pn->setAttribute('nameType', $partner->partner_name_type ?? 'Qualification');
+                $nad->appendChild($pn);
+            }
 
-        if ($oldinvoice->due_date) {
-            $dueDate = $this->dom->createElement('DateText', $oldinvoice->due_date->format('dmy'));
-            $dueDate->setAttribute('format', 'ddMMyy');
-            $dueDate->setAttribute('functionCode', 'I-32');
-            $dtm->appendChild($dueDate);
-        }
+            if ($partner->address_description) {
+                $addr = $this->dom->createElement('PartnerAdresses');
+                if ($partner->address_lang) {
+                    $addr->setAttribute('lang', $partner->address_lang);
+                }
+                $this->appendTextChild($addr, 'AdressDescription', $partner->address_description);
+                if ($partner->street) $this->appendTextChild($addr, 'Street', $partner->street);
+                if ($partner->city)   $this->appendTextChild($addr, 'CityName', $partner->city);
+                if ($partner->postal_code) $this->appendTextChild($addr, 'PostalCode', $partner->postal_code);
 
-        $parent->appendChild($dtm);
-    }
+                $country = $this->dom->createElement('Country',
+                             htmlspecialchars($partner->country ?? ''));
+                if ($partner->country_code_list) {
+                    $country->setAttribute('codeList', $partner->country_code_list);
+                }
+                $addr->appendChild($country);
+                $nad->appendChild($addr);
+            }
 
-    private function buildPartnerSection(DOMElement $parent, OldInvoice $oldinvoice, CompanySetting $settings): void
-    {
-        $section = $this->dom->createElement('PartnerSection');
+            $pd->appendChild($nad);
 
-        // Seller (I-62)
-        $this->buildPartner($section, 'I-62', $settings->company_name, $settings->matricule_fiscal, [
-            'address_description' => $settings->address_description,
-            'street' => $settings->street,
-            'city' => $settings->city,
-            'postal_code' => $settings->postal_code,
-            'country_code' => $settings->country_code,
-        ], [
-            'I-81' => $settings->matricule_fiscal,
-            'I-811' => $settings->category_type,
-            'I-812' => $settings->person_type,
-            'I-813' => $settings->tax_office,
-            'I-815' => $settings->registre_commerce,
-            'I-816' => $settings->legal_form,
-        ], [
-            'I-101' => $settings->phone,
-            'I-102' => $settings->fax,
-            'I-103' => $settings->email,
-            'I-104' => $settings->website,
-        ]);
-
-        // Buyer (I-61)
-        $customer = $oldinvoice->customer;
-        $this->buildPartner($section, 'I-61', $customer->name, $customer->identifier_value, [
-            'address_description' => $customer->address_description,
-            'street' => $customer->street,
-            'city' => $customer->city,
-            'postal_code' => $customer->postal_code,
-            'country_code' => $customer->country_code,
-        ], [
-            'I-81' => $customer->matricule_fiscal,
-            'I-811' => $customer->category_type,
-            'I-812' => $customer->person_type,
-            'I-813' => $customer->tax_office,
-            'I-815' => $customer->registre_commerce,
-            'I-816' => $customer->legal_form,
-        ], [
-            'I-101' => $customer->phone,
-            'I-102' => $customer->fax,
-            'I-103' => $customer->email,
-            'I-104' => $customer->website,
-        ]);
-
-        $parent->appendChild($section);
-    }
-
-    /**
-     * @param array<string, string|null> $address
-     * @param array<string, string|null> $references
-     * @param array<string, string|null> $contacts
-     */
-    private function buildPartner(
-        DOMElement $parent,
-        string $functionCode,
-        string $name,
-        string $identifier,
-        array $address,
-        array $references,
-        array $contacts,
-    ): void {
-        $partner = $this->dom->createElement('Partner');
-        $partner->setAttribute('functionCode', $functionCode);
-
-        $nad = $this->dom->createElement('Nad');
-
-        $partnerIdElem = $this->dom->createElement('PartnerIdentifier', $identifier);
-        $partnerIdElem->setAttribute('type', 'I-01');
-        $nad->appendChild($partnerIdElem);
-
-        $nameElem = $this->dom->createElement('PartnerName');
-        $nameElem->setAttribute('nameType', 'Qualification');
-        $nameNode = $this->dom->createElement('Name', $name);
-        $nameElem->appendChild($nameNode);
-        $nad->appendChild($nameElem);
-
-        if (array_filter($address)) {
-            $addrElem = $this->dom->createElement('PartnerAdresses');
-            foreach (['address_description' => 'Description', 'street' => 'Street', 'city' => 'City', 'postal_code' => 'PostalCode', 'country_code' => 'CountryCode'] as $key => $tag) {
-                if (!empty($address[$key])) {
-                    $addrElem->appendChild($this->dom->createElement($tag, $address[$key]));
+            // References
+            if (!empty($partner->references)) {
+                foreach ($partner->references as $ref) {
+                    $rff = $this->dom->createElement('RffSection');
+                    $refEl = $this->dom->createElement('Reference',
+                               htmlspecialchars($ref['value']));
+                    $refEl->setAttribute('refID', $ref['ref_id']);
+                    $rff->appendChild($refEl);
+                    $pd->appendChild($rff);
                 }
             }
-            $nad->appendChild($addrElem);
-        }
 
-        $partner->appendChild($nad);
+            // Contacts
+            if (!empty($partner->contacts)) {
+                foreach ($partner->contacts as $ctaData) {
+                    $cta = $this->dom->createElement('CtaSection');
+                    $contact = $this->dom->createElement('Contact');
+                    if ($ctaData['function_code']) {
+                        $contact->setAttribute('functionCode', $ctaData['function_code']);
+                    }
+                    $this->appendTextChild($contact, 'ContactIdentifier',
+                        $ctaData['contact_identifier']);
+                    $this->appendTextChild($contact, 'ContactName',
+                        $ctaData['contact_name']);
+                    $cta->appendChild($contact);
 
-        // References
-        $rffSection = $this->dom->createElement('RffSection');
-        foreach ($references as $refCode => $refValue) {
-            if (!empty($refValue)) {
-                $rff = $this->dom->createElement('Rff');
-                $refElem = $this->dom->createElement('ReferenceIdentifier', $refValue);
-                $refElem->setAttribute('refID', $refCode);
-                $rff->appendChild($refElem);
-                $rffSection->appendChild($rff);
+                    if (!empty($ctaData['com_means_type'])) {
+                        $comm = $this->dom->createElement('Communication');
+                        $this->appendTextChild($comm, 'ComMeansType',
+                            $ctaData['com_means_type']);
+                        $this->appendTextChild($comm, 'ComAdress',
+                            $ctaData['com_address'] ?? '');
+                        $cta->appendChild($comm);
+                    }
+                    $pd->appendChild($cta);
+                }
             }
-        }
-        if ($rffSection->hasChildNodes()) {
-            $partner->appendChild($rffSection);
-        }
 
-        // Contact
-        $ctaSection = $this->dom->createElement('CtaSection');
-        $com = $this->dom->createElement('Com');
-        foreach ($contacts as $comCode => $comValue) {
-            if (!empty($comValue)) {
-                $comMeans = $this->dom->createElement('CommunicationMeans', $comValue);
-                $comMeans->setAttribute('communicationType', $comCode);
-                $com->appendChild($comMeans);
-            }
+            $partnerSection->appendChild($pd);
         }
-        if ($com->hasChildNodes()) {
-            $ctaSection->appendChild($com);
-            $partner->appendChild($ctaSection);
-        }
-
-        $parent->appendChild($partner);
+        return $partnerSection;
     }
 
-    private function buildPytSection(DOMElement $parent, OldInvoice $oldinvoice, CompanySetting $settings): void
+    private function buildPaymentSection(array $paymentData): DOMElement
     {
-        if (empty($settings->bank_rib) && empty($settings->postal_account)) {
-            return;
-        }
+        $pytSection = $this->dom->createElement('PytSection');
+        foreach ($paymentData as $psd) {
+            $psdEl = $this->dom->createElement('PytSectionDetails');
 
-        $pyt = $this->dom->createElement('PytSection');
-
-        if (!empty($settings->bank_rib)) {
-            $pytTerms = $this->dom->createElement('PaymentTerms');
-            $pytTerms->setAttribute('code', 'I-114');
-            $fiiSection = $this->dom->createElement('FiiSection');
-            $fii = $this->dom->createElement('Fii');
-            $fii->setAttribute('functionCode', 'I-141');
-            $accountNum = $this->dom->createElement('AccountNumber', $settings->bank_rib);
-            $fii->appendChild($accountNum);
-
-            if (!empty($settings->bank_name)) {
-                $institution = $this->dom->createElement('InstitutionIdentifier', $settings->bank_name);
-                $fii->appendChild($institution);
-            }
-            if (!empty($settings->bank_branch_code)) {
-                $branch = $this->dom->createElement('BranchNumber', $settings->bank_branch_code);
-                $fii->appendChild($branch);
+            if (!empty($psd['payment_terms_type_code'])) {
+                $pyt = $this->dom->createElement('Pyt');
+                $this->appendTextChild($pyt, 'PaymentTearmsTypeCode',
+                    $psd['payment_terms_type_code']);
+                if (!empty($psd['payment_terms_description'])) {
+                    $this->appendTextChild($pyt, 'PaymentTearmsDescription',
+                        $psd['payment_terms_description']);
+                }
+                $psdEl->appendChild($pyt);
             }
 
-            $fiiSection->appendChild($fii);
-            $pytTerms->appendChild($fiiSection);
-            $pyt->appendChild($pytTerms);
-        }
+            if (!empty($psd['fii'])) {
+                $fii = $this->dom->createElementNS(null, 'PytFii');
+                $fii->setAttribute('functionCode', $psd['fii']['function_code']);
 
-        if (!empty($settings->postal_account)) {
-            $pytTerms = $this->dom->createElement('PaymentTerms');
-            $pytTerms->setAttribute('code', 'I-115');
-            $fiiSection = $this->dom->createElement('FiiSection');
-            $fii = $this->dom->createElement('Fii');
-            $fii->setAttribute('functionCode', 'I-141');
-            $accountNum = $this->dom->createElement('AccountNumber', $settings->postal_account);
-            $fii->appendChild($accountNum);
-            $fiiSection->appendChild($fii);
-            $pytTerms->appendChild($fiiSection);
-            $pyt->appendChild($pytTerms);
-        }
+                if (!empty($psd['fii']['account_number'])) {
+                    $ah = $this->dom->createElement('AccountHolder');
+                    $this->appendTextChild($ah, 'AccountNumber',
+                        $psd['fii']['account_number']);
+                    if (!empty($psd['fii']['owner_identifier'])) {
+                        $this->appendTextChild($ah, 'OwnerIdentifier',
+                            $psd['fii']['owner_identifier']);
+                    }
+                    $fii->appendChild($ah);
+                }
 
-        $parent->appendChild($pyt);
+                if (!empty($psd['fii']['name_code'])) {
+                    $inst = $this->dom->createElement('InstitutionIdentification');
+                    $inst->setAttribute('nameCode', $psd['fii']['name_code']);
+                    if (!empty($psd['fii']['branch_identifier'])) {
+                        $this->appendTextChild($inst, 'BranchIdentifier',
+                            $psd['fii']['branch_identifier']);
+                    }
+                    if (!empty($psd['fii']['institution_name'])) {
+                        $this->appendTextChild($inst, 'InstitutionName',
+                            $psd['fii']['institution_name']);
+                    }
+                    $fii->appendChild($inst);
+                }
+                $psdEl->appendChild($fii);
+            }
+
+            $pytSection->appendChild($psdEl);
+        }
+        return $pytSection;
     }
 
-    private function buildLinSection(DOMElement $parent, OldInvoice $oldinvoice): void
+    private function buildLinSection(Invoice $invoice): DOMElement
     {
         $linSection = $this->dom->createElement('LinSection');
-
-        foreach ($oldinvoice->lines as $line) {
-            $lin = $this->dom->createElement('Lin');
-
-            $lin->appendChild($this->dom->createElement('ItemIdentifier', (string) $line->line_number));
-
-            $imd = $this->dom->createElement('LinImd');
-            $imd->setAttribute('lang', $line->item_lang);
-            $imd->appendChild($this->dom->createElement('ItemCode', $line->item_code));
-            $imd->appendChild($this->dom->createElement('ItemDescription', $line->item_description));
-            $lin->appendChild($imd);
-
-            $qty = $this->dom->createElement('LinQty');
-            $qtyElem = $this->dom->createElement('Quantity', $this->formatAmount($line->quantity));
-            $qtyElem->setAttribute('measurementUnit', $line->unit_of_measure);
-            $qty->appendChild($qtyElem);
-            $lin->appendChild($qty);
-
-            $tax = $this->dom->createElement('LinTax');
-            $taxName = $this->dom->createElement('TaxTypeName', 'TVA');
-            $taxName->setAttribute('code', TaxTypeCode::TVA->value);
-            $tax->appendChild($taxName);
-            $taxDetails = $this->dom->createElement('TaxDetails');
-            $taxDetails->appendChild($this->dom->createElement('TaxRate', $this->formatRate($line->tva_rate)));
-            $tax->appendChild($taxDetails);
-            $lin->appendChild($tax);
-
-            $linMoa = $this->dom->createElement('LinMoa');
-
-            // I-183: Unit price
-            $this->appendMoaDetails($linMoa, AmountTypeCode::LINE_UNIT_PRICE->value, $line->unit_price);
-            // I-171: Line net amount
-            $this->appendMoaDetails($linMoa, AmountTypeCode::LINE_NET->value, $line->line_net_amount);
-
-            $lin->appendChild($linMoa);
-            $linSection->appendChild($lin);
+        foreach ($invoice->lines as $line) {
+            $linSection->appendChild($this->buildOneLin($line->toArray()));
         }
-
-        $parent->appendChild($linSection);
+        return $linSection;
     }
 
-    private function buildOldInvoiceMoa(DOMElement $parent, OldInvoice $oldinvoice): void
+    private function buildOneLin(array $line): DOMElement
     {
-        $oldinvoiceMoa = $this->dom->createElement('OldInvoiceMoa');
+        $lin = $this->dom->createElement('Lin');
+        $this->appendTextChild($lin, 'ItemIdentifier', $line['item_identifier']);
 
-        // I-179: Total gross
-        $this->appendAmountDetails($oldinvoiceMoa, AmountTypeCode::TOTAL_GROSS->value, $oldinvoice->total_gross);
-        // I-182: Total net before discount
-        $this->appendAmountDetails($oldinvoiceMoa, AmountTypeCode::TOTAL_NET_BEFORE_DISC->value, $oldinvoice->total_net_before_disc);
-        // I-176: Total HT
-        $this->appendAmountDetails($oldinvoiceMoa, AmountTypeCode::TOTAL_HT->value, $oldinvoice->total_ht);
-        // I-181: Total TVA
-        $this->appendAmountDetails($oldinvoiceMoa, AmountTypeCode::TOTAL_TVA->value, $oldinvoice->total_tva);
+        $imd = $this->dom->createElement('LinImd');
+        if (!empty($line['item_lang'])) {
+            $imd->setAttribute('lang', $line['item_lang']);
+        }
+        $this->appendTextChild($imd, 'ItemCode', $line['item_code']);
+        $this->appendTextChild($imd, 'ItemDescription', $line['item_description'] ?? '');
+        $lin->appendChild($imd);
 
-        // I-180: Total TTC with amount description in French
-        $amountDetails = $this->dom->createElement('AmountDetails');
+        // Quantity
+        $linQty = $this->dom->createElement('LinQty');
+        $qty = $this->dom->createElement('Quantity',
+                 htmlspecialchars($line['quantity']));
+        $qty->setAttribute('measurementUnit', $line['measurement_unit']);
+        $linQty->appendChild($qty);
+        $lin->appendChild($linQty);
+
+        // Tax
+        $linTax = $this->dom->createElement('LinTax');
+        $taxName = $this->dom->createElement('TaxTypeName',
+                     htmlspecialchars($line['tax_type_name']));
+        $taxName->setAttribute('code', $line['tax_type_code']);
+        $linTax->appendChild($taxName);
+
+        $taxDetails = $this->dom->createElement('TaxDetails');
+        $this->appendTextChild($taxDetails, 'TaxRate', $line['tax_rate']);
+        $linTax->appendChild($taxDetails);
+        $lin->appendChild($linTax);
+
+        // LinMoa
+        $linMoa = $this->dom->createElement('LinMoa');
+        foreach ($line['amounts'] ?? [] as $amt) {
+            $linMoa->appendChild($this->buildMoaDetails($amt));
+        }
+        $lin->appendChild($linMoa);
+
+        return $lin;
+    }
+
+    private function buildInvoiceMoa(array $amounts): DOMElement
+    {
+        $invoiceMoa = $this->dom->createElement('InvoiceMoa');
+        foreach ($amounts as $amt) {
+            $invoiceMoa->appendChild($this->buildMoaDetails($amt));
+        }
+        return $invoiceMoa;
+    }
+
+    private function buildMoaDetails(array $amt): DOMElement
+    {
+        $amtDetails = $this->dom->createElement('AmountDetails');
         $moa = $this->dom->createElement('Moa');
-        $moa->setAttribute('amountTypeCode', AmountTypeCode::TOTAL_TTC->value);
-        $moa->setAttribute('currencyCodeList', 'ISO_4217');
-        $amount = $this->dom->createElement('Amount', $this->formatAmount($oldinvoice->total_ttc));
-        $amount->setAttribute('currencyIdentifier', 'TND');
+        $moa->setAttribute('amountTypeCode', $amt['amount_type_code']);
+        $moa->setAttribute('currencyCodeList', $amt['currency_code_list'] ?? 'ISO_4217');
+
+        $amount = $this->dom->createElement('Amount',
+                    htmlspecialchars($amt['amount']));
+        $amount->setAttribute('currencyIdentifier', $amt['currency_identifier'] ?? 'TND');
         $moa->appendChild($amount);
 
-        $description = $this->amountInWords->convert($this->formatAmount($oldinvoice->total_ttc));
-        $descElem = $this->dom->createElement('AmountDescription', $description);
-        $descElem->setAttribute('lang', 'fr');
-        $moa->appendChild($descElem);
+        if (!empty($amt['description'])) {
+            $desc = $this->dom->createElement('AmountDescription',
+                      htmlspecialchars($amt['description']));
+            if (!empty($amt['description_lang'])) {
+                $desc->setAttribute('lang', $amt['description_lang']);
+            }
+            $moa->appendChild($desc);
+        }
 
-        $amountDetails->appendChild($moa);
-        $oldinvoiceMoa->appendChild($amountDetails);
-
-        $parent->appendChild($oldinvoiceMoa);
+        $amtDetails->appendChild($moa);
+        return $amtDetails;
     }
 
-    private function buildOldInvoiceTax(DOMElement $parent, OldInvoice $oldinvoice): void
+    private function buildInvoiceTax(Invoice $invoice): DOMElement
     {
-        $oldinvoiceTax = $this->dom->createElement('OldInvoiceTax');
+        $invoiceTax = $this->dom->createElement('InvoiceTax');
+        foreach ($invoice->taxes as $tax) {
+            $taxDetails = $this->dom->createElement('InvoiceTaxDetails');
 
-        // Timbre Fiscal
-        if (bccomp((string) $oldinvoice->timbre_fiscal, '0.000', 3) > 0) {
-            $taxDetails = $this->dom->createElement('OldInvoiceTaxDetails');
-            $tax = $this->dom->createElement('Tax');
-            $taxName = $this->dom->createElement('TaxTypeName', TaxTypeCode::DROIT_TIMBRE->label());
-            $taxName->setAttribute('code', TaxTypeCode::DROIT_TIMBRE->value);
-            $tax->appendChild($taxName);
+            $taxEl = $this->dom->createElement('Tax');
+            $taxName = $this->dom->createElement('TaxTypeName',
+                         htmlspecialchars($tax->tax_type_name));
+            $taxName->setAttribute('code', $tax->tax_type_code);
+            $taxEl->appendChild($taxName);
+
             $td = $this->dom->createElement('TaxDetails');
-            $td->appendChild($this->dom->createElement('TaxRate', '0'));
-            $tax->appendChild($td);
-            $taxDetails->appendChild($tax);
+            $this->appendTextChild($td, 'TaxRate', $tax->tax_rate);
+            $taxEl->appendChild($td);
+            $taxDetails->appendChild($taxEl);
 
-            $this->appendAmountDetails($taxDetails, AmountTypeCode::TAX_AMOUNT->value, $oldinvoice->timbre_fiscal);
-            $oldinvoiceTax->appendChild($taxDetails);
+            foreach ($tax->amounts as $amt) {
+                $taxDetails->appendChild($this->buildMoaDetails($amt));
+            }
+
+            $invoiceTax->appendChild($taxDetails);
+        }
+        return $invoiceTax;
+    }
+
+    private function buildRefTtnVal(Invoice $invoice): DOMElement
+    {
+        $refTtn = $this->dom->createElement('RefTtnVal');
+
+        $refTtnEl = $this->dom->createElement('ReferenceTTN',
+                      htmlspecialchars($invoice->ref_ttn_value));
+        $refTtnEl->setAttribute('refID', $invoice->ref_ttn_id ?? 'I-88');
+        $refTtn->appendChild($refTtnEl);
+
+        $this->appendTextChild($refTtn, 'ReferenceCEV', $invoice->ref_cev ?? '');
+
+        if (!empty($invoice->ref_ttn_dates)) {
+            $refDate = $this->dom->createElement('ReferenceDate');
+            foreach ($invoice->ref_ttn_dates as $d) {
+                $dateText = $this->dom->createElement('DateText',
+                              htmlspecialchars($d['value']));
+                $dateText->setAttribute('functionCode', $d['function_code']);
+                $dateText->setAttribute('format', $d['format']);
+                $refDate->appendChild($dateText);
+            }
+            $refTtn->appendChild($refDate);
         }
 
-        // TVA by rate
-        foreach ($oldinvoice->taxLines as $taxLine) {
-            $taxDetails = $this->dom->createElement('OldInvoiceTaxDetails');
-            $tax = $this->dom->createElement('Tax');
-            $taxName = $this->dom->createElement('TaxTypeName', $taxLine->tax_type_name);
-            $taxName->setAttribute('code', $taxLine->tax_type_code);
-            $tax->appendChild($taxName);
-            $td = $this->dom->createElement('TaxDetails');
-            $td->appendChild($this->dom->createElement('TaxRate', $this->formatRate($taxLine->tax_rate)));
-            $tax->appendChild($td);
-            $taxDetails->appendChild($tax);
-
-            // I-177: Taxable amount
-            $this->appendAmountDetails($taxDetails, AmountTypeCode::TAXABLE_AMOUNT->value, $taxLine->taxable_amount);
-            // I-178: Tax amount
-            $this->appendAmountDetails($taxDetails, AmountTypeCode::TAX_AMOUNT->value, $taxLine->tax_amount);
-
-            $oldinvoiceTax->appendChild($taxDetails);
-        }
-
-        $parent->appendChild($oldinvoiceTax);
+        return $refTtn;
     }
 
-    private function appendMoaDetails(DOMElement $parent, string $amountTypeCode, string|int|float $amount): void
+    private function buildSignatureStub(array $sig): DOMElement
     {
-        $moaDetails = $this->dom->createElement('MoaDetails');
-        $moa = $this->dom->createElement('Moa');
-        $moa->setAttribute('amountTypeCode', $amountTypeCode);
-        $moa->setAttribute('currencyCodeList', 'ISO_4217');
-        $amountElem = $this->dom->createElement('Amount', $this->formatAmount($amount));
-        $amountElem->setAttribute('currencyIdentifier', 'TND');
-        $moa->appendChild($amountElem);
-        $moaDetails->appendChild($moa);
-        $parent->appendChild($moaDetails);
+        $sigEl = $this->dom->createElementNS($this->dsNs, 'ds:Signature');
+        $sigEl->setAttribute('Id', $sig['id'] ?? 'SigFrs');
+        // Full XAdES signature building is handled by SigningService
+        return $sigEl;
     }
 
-    private function appendAmountDetails(DOMElement $parent, string $amountTypeCode, string|int|float $amount): void
+    private function appendTextChild(DOMElement $parent, string $tag, string $value): void
     {
-        $amountDetails = $this->dom->createElement('AmountDetails');
-        $moa = $this->dom->createElement('Moa');
-        $moa->setAttribute('amountTypeCode', $amountTypeCode);
-        $moa->setAttribute('currencyCodeList', 'ISO_4217');
-        $amountElem = $this->dom->createElement('Amount', $this->formatAmount($amount));
-        $amountElem->setAttribute('currencyIdentifier', 'TND');
-        $moa->appendChild($amountElem);
-        $amountDetails->appendChild($moa);
-        $parent->appendChild($amountDetails);
-    }
-
-    private function formatAmount(string|int|float $amount): string
-    {
-        return number_format((float) $amount, 3, '.', '');
-    }
-
-    private function formatRate(string|int|float $rate): string
-    {
-        $floatRate = (float) $rate;
-        if ($floatRate === floor($floatRate)) {
-            return (string) (int) $floatRate;
-        }
-        return rtrim(rtrim(number_format($floatRate, 2, '.', ''), '0'), '.');
+        $el = $this->dom->createElement($tag, htmlspecialchars($value));
+        $parent->appendChild($el);
     }
 }

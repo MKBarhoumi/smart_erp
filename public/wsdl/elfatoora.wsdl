@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://elfatoora.tn/invoicing/v1"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="http://elfatoora.tn/invoicing/v1"
+             name="ElfatooraInvoicingService">
+
+  <!-- ==================== TYPES ==================== -->
+  <types>
+    <xsd:schema targetNamespace="http://elfatoora.tn/invoicing/v1">
+
+      <!-- Submit Invoice Request -->
+      <xsd:element name="SubmitInvoiceRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="teifXml"      type="xsd:string"/>
+            <xsd:element name="withSignature" type="xsd:boolean"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="SubmitInvoiceResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="invoiceId"  type="xsd:integer"/>
+            <xsd:element name="status"     type="xsd:string"/>
+            <xsd:element name="message"    type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- Get Invoice Request -->
+      <xsd:element name="GetInvoiceRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="invoiceId" type="xsd:integer"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetInvoiceResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="teifXml" type="xsd:string"/>
+            <xsd:element name="status"  type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- Validate Invoice -->
+      <xsd:element name="ValidateInvoiceRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="invoiceId" type="xsd:integer"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ValidateInvoiceResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="valid"    type="xsd:boolean"/>
+            <xsd:element name="errors"   type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- List Invoices -->
+      <xsd:element name="ListInvoicesRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="senderIdentifier" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="status"           type="xsd:string" minOccurs="0"/>
+            <xsd:element name="page"             type="xsd:integer" minOccurs="0"/>
+            <xsd:element name="perPage"          type="xsd:integer" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ListInvoicesResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="invoicesJson" type="xsd:string"/>
+            <xsd:element name="total"        type="xsd:integer"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- Update Invoice -->
+      <xsd:element name="UpdateInvoiceRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="invoiceId" type="xsd:integer"/>
+            <xsd:element name="teifXml"   type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="UpdateInvoiceResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="success" type="xsd:boolean"/>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- Delete Invoice -->
+      <xsd:element name="DeleteInvoiceRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="invoiceId" type="xsd:integer"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="DeleteInvoiceResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="success" type="xsd:boolean"/>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- Sign Invoice -->
+      <xsd:element name="SignInvoiceRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="invoiceId"        type="xsd:integer"/>
+            <xsd:element name="signerRole"       type="xsd:string"/>
+            <xsd:element name="privateKeyPem"    type="xsd:string"/>
+            <xsd:element name="certificatePem"   type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="SignInvoiceResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="signedXml" type="xsd:string"/>
+            <xsd:element name="success"   type="xsd:boolean"/>
+            <xsd:element name="message"   type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- Verify Signature -->
+      <xsd:element name="VerifySignatureRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="invoiceId" type="xsd:integer"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="VerifySignatureResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="valid"   type="xsd:boolean"/>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- Fault -->
+      <xsd:element name="ElfatooraFault">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="code"    type="xsd:string"/>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </types>
+
+  <!-- ==================== MESSAGES ==================== -->
+  <message name="SubmitInvoiceInput">
+    <part name="parameters" element="tns:SubmitInvoiceRequest"/>
+  </message>
+  <message name="SubmitInvoiceOutput">
+    <part name="parameters" element="tns:SubmitInvoiceResponse"/>
+  </message>
+
+  <message name="GetInvoiceInput">
+    <part name="parameters" element="tns:GetInvoiceRequest"/>
+  </message>
+  <message name="GetInvoiceOutput">
+    <part name="parameters" element="tns:GetInvoiceResponse"/>
+  </message>
+
+  <message name="ValidateInvoiceInput">
+    <part name="parameters" element="tns:ValidateInvoiceRequest"/>
+  </message>
+  <message name="ValidateInvoiceOutput">
+    <part name="parameters" element="tns:ValidateInvoiceResponse"/>
+  </message>
+
+  <message name="ListInvoicesInput">
+    <part name="parameters" element="tns:ListInvoicesRequest"/>
+  </message>
+  <message name="ListInvoicesOutput">
+    <part name="parameters" element="tns:ListInvoicesResponse"/>
+  </message>
+
+  <message name="UpdateInvoiceInput">
+    <part name="parameters" element="tns:UpdateInvoiceRequest"/>
+  </message>
+  <message name="UpdateInvoiceOutput">
+    <part name="parameters" element="tns:UpdateInvoiceResponse"/>
+  </message>
+
+  <message name="DeleteInvoiceInput">
+    <part name="parameters" element="tns:DeleteInvoiceRequest"/>
+  </message>
+  <message name="DeleteInvoiceOutput">
+    <part name="parameters" element="tns:DeleteInvoiceResponse"/>
+  </message>
+
+  <message name="SignInvoiceInput">
+    <part name="parameters" element="tns:SignInvoiceRequest"/>
+  </message>
+  <message name="SignInvoiceOutput">
+    <part name="parameters" element="tns:SignInvoiceResponse"/>
+  </message>
+
+  <message name="VerifySignatureInput">
+    <part name="parameters" element="tns:VerifySignatureRequest"/>
+  </message>
+  <message name="VerifySignatureOutput">
+    <part name="parameters" element="tns:VerifySignatureResponse"/>
+  </message>
+
+  <message name="FaultMessage">
+    <part name="fault" element="tns:ElfatooraFault"/>
+  </message>
+
+  <!-- ==================== PORT TYPE ==================== -->
+  <portType name="ElfatooraPortType">
+
+    <operation name="SubmitInvoice">
+      <input  message="tns:SubmitInvoiceInput"/>
+      <output message="tns:SubmitInvoiceOutput"/>
+      <fault  name="ElfatooraFault" message="tns:FaultMessage"/>
+    </operation>
+
+    <operation name="GetInvoice">
+      <input  message="tns:GetInvoiceInput"/>
+      <output message="tns:GetInvoiceOutput"/>
+      <fault  name="ElfatooraFault" message="tns:FaultMessage"/>
+    </operation>
+
+    <operation name="ValidateInvoice">
+      <input  message="tns:ValidateInvoiceInput"/>
+      <output message="tns:ValidateInvoiceOutput"/>
+      <fault  name="ElfatooraFault" message="tns:FaultMessage"/>
+    </operation>
+
+    <operation name="ListInvoices">
+      <input  message="tns:ListInvoicesInput"/>
+      <output message="tns:ListInvoicesOutput"/>
+      <fault  name="ElfatooraFault" message="tns:FaultMessage"/>
+    </operation>
+
+    <operation name="UpdateInvoice">
+      <input  message="tns:UpdateInvoiceInput"/>
+      <output message="tns:UpdateInvoiceOutput"/>
+      <fault  name="ElfatooraFault" message="tns:FaultMessage"/>
+    </operation>
+
+    <operation name="DeleteInvoice">
+      <input  message="tns:DeleteInvoiceInput"/>
+      <output message="tns:DeleteInvoiceOutput"/>
+      <fault  name="ElfatooraFault" message="tns:FaultMessage"/>
+    </operation>
+
+    <operation name="SignInvoice">
+      <input  message="tns:SignInvoiceInput"/>
+      <output message="tns:SignInvoiceOutput"/>
+      <fault  name="ElfatooraFault" message="tns:FaultMessage"/>
+    </operation>
+
+    <operation name="VerifySignature">
+      <input  message="tns:VerifySignatureInput"/>
+      <output message="tns:VerifySignatureOutput"/>
+      <fault  name="ElfatooraFault" message="tns:FaultMessage"/>
+    </operation>
+
+  </portType>
+
+  <!-- ==================== BINDING ==================== -->
+  <binding name="ElfatooraBinding" type="tns:ElfatooraPortType">
+    <soap:binding style="document"
+                  transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <operation name="SubmitInvoice">
+      <soap:operation soapAction="http://elfatoora.tn/invoicing/v1/SubmitInvoice"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+      <fault name="ElfatooraFault"><soap:fault name="ElfatooraFault" use="literal"/></fault>
+    </operation>
+
+    <operation name="GetInvoice">
+      <soap:operation soapAction="http://elfatoora.tn/invoicing/v1/GetInvoice"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+      <fault name="ElfatooraFault"><soap:fault name="ElfatooraFault" use="literal"/></fault>
+    </operation>
+
+    <operation name="ValidateInvoice">
+      <soap:operation soapAction="http://elfatoora.tn/invoicing/v1/ValidateInvoice"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+      <fault name="ElfatooraFault"><soap:fault name="ElfatooraFault" use="literal"/></fault>
+    </operation>
+
+    <operation name="ListInvoices">
+      <soap:operation soapAction="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+      <fault name="ElfatooraFault"><soap:fault name="ElfatooraFault" use="literal"/></fault>
+    </operation>
+
+    <operation name="UpdateInvoice">
+      <soap:operation soapAction="http://elfatoora.tn/invoicing/v1/UpdateInvoice"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+      <fault name="ElfatooraFault"><soap:fault name="ElfatooraFault" use="literal"/></fault>
+    </operation>
+
+    <operation name="DeleteInvoice">
+      <soap:operation soapAction="http://elfatoora.tn/invoicing/v1/DeleteInvoice"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+      <fault name="ElfatooraFault"><soap:fault name="ElfatooraFault" use="literal"/></fault>
+    </operation>
+
+    <operation name="SignInvoice">
+      <soap:operation soapAction="http://elfatoora.tn/invoicing/v1/SignInvoice"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+      <fault name="ElfatooraFault"><soap:fault name="ElfatooraFault" use="literal"/></fault>
+    </operation>
+
+    <operation name="VerifySignature">
+      <soap:operation soapAction="http://elfatoora.tn/invoicing/v1/VerifySignature"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+      <fault name="ElfatooraFault"><soap:fault name="ElfatooraFault" use="literal"/></fault>
+    </operation>
+
+  </binding>
+
+  <!-- ==================== SERVICE ==================== -->
+  <service name="ElfatooraInvoicingService">
+    <port name="ElfatooraPort" binding="tns:ElfatooraBinding">
+      <soap:address location="http://localhost:8000/soap/invoicing"/>
+    </port>
+  </service>
+
+</definitions>

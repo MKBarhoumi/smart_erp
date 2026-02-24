@@ -1,0 +1,536 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project id="elfatoora-invoicing" activeEnvironment="Default" 
+    name="Elfatoora Invoicing API" 
+    resourceRoot="" 
+    soapui-version="5.7.0" 
+    abortOnError="false" 
+    runType="SEQUENTIAL"
+    xmlns:con="http://eviware.com/soapui/config">
+    
+    <con:settings/>
+    
+    <con:interface xsi:type="con:WsdlInterface" 
+        wsaVersion="NONE" 
+        name="ElfatooraPortType" 
+        type="wsdl" 
+        bindingName="{http://elfatoora.tn/invoicing/v1}ElfatooraBinding" 
+        soapVersion="1_1" 
+        anonymous="optional" 
+        definition="http://localhost:8000/soap/invoicing?wsdl"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        
+        <!-- ==================== SUBMIT INVOICE ==================== -->
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/SubmitInvoice" name="SubmitInvoice" bindingOperationName="SubmitInvoice" type="Request-Response" outputName="SubmitInvoiceOutput" inputName="SubmitInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+            <con:settings/>
+            
+            <!-- Happy Path Request -->
+            <con:call name="SubmitInvoice - Happy Path">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:SubmitInvoiceRequest>
+         <v1:teifXml>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;TEIF controlingAgency="TTN" version="1.8.8"&gt;
+  &lt;InvoiceHeader&gt;
+    &lt;MessageSenderIdentifier type="I-01"&gt;0736202XAM000&lt;/MessageSenderIdentifier&gt;
+    &lt;MessageRecieverIdentifier type="I-01"&gt;0914089JAM000&lt;/MessageRecieverIdentifier&gt;
+  &lt;/InvoiceHeader&gt;
+  &lt;InvoiceBody&gt;
+    &lt;Bgm&gt;
+      &lt;DocumentIdentifier&gt;INV-2026-001&lt;/DocumentIdentifier&gt;
+      &lt;DocumentType code="I-11"&gt;Facture&lt;/DocumentType&gt;
+    &lt;/Bgm&gt;
+    &lt;Dtm&gt;
+      &lt;DateText format="ddMMyy" functionCode="I-31"&gt;240226&lt;/DateText&gt;
+    &lt;/Dtm&gt;
+    &lt;PartnerSection&gt;
+      &lt;PartnerDetails functionCode="I-62"&gt;
+        &lt;Nad&gt;
+          &lt;PartnerIdentifier type="I-01"&gt;0736202XAM000&lt;/PartnerIdentifier&gt;
+          &lt;PartnerName nameType="Qualification"&gt;Sender Company&lt;/PartnerName&gt;
+          &lt;PartnerAdresses lang="fr"&gt;
+            &lt;AdressDescription&gt;Business District&lt;/AdressDescription&gt;
+            &lt;Street&gt;Main Street 123&lt;/Street&gt;
+            &lt;CityName&gt;Tunis&lt;/CityName&gt;
+            &lt;PostalCode&gt;1000&lt;/PostalCode&gt;
+            &lt;Country codeList="ISO_3166-1"&gt;TN&lt;/Country&gt;
+          &lt;/PartnerAdresses&gt;
+        &lt;/Nad&gt;
+      &lt;/PartnerDetails&gt;
+      &lt;PartnerDetails functionCode="I-64"&gt;
+        &lt;Nad&gt;
+          &lt;PartnerIdentifier type="I-01"&gt;0914089JAM000&lt;/PartnerIdentifier&gt;
+          &lt;PartnerName nameType="Qualification"&gt;Receiver Company&lt;/PartnerName&gt;
+          &lt;PartnerAdresses lang="fr"&gt;
+            &lt;AdressDescription&gt;Industrial Zone&lt;/AdressDescription&gt;
+            &lt;Street&gt;Industrial Avenue 456&lt;/Street&gt;
+            &lt;CityName&gt;Sfax&lt;/CityName&gt;
+            &lt;PostalCode&gt;3000&lt;/PostalCode&gt;
+            &lt;Country codeList="ISO_3166-1"&gt;TN&lt;/Country&gt;
+          &lt;/PartnerAdresses&gt;
+        &lt;/Nad&gt;
+      &lt;/PartnerDetails&gt;
+    &lt;/PartnerSection&gt;
+    &lt;LinSection&gt;
+      &lt;Lin&gt;
+        &lt;ItemIdentifier&gt;1&lt;/ItemIdentifier&gt;
+        &lt;LinImd lang="fr"&gt;
+          &lt;ItemCode&gt;PROD001&lt;/ItemCode&gt;
+          &lt;ItemDescription&gt;Product Description&lt;/ItemDescription&gt;
+        &lt;/LinImd&gt;
+        &lt;LinQty&gt;
+          &lt;Quantity measurementUnit="UNIT"&gt;10.0&lt;/Quantity&gt;
+        &lt;/LinQty&gt;
+        &lt;LinTax&gt;
+          &lt;TaxTypeName code="I-1602"&gt;TVA&lt;/TaxTypeName&gt;
+          &lt;TaxDetails&gt;
+            &lt;TaxRate&gt;19&lt;/TaxRate&gt;
+          &lt;/TaxDetails&gt;
+        &lt;/LinTax&gt;
+        &lt;LinMoa&gt;
+          &lt;MoaDetails&gt;
+            &lt;Moa amountTypeCode="I-183" currencyCodeList="ISO_4217"&gt;
+              &lt;Amount currencyIdentifier="TND"&gt;100.000&lt;/Amount&gt;
+            &lt;/Moa&gt;
+          &lt;/MoaDetails&gt;
+        &lt;/LinMoa&gt;
+      &lt;/Lin&gt;
+    &lt;/LinSection&gt;
+    &lt;InvoiceMoa&gt;
+      &lt;AmountDetails&gt;
+        &lt;Moa amountTypeCode="I-176" currencyCodeList="ISO_4217"&gt;
+          &lt;Amount currencyIdentifier="TND"&gt;100.000&lt;/Amount&gt;
+        &lt;/Moa&gt;
+      &lt;/AmountDetails&gt;
+      &lt;AmountDetails&gt;
+        &lt;Moa amountTypeCode="I-181" currencyCodeList="ISO_4217"&gt;
+          &lt;Amount currencyIdentifier="TND"&gt;19.000&lt;/Amount&gt;
+        &lt;/Moa&gt;
+      &lt;/AmountDetails&gt;
+      &lt;AmountDetails&gt;
+        &lt;Moa amountTypeCode="I-180" currencyCodeList="ISO_4217"&gt;
+          &lt;Amount currencyIdentifier="TND"&gt;119.000&lt;/Amount&gt;
+        &lt;/Moa&gt;
+      &lt;/AmountDetails&gt;
+    &lt;/InvoiceMoa&gt;
+    &lt;InvoiceTax&gt;
+      &lt;InvoiceTaxDetails&gt;
+        &lt;Tax&gt;
+          &lt;TaxTypeName code="I-1602"&gt;TVA&lt;/TaxTypeName&gt;
+          &lt;TaxDetails&gt;
+            &lt;TaxRate&gt;19.0&lt;/TaxRate&gt;
+          &lt;/TaxDetails&gt;
+        &lt;/Tax&gt;
+        &lt;AmountDetails&gt;
+          &lt;Moa amountTypeCode="I-177" currencyCodeList="ISO_4217"&gt;
+            &lt;Amount currencyIdentifier="TND"&gt;100.000&lt;/Amount&gt;
+          &lt;/Moa&gt;
+        &lt;/AmountDetails&gt;
+        &lt;AmountDetails&gt;
+          &lt;Moa amountTypeCode="I-178" currencyCodeList="ISO_4217"&gt;
+            &lt;Amount currencyIdentifier="TND"&gt;19.000&lt;/Amount&gt;
+          &lt;/Moa&gt;
+        &lt;/AmountDetails&gt;
+      &lt;/InvoiceTaxDetails&gt;
+    &lt;/InvoiceTax&gt;
+  &lt;/InvoiceBody&gt;
+&lt;/TEIF&gt;</v1:teifXml>
+         <v1:withSignature>false</v1:withSignature>
+      </v1:SubmitInvoiceRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/SubmitInvoice"/>
+            </con:call>
+            
+            <!-- Invalid XML Request -->
+            <con:call name="SubmitInvoice - Invalid XML">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:SubmitInvoiceRequest>
+         <v1:teifXml>&lt;InvalidXML&gt;This is not valid TEIF&lt;/InvalidXML&gt;</v1:teifXml>
+         <v1:withSignature>false</v1:withSignature>
+      </v1:SubmitInvoiceRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/SubmitInvoice"/>
+            </con:call>
+        </con:operation>
+        
+        <!-- ==================== GET INVOICE ==================== -->
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/GetInvoice" name="GetInvoice" bindingOperationName="GetInvoice" type="Request-Response" outputName="GetInvoiceOutput" inputName="GetInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+            <con:settings/>
+            
+            <con:call name="GetInvoice - Happy Path">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:GetInvoiceRequest>
+         <v1:invoiceId>1</v1:invoiceId>
+      </v1:GetInvoiceRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/GetInvoice"/>
+            </con:call>
+            
+            <con:call name="GetInvoice - Not Found">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:GetInvoiceRequest>
+         <v1:invoiceId>99999</v1:invoiceId>
+      </v1:GetInvoiceRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/GetInvoice"/>
+            </con:call>
+        </con:operation>
+        
+        <!-- ==================== VALIDATE INVOICE ==================== -->
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/ValidateInvoice" name="ValidateInvoice" bindingOperationName="ValidateInvoice" type="Request-Response" outputName="ValidateInvoiceOutput" inputName="ValidateInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+            <con:settings/>
+            
+            <con:call name="ValidateInvoice - Happy Path">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:ValidateInvoiceRequest>
+         <v1:invoiceId>1</v1:invoiceId>
+      </v1:ValidateInvoiceRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ValidateInvoice"/>
+            </con:call>
+        </con:operation>
+        
+        <!-- ==================== LIST INVOICES ==================== -->
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/ListInvoices" name="ListInvoices" bindingOperationName="ListInvoices" type="Request-Response" outputName="ListInvoicesOutput" inputName="ListInvoicesInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+            <con:settings/>
+            
+            <con:call name="ListInvoices - All">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:ListInvoicesRequest>
+         <v1:page>1</v1:page>
+         <v1:perPage>20</v1:perPage>
+      </v1:ListInvoicesRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
+            </con:call>
+            
+            <con:call name="ListInvoices - Filter by Sender">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:ListInvoicesRequest>
+         <v1:senderIdentifier>0736202XAM000</v1:senderIdentifier>
+         <v1:page>1</v1:page>
+         <v1:perPage>20</v1:perPage>
+      </v1:ListInvoicesRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
+            </con:call>
+            
+            <con:call name="ListInvoices - Filter by Status">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:ListInvoicesRequest>
+         <v1:status>draft</v1:status>
+         <v1:page>1</v1:page>
+         <v1:perPage>10</v1:perPage>
+      </v1:ListInvoicesRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
+            </con:call>
+        </con:operation>
+        
+        <!-- ==================== UPDATE INVOICE ==================== -->
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/UpdateInvoice" name="UpdateInvoice" bindingOperationName="UpdateInvoice" type="Request-Response" outputName="UpdateInvoiceOutput" inputName="UpdateInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+            <con:settings/>
+            
+            <con:call name="UpdateInvoice - Happy Path">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:UpdateInvoiceRequest>
+         <v1:invoiceId>1</v1:invoiceId>
+         <v1:teifXml>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;TEIF controlingAgency="TTN" version="1.8.8"&gt;
+  &lt;InvoiceHeader&gt;
+    &lt;MessageSenderIdentifier type="I-01"&gt;0736202XAM000&lt;/MessageSenderIdentifier&gt;
+    &lt;MessageRecieverIdentifier type="I-01"&gt;0914089JAM000&lt;/MessageRecieverIdentifier&gt;
+  &lt;/InvoiceHeader&gt;
+  &lt;InvoiceBody&gt;
+    &lt;Bgm&gt;
+      &lt;DocumentIdentifier&gt;INV-2026-001-UPDATED&lt;/DocumentIdentifier&gt;
+      &lt;DocumentType code="I-11"&gt;Facture&lt;/DocumentType&gt;
+    &lt;/Bgm&gt;
+    &lt;Dtm&gt;
+      &lt;DateText format="ddMMyy" functionCode="I-31"&gt;240226&lt;/DateText&gt;
+    &lt;/Dtm&gt;
+    &lt;PartnerSection&gt;
+      &lt;PartnerDetails functionCode="I-62"&gt;
+        &lt;Nad&gt;
+          &lt;PartnerIdentifier type="I-01"&gt;0736202XAM000&lt;/PartnerIdentifier&gt;
+          &lt;PartnerName nameType="Qualification"&gt;Updated Sender Company&lt;/PartnerName&gt;
+          &lt;PartnerAdresses lang="fr"&gt;
+            &lt;AdressDescription&gt;Business District&lt;/AdressDescription&gt;
+            &lt;Street&gt;Main Street 123&lt;/Street&gt;
+            &lt;CityName&gt;Tunis&lt;/CityName&gt;
+            &lt;PostalCode&gt;1000&lt;/PostalCode&gt;
+            &lt;Country codeList="ISO_3166-1"&gt;TN&lt;/Country&gt;
+          &lt;/PartnerAdresses&gt;
+        &lt;/Nad&gt;
+      &lt;/PartnerDetails&gt;
+      &lt;PartnerDetails functionCode="I-64"&gt;
+        &lt;Nad&gt;
+          &lt;PartnerIdentifier type="I-01"&gt;0914089JAM000&lt;/PartnerIdentifier&gt;
+          &lt;PartnerName nameType="Qualification"&gt;Updated Receiver Company&lt;/PartnerName&gt;
+          &lt;PartnerAdresses lang="fr"&gt;
+            &lt;AdressDescription&gt;Industrial Zone&lt;/AdressDescription&gt;
+            &lt;Street&gt;Industrial Avenue 456&lt;/Street&gt;
+            &lt;CityName&gt;Sfax&lt;/CityName&gt;
+            &lt;PostalCode&gt;3000&lt;/PostalCode&gt;
+            &lt;Country codeList="ISO_3166-1"&gt;TN&lt;/Country&gt;
+          &lt;/PartnerAdresses&gt;
+        &lt;/Nad&gt;
+      &lt;/PartnerDetails&gt;
+    &lt;/PartnerSection&gt;
+    &lt;LinSection&gt;
+      &lt;Lin&gt;
+        &lt;ItemIdentifier&gt;1&lt;/ItemIdentifier&gt;
+        &lt;LinImd lang="fr"&gt;
+          &lt;ItemCode&gt;PROD001&lt;/ItemCode&gt;
+          &lt;ItemDescription&gt;Updated Product Description&lt;/ItemDescription&gt;
+        &lt;/LinImd&gt;
+        &lt;LinQty&gt;
+          &lt;Quantity measurementUnit="UNIT"&gt;15.0&lt;/Quantity&gt;
+        &lt;/LinQty&gt;
+        &lt;LinTax&gt;
+          &lt;TaxTypeName code="I-1602"&gt;TVA&lt;/TaxTypeName&gt;
+          &lt;TaxDetails&gt;
+            &lt;TaxRate&gt;19&lt;/TaxRate&gt;
+          &lt;/TaxDetails&gt;
+        &lt;/LinTax&gt;
+        &lt;LinMoa&gt;
+          &lt;MoaDetails&gt;
+            &lt;Moa amountTypeCode="I-183" currencyCodeList="ISO_4217"&gt;
+              &lt;Amount currencyIdentifier="TND"&gt;150.000&lt;/Amount&gt;
+            &lt;/Moa&gt;
+          &lt;/MoaDetails&gt;
+        &lt;/LinMoa&gt;
+      &lt;/Lin&gt;
+    &lt;/LinSection&gt;
+    &lt;InvoiceMoa&gt;
+      &lt;AmountDetails&gt;
+        &lt;Moa amountTypeCode="I-176" currencyCodeList="ISO_4217"&gt;
+          &lt;Amount currencyIdentifier="TND"&gt;150.000&lt;/Amount&gt;
+        &lt;/Moa&gt;
+      &lt;/AmountDetails&gt;
+      &lt;AmountDetails&gt;
+        &lt;Moa amountTypeCode="I-181" currencyCodeList="ISO_4217"&gt;
+          &lt;Amount currencyIdentifier="TND"&gt;28.500&lt;/Amount&gt;
+        &lt;/Moa&gt;
+      &lt;/AmountDetails&gt;
+      &lt;AmountDetails&gt;
+        &lt;Moa amountTypeCode="I-180" currencyCodeList="ISO_4217"&gt;
+          &lt;Amount currencyIdentifier="TND"&gt;178.500&lt;/Amount&gt;
+        &lt;/Moa&gt;
+      &lt;/AmountDetails&gt;
+    &lt;/InvoiceMoa&gt;
+    &lt;InvoiceTax&gt;
+      &lt;InvoiceTaxDetails&gt;
+        &lt;Tax&gt;
+          &lt;TaxTypeName code="I-1602"&gt;TVA&lt;/TaxTypeName&gt;
+          &lt;TaxDetails&gt;
+            &lt;TaxRate&gt;19.0&lt;/TaxRate&gt;
+          &lt;/TaxDetails&gt;
+        &lt;/Tax&gt;
+        &lt;AmountDetails&gt;
+          &lt;Moa amountTypeCode="I-177" currencyCodeList="ISO_4217"&gt;
+            &lt;Amount currencyIdentifier="TND"&gt;150.000&lt;/Amount&gt;
+          &lt;/Moa&gt;
+        &lt;/AmountDetails&gt;
+        &lt;AmountDetails&gt;
+          &lt;Moa amountTypeCode="I-178" currencyCodeList="ISO_4217"&gt;
+            &lt;Amount currencyIdentifier="TND"&gt;28.500&lt;/Amount&gt;
+          &lt;/Moa&gt;
+        &lt;/AmountDetails&gt;
+      &lt;/InvoiceTaxDetails&gt;
+    &lt;/InvoiceTax&gt;
+  &lt;/InvoiceBody&gt;
+&lt;/TEIF&gt;</v1:teifXml>
+      </v1:UpdateInvoiceRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/UpdateInvoice"/>
+            </con:call>
+        </con:operation>
+        
+        <!-- ==================== DELETE INVOICE ==================== -->
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/DeleteInvoice" name="DeleteInvoice" bindingOperationName="DeleteInvoice" type="Request-Response" outputName="DeleteInvoiceOutput" inputName="DeleteInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+            <con:settings/>
+            
+            <con:call name="DeleteInvoice - Happy Path">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:DeleteInvoiceRequest>
+         <v1:invoiceId>1</v1:invoiceId>
+      </v1:DeleteInvoiceRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/DeleteInvoice"/>
+            </con:call>
+        </con:operation>
+        
+        <!-- ==================== SIGN INVOICE ==================== -->
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/SignInvoice" name="SignInvoice" bindingOperationName="SignInvoice" type="Request-Response" outputName="SignInvoiceOutput" inputName="SignInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+            <con:settings/>
+            
+            <con:call name="SignInvoice - Request">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:SignInvoiceRequest>
+         <v1:invoiceId>1</v1:invoiceId>
+         <v1:signerRole>supplier</v1:signerRole>
+         <v1:privateKeyPem>-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC...
+-----END PRIVATE KEY-----</v1:privateKeyPem>
+         <v1:certificatePem>-----BEGIN CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0Gcsi...
+-----END CERTIFICATE-----</v1:certificatePem>
+      </v1:SignInvoiceRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/SignInvoice"/>
+            </con:call>
+        </con:operation>
+        
+        <!-- ==================== VERIFY SIGNATURE ==================== -->
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/VerifySignature" name="VerifySignature" bindingOperationName="VerifySignature" type="Request-Response" outputName="VerifySignatureOutput" inputName="VerifySignatureInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+            <con:settings/>
+            
+            <con:call name="VerifySignature - Request">
+                <con:settings/>
+                <con:encoding>UTF-8</con:encoding>
+                <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
+                <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:VerifySignatureRequest>
+         <v1:invoiceId>1</v1:invoiceId>
+      </v1:VerifySignatureRequest>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request>
+                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/VerifySignature"/>
+            </con:call>
+        </con:operation>
+        
+    </con:interface>
+    
+    <!-- ==================== TEST SUITE ==================== -->
+    <con:testSuite id="test-suite-1" name="Elfatoora API Test Suite">
+        <con:settings/>
+        <con:runType>SEQUENTIAL</con:runType>
+        
+        <con:testCase id="test-case-1" name="Invoice CRUD Operations" searchProperties="true" failOnError="true" failTestCaseOnErrors="true" keepSession="false" maxResults="0" timeout="0" discardOkResults="false">
+            <con:settings/>
+            
+            <con:testStep type="request" name="1. Submit Invoice">
+                <con:settings/>
+                <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <con:interface>ElfatooraPortType</con:interface>
+                    <con:operation>SubmitInvoice</con:operation>
+                    <con:request name="SubmitInvoice - Happy Path"/>
+                </con:config>
+            </con:testStep>
+            
+            <con:testStep type="request" name="2. Get Invoice">
+                <con:settings/>
+                <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <con:interface>ElfatooraPortType</con:interface>
+                    <con:operation>GetInvoice</con:operation>
+                    <con:request name="GetInvoice - Happy Path"/>
+                </con:config>
+            </con:testStep>
+            
+            <con:testStep type="request" name="3. Validate Invoice">
+                <con:settings/>
+                <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <con:interface>ElfatooraPortType</con:interface>
+                    <con:operation>ValidateInvoice</con:operation>
+                    <con:request name="ValidateInvoice - Happy Path"/>
+                </con:config>
+            </con:testStep>
+            
+            <con:testStep type="request" name="4. List Invoices">
+                <con:settings/>
+                <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <con:interface>ElfatooraPortType</con:interface>
+                    <con:operation>ListInvoices</con:operation>
+                    <con:request name="ListInvoices - All"/>
+                </con:config>
+            </con:testStep>
+            
+            <con:testStep type="request" name="5. Update Invoice">
+                <con:settings/>
+                <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <con:interface>ElfatooraPortType</con:interface>
+                    <con:operation>UpdateInvoice</con:operation>
+                    <con:request name="UpdateInvoice - Happy Path"/>
+                </con:config>
+            </con:testStep>
+            
+            <con:testStep type="request" name="6. Delete Invoice">
+                <con:settings/>
+                <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <con:interface>ElfatooraPortType</con:interface>
+                    <con:operation>DeleteInvoice</con:operation>
+                    <con:request name="DeleteInvoice - Happy Path"/>
+                </con:config>
+            </con:testStep>
+        </con:testCase>
+    </con:testSuite>
+    
+</con:soapui-project>
+

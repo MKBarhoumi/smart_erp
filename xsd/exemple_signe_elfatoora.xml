@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <TEIF controlingAgency="TTN" version="1.8.8">
-  <OldInvoiceHeader>
+  <InvoiceHeader>
     <MessageSenderIdentifier type="I-01">0736202XAM000</MessageSenderIdentifier>
     <MessageRecieverIdentifier type="I-01">0914089JAM000</MessageRecieverIdentifier>
-  </OldInvoiceHeader>
-  <OldInvoiceBody>
+  </InvoiceHeader>
+  <InvoiceBody>
     <Bgm>
       <DocumentIdentifier>12016_2012</DocumentIdentifier>
       <DocumentType code="I-11">Facture</DocumentType>
@@ -147,7 +147,7 @@
         </LinMoa>
       </Lin>
     </LinSection>
-    <OldInvoiceMoa>
+    <InvoiceMoa>
       <AmountDetails>
         <Moa amountTypeCode="I-179" currencyCodeList="ISO_4217">
           <Amount currencyIdentifier="TND">2000000</Amount>
@@ -174,9 +174,9 @@
           <Amount currencyIdentifier="TND">0.240</Amount>
         </Moa>
       </AmountDetails>
-    </OldInvoiceMoa>
-    <OldInvoiceTax>
-      <OldInvoiceTaxDetails>
+    </InvoiceMoa>
+    <InvoiceTax>
+      <InvoiceTaxDetails>
         <Tax>
           <TaxTypeName code="I-1601">droit de timbre</TaxTypeName>
           <TaxDetails>
@@ -188,8 +188,8 @@
             <Amount currencyIdentifier="TND">0.300</Amount>
           </Moa>
         </AmountDetails>
-      </OldInvoiceTaxDetails>
-      <OldInvoiceTaxDetails>
+      </InvoiceTaxDetails>
+      <InvoiceTaxDetails>
         <Tax>
           <TaxTypeName code="I-1602">TVA</TaxTypeName>
           <TaxDetails>
@@ -206,9 +206,9 @@
             <Amount currencyIdentifier="TND">0.240</Amount>
           </Moa>
         </AmountDetails>
-      </OldInvoiceTaxDetails>
-    </OldInvoiceTax>
-  </OldInvoiceBody>
+      </InvoiceTaxDetails>
+    </InvoiceTax>
+  </InvoiceBody>
   <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="SigFrs">
     <ds:SignedInfo>
       <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
@@ -371,3 +371,4 @@
     </ds:Object>
   </ds:Signature>
 </TEIF>
+

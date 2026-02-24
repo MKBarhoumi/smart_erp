@@ -3,7 +3,7 @@
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\OldInvoiceController;
+use App\Http\Controllers\SoapController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
@@ -13,6 +13,10 @@ use App\Http\Controllers\Admin\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+// SOAP endpoints (no auth, no CSRF)
+Route::get('/soap/invoicing', [SoapController::class, 'wsdl'])->name('soap.wsdl');
+Route::post('/soap/invoicing', [SoapController::class, 'handle'])->name('soap.handle');
 
 Route::middleware('guest')->group(function () {
 
@@ -38,17 +42,6 @@ Route::middleware('auth')->group(function () {
 
     // Products
     Route::resource('products', ProductController::class);
-
-    // OldInvoices
-    Route::resource('oldinvoices', OldInvoiceController::class);
-    Route::prefix('oldinvoices/{oldinvoice}')->name('oldinvoices.')->group(function () {
-        Route::post('/validate', [OldInvoiceController::class, 'validateOldInvoice'])->name('validate');
-        Route::post('/sign', [OldInvoiceController::class, 'sign'])->name('sign');
-        Route::post('/submit', [OldInvoiceController::class, 'submit'])->name('submit');
-        Route::get('/pdf', [OldInvoiceController::class, 'downloadPdf'])->name('pdf');
-        Route::get('/xml', [OldInvoiceController::class, 'downloadXml'])->name('xml');
-        Route::post('/duplicate', [OldInvoiceController::class, 'duplicate'])->name('duplicate');
-    });
 
     // Payments
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -83,10 +76,13 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
         Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
     });
-});
+
+
+    });
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/oldInvoices.php';
 
 // Error page test routes (only in development)
 if (app()->environment('local')) {
