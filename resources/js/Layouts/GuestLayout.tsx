@@ -1,5 +1,5 @@
-import { PropsWithChildren } from 'react';
 import { Link } from '@inertiajs/react';
+import type { PropsWithChildren } from 'react';
 
 export default function GuestLayout({ children }: PropsWithChildren) {
   return (

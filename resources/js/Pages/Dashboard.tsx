@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { DashboardData, PageProps } from '@/types';
+import type { PageProps } from '@/types';
 
 interface Props extends PageProps {
     stats: {
@@ -63,7 +63,6 @@ export default function Dashboard({
     },
     recentInvoices = [],
     revenueChart = {},
-    statusDistribution = {},
     topCustomers = [],
     lowStockProducts = [],
 }: Props) {

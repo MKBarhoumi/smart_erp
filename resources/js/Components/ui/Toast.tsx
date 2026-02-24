@@ -70,6 +70,7 @@ export function FlashMessages({ flash }: { flash: { success?: string; error?: st
       newMessages.push({ id: Date.now() + 1, type: 'error', message: flash.error });
     }
     if (newMessages.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages((prev) => [...prev, ...newMessages]);
     }
   }, [flash?.success, flash?.error]);

@@ -1,12 +1,12 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { useState } from 'react';
+import { Badge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
-import { Badge } from '@/Components/ui/Badge';
-import { Pagination } from '@/Components/ui/Pagination';
 import { Modal } from '@/Components/ui/Modal';
+import { Pagination } from '@/Components/ui/Pagination';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { User, PaginatedData, PageProps } from '@/types';
-import { useState } from 'react';
 
 interface Props extends PageProps {
     users: PaginatedData<User>;

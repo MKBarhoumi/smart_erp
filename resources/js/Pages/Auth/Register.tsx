@@ -1,8 +1,8 @@
-import { FormEvent } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Input } from '@/Components/ui/Input';
+import type { FormEvent } from 'react';
 import { Button } from '@/Components/ui/Button';
+import { Input } from '@/Components/ui/Input';
+import GuestLayout from '@/Layouts/GuestLayout';
 
 export default function Register() {
     const { data, setData, post, processing, errors } = useForm({

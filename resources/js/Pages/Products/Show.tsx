@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/Components/ui/Button';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Product } from '@/types';
 
 interface Props {

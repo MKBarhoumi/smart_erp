@@ -1,8 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Button } from '@/Components/ui/Button';
 import { Badge } from '@/Components/ui/Badge';
+import { Button } from '@/Components/ui/Button';
 import { Pagination } from '@/Components/ui/Pagination';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Product, PageProps, PaginatedData } from '@/types';
 
 interface StockMovement {

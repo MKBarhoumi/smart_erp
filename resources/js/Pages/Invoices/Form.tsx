@@ -1,9 +1,9 @@
-import { FormEvent, useState } from 'react';
-import { Head, useForm, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, useForm, Link } from '@inertiajs/react';
+import type { FormEvent} from 'react';
+import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Select } from '@/Components/ui/Select';
-import { Button } from '@/Components/ui/Button';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 interface LineData {
     product_id: string;
@@ -40,11 +40,13 @@ interface Product {
     is_subject_to_timbre: boolean;
 }
 
+import type { Invoice } from '@/types';
+
 interface Props {
     customers: Array<{ id: string; name: string; identifier_value: string }>;
     products: Product[];
     documentTypes: Array<{ value: string; label: string }>;
-    invoice?: any;
+    invoice?: Partial<Invoice>;
     isEdit?: boolean;
 }
 
@@ -72,7 +74,7 @@ export default function InvoiceForm({ customers, products, documentTypes, invoic
         timbre_fiscal: invoice?.timbre_fiscal ?? '1.000',
         notes: invoice?.notes ?? '',
         lines: invoice?.lines?.length
-            ? invoice.lines.map((l: any) => ({
+            ? invoice.lines.map((l) => ({
                 product_id: l.product_id ?? '',
                 item_code: l.item_code ?? '',
                 item_description: l.item_description ?? '',

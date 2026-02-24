@@ -42,8 +42,8 @@ class InvoiceController extends Controller
     {
         $invoices = Invoice::with('customer:id,name')
             ->when(request('search'), function ($query, $search) {
-                $query->where('invoice_number', 'ilike', "%{$search}%")
-                    ->orWhereHas('customer', fn ($q) => $q->where('name', 'ilike', "%{$search}%"));
+                $query->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhereHas('customer', fn ($q) => $q->where('name', 'like', "%{$search}%"));
             })
             ->when(request('status'), function ($query, $status) {
                 $query->where('status', $status);
@@ -177,7 +177,7 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function edit(Invoice $invoice): Response
+    public function edit(Invoice $invoice)
     {
         if (!$invoice->isEditable()) {
             return redirect()->route('invoices.show', $invoice)

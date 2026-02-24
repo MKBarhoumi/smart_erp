@@ -10,6 +10,7 @@ export interface User {
 }
 
 export interface Customer {
+  [key: string]: unknown;
   id: string;
   identifier_type: 'I-01' | 'I-02' | 'I-03' | 'I-04';
   identifier_value: string;
@@ -35,6 +36,7 @@ export interface Customer {
 }
 
 export interface Product {
+  [key: string]: unknown;
   id: string;
   code: string;
   name: string;
@@ -69,6 +71,9 @@ export interface InvoiceLine {
   tva_amount: string;
   discount_rate: string;
   discount_amount: string;
+  // helper properties used in the UI
+  line_total_ht?: string;
+  line_total_ttc?: string;
 }
 
 export interface InvoiceTaxLine {
@@ -133,6 +138,8 @@ export interface CompanySettings {
   id: string;
   company_name: string;
   matricule_fiscal: string;
+  // aliases provided by model accessors
+  matricule_fiscale?: string;
   category_type: string;
   person_type: string;
   tax_office: string | null;
@@ -140,8 +147,11 @@ export interface CompanySettings {
   legal_form: string | null;
   address_description: string | null;
   street: string | null;
+  address_street?: string;
   city: string;
+  address_city?: string;
   postal_code: string | null;
+  address_postal_code?: string;
   country_code: string;
   phone: string | null;
   fax: string | null;
@@ -159,6 +169,9 @@ export interface CompanySettings {
   invoice_number_format: string;
   next_invoice_counter: number;
   default_timbre_fiscal: string;
+  // extra fields used by the settings form that come from backend or aliases
+  tax_category_code?: string;
+  secondary_establishment?: string;
 }
 
 export interface Plan {
@@ -183,6 +196,7 @@ export interface PaginatedData<T> {
 }
 
 export interface PageProps {
+  [key: string]: any;
   auth: {
     user: User;
   };

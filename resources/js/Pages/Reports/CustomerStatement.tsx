@@ -1,9 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Customer, Invoice, PaginatedData, PageProps } from '@/types';
+import type { Customer, Invoice, PaginatedData, PageProps, Payment } from '@/types';
 
 interface InvoiceWithPayments extends Invoice {
-  payments: Array<{ amount: string; payment_date: string }>;
+  payments: Payment[];
 }
 
 interface Props extends PageProps {

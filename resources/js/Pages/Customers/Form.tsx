@@ -1,9 +1,10 @@
-import { FormEvent } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import type { FormEvent } from 'react';
+import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Select } from '@/Components/ui/Select';
-import { Button } from '@/Components/ui/Button';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import type { Customer } from '@/types';
 
 interface CustomerFormData {
     name: string;
@@ -52,7 +53,7 @@ const personTypes = [
 ];
 
 interface Props {
-    customer?: CustomerFormData & { id: string };
+    customer?: Partial<Customer> & { id: string };
     isEdit?: boolean;
 }
 

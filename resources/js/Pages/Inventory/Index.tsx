@@ -1,12 +1,13 @@
-import { Head, useForm, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, useForm } from '@inertiajs/react';
+import type { FormEvent} from 'react';
+import { useState } from 'react';
+import { Badge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
-import { Badge } from '@/Components/ui/Badge';
 import { Modal } from '@/Components/ui/Modal';
 import { Pagination } from '@/Components/ui/Pagination';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Product, PaginatedData, PageProps } from '@/types';
-import { FormEvent, useState } from 'react';
 
 interface StockMovement {
     id: string;
@@ -37,7 +38,7 @@ export default function Index({ products, recentMovements, lowStockCount }: Prop
         notes: '',
     });
 
-    const openAdjust = (product: any) => {
+    const openAdjust = (product: Product) => {
         setSelectedProduct(product);
         form.setData('product_id', product.id);
         form.setData('quantity', '');

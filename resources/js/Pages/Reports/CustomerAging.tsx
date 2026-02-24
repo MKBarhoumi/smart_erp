@@ -1,6 +1,5 @@
 import { Head } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Badge } from '@/Components/ui/Badge';
 
 interface AgingCustomer {
     id: string;
@@ -15,14 +14,14 @@ interface AgingCustomer {
 }
 
 interface Props {
-    customers: AgingCustomer[] | { data: AgingCustomer[]; [key: string]: any };
-    totals?: {
+    customers: AgingCustomer[];
+    totals: {
         total_outstanding: string;
         current: string;
         days_30_60: string;
         days_60_90: string;
         over_90: string;
-    } | null;
+    };
 }
 
 const defaultTotals = {
@@ -34,8 +33,6 @@ const defaultTotals = {
 };
 
 export default function CustomerAging({ customers = [], totals }: Props) {
-    // normalize customers — accept array or Laravel paginator (with .data)
-    const list: AgingCustomer[] = Array.isArray(customers) ? customers : (customers && Array.isArray((customers as any).data) ? (customers as any).data : []);
     const safeTotals = totals ?? defaultTotals;
     const fmt = (val: string) => parseFloat(val || '0').toFixed(3);
 
@@ -88,7 +85,7 @@ export default function CustomerAging({ customers = [], totals }: Props) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {list.map((c) => {
+                                {customers.map((c) => {
                                     const over90 = parseFloat(c.over_90 || '0');
                                     return (
                                         <tr key={c.id} className={over90 > 0 ? 'bg-red-50' : ''}>
@@ -103,19 +100,19 @@ export default function CustomerAging({ customers = [], totals }: Props) {
                                         </tr>
                                     );
                                 })}
-                                {list.length === 0 && (
+                                {customers.length === 0 && (
                                     <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">No outstanding receivables.</td></tr>
                                 )}
                             </tbody>
-                            {list.length > 0 && (
+                            {customers.length > 0 && (
                                 <tfoot className="border-t font-bold">
                                     <tr>
                                         <td className="px-4 py-3" colSpan={2}>Total</td>
-                                        <td className="px-4 py-3 text-right">{fmt(safeTotals.current)}</td>
-                                        <td className="px-4 py-3 text-right">{fmt(safeTotals.days_30_60)}</td>
-                                        <td className="px-4 py-3 text-right">{fmt(safeTotals.days_60_90)}</td>
-                                        <td className="px-4 py-3 text-right text-red-600">{fmt(safeTotals.over_90)}</td>
-                                        <td className="px-4 py-3 text-right">{fmt(safeTotals.total_outstanding)}</td>
+                                        <td className="px-4 py-3 text-right">{fmt(totals.current)}</td>
+                                        <td className="px-4 py-3 text-right">{fmt(totals.days_30_60)}</td>
+                                        <td className="px-4 py-3 text-right">{fmt(totals.days_60_90)}</td>
+                                        <td className="px-4 py-3 text-right text-red-600">{fmt(totals.over_90)}</td>
+                                        <td className="px-4 py-3 text-right">{fmt(totals.total_outstanding)}</td>
                                         <td></td>
                                     </tr>
                                 </tfoot>

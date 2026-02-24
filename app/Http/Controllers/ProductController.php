@@ -17,8 +17,8 @@ class ProductController extends Controller
     {
         $products = Product::query()
             ->when(request('search'), function ($query, $search) {
-                $query->where('name', 'ilike', "%{$search}%")
-                    ->orWhere('code', 'ilike', "%{$search}%");
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%");
             })
             ->orderBy('name')
             ->paginate(15)

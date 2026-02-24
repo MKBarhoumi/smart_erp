@@ -1,9 +1,9 @@
 import { Head, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { useState } from 'react';
 import { Input } from '@/Components/ui/Input';
 import { Pagination } from '@/Components/ui/Pagination';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { PaginatedData, PageProps } from '@/types';
-import { useState } from 'react';
 
 interface AuditLogEntry {
     id: string;
@@ -12,8 +12,8 @@ interface AuditLogEntry {
     event: string;
     auditable_type: string;
     auditable_id: string;
-    old_values: Record<string, any> | null;
-    new_values: Record<string, any> | null;
+    old_values: Record<string, unknown> | null;
+    new_values: Record<string, unknown> | null;
     ip_address: string;
     user_agent: string;
     created_at: string;

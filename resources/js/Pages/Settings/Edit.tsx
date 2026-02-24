@@ -1,11 +1,11 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Input } from '@/Components/ui/Input';
-import { Select } from '@/Components/ui/Select';
-import { Button } from '@/Components/ui/Button';
+import type { FormEvent} from 'react';
+import { useRef, useState } from 'react';
 import { Badge } from '@/Components/ui/Badge';
+import { Button } from '@/Components/ui/Button';
+import { Input } from '@/Components/ui/Input';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { CompanySettings, PageProps } from '@/types';
-import { FormEvent, useRef, useState } from 'react';
 
 interface Props extends PageProps {
     settings: CompanySettings;
@@ -22,7 +22,7 @@ interface Props extends PageProps {
 export default function Edit({ settings, certificateInfo }: Props) {
     const { data, setData, put, processing, errors } = useForm({
         company_name: settings.company_name ?? '',
-        matricule_fiscale: settings.matricule_fiscale ?? '',
+        matricule_fiscal: settings.matricule_fiscal ?? '',
         tax_category_code: settings.tax_category_code ?? '',
         secondary_establishment: settings.secondary_establishment ?? '000',
         tax_office: settings.tax_office ?? '',
@@ -31,7 +31,7 @@ export default function Edit({ settings, certificateInfo }: Props) {
         address_street: settings.address_street ?? '',
         address_city: settings.address_city ?? '',
         address_postal_code: settings.address_postal_code ?? '',
-        address_country_code: settings.address_country_code ?? 'TN',
+        country_code: settings.country_code ?? 'TN',
         phone: settings.phone ?? '',
         fax: settings.fax ?? '',
         email: settings.email ?? '',
@@ -65,6 +65,7 @@ export default function Edit({ settings, certificateInfo }: Props) {
         formData.append('certificate_passphrase', passphrase);
 
         setCertUploading(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         router.post('/settings/certificate', formData as any, {
             onFinish: () => setCertUploading(false),
         });
@@ -77,6 +78,7 @@ export default function Edit({ settings, certificateInfo }: Props) {
         formData.append('logo', file);
 
         setLogoUploading(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         router.post('/settings/logo', formData as any, {
             onFinish: () => setLogoUploading(false),
         });
@@ -94,7 +96,7 @@ export default function Edit({ settings, certificateInfo }: Props) {
                     <h2 className="mb-4 text-lg font-semibold">Tax Identity</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <Input label="Company Name" value={data.company_name} onChange={(e) => setData('company_name', e.target.value)} error={errors.company_name} required />
-                        <Input label="Tax ID" value={data.matricule_fiscale} onChange={(e) => setData('matricule_fiscale', e.target.value)} error={errors.matricule_fiscale} placeholder="1234567A/B/C/000" required />
+                        <Input label="Tax ID" value={data.matricule_fiscal} onChange={(e) => setData('matricule_fiscal', e.target.value)} error={errors.matricule_fiscal} placeholder="1234567A/B/C/000" required />
                         <Input label="Category Code" value={data.tax_category_code} onChange={(e) => setData('tax_category_code', e.target.value)} error={errors.tax_category_code} />
                         <Input label="Secondary Establishment" value={data.secondary_establishment} onChange={(e) => setData('secondary_establishment', e.target.value)} error={errors.secondary_establishment} />
                         <Input label="Tax Office" value={data.tax_office} onChange={(e) => setData('tax_office', e.target.value)} error={errors.tax_office} />
@@ -110,7 +112,7 @@ export default function Edit({ settings, certificateInfo }: Props) {
                         <div className="sm:col-span-2"><Input label="Street" value={data.address_street} onChange={(e) => setData('address_street', e.target.value)} error={errors.address_street} /></div>
                         <Input label="City" value={data.address_city} onChange={(e) => setData('address_city', e.target.value)} error={errors.address_city} />
                         <Input label="Postal Code" value={data.address_postal_code} onChange={(e) => setData('address_postal_code', e.target.value)} error={errors.address_postal_code} />
-                        <Input label="Country" value={data.address_country_code} onChange={(e) => setData('address_country_code', e.target.value)} error={errors.address_country_code} />
+                        <Input label="Country" value={data.country_code} onChange={(e) => setData('country_code', e.target.value)} error={errors.country_code} />
                     </div>
                 </div>
 

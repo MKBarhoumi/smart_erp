@@ -13,8 +13,8 @@ class AuditLogController extends Controller
     {
         $logs = AuditLog::query()
             ->with('user')
-            ->when($request->search, fn ($q, $search) => $q->where('event', 'ilike', "%{$search}%")
-                ->orWhere('auditable_type', 'ilike', "%{$search}%"))
+            ->when($request->search, fn ($q, $search) => $q->where('event', 'like', "%{$search}%")
+                ->orWhere('auditable_type', 'like', "%{$search}%"))
             ->when($request->user_id, fn ($q, $userId) => $q->where('user_id', $userId))
             ->when($request->event, fn ($q, $event) => $q->where('event', $event))
             ->when($request->date_from, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))

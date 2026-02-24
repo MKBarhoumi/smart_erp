@@ -22,10 +22,10 @@ class PaymentController extends Controller
         ])
             ->when($request->input('search'), function ($query, $search) {
                 $query->whereHas('invoice', function ($q) use ($search) {
-                    $q->where('invoice_number', 'ilike', "%{$search}%")
-                        ->orWhereHas('customer', fn ($cq) => $cq->where('name', 'ilike', "%{$search}%"));
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhereHas('customer', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
                 })
-                    ->orWhere('reference', 'ilike', "%{$search}%");
+                    ->orWhere('reference', 'like', "%{$search}%");
             })
             ->when($request->input('method'), fn ($q, $method) => $q->where('method', $method))
             ->when($request->input('date_from'), fn ($q, $d) => $q->where('payment_date', '>=', $d))

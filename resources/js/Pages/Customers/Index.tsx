@@ -1,11 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { useState } from 'react';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
-import { Table } from '@/Components/ui/Table';
 import { Pagination } from '@/Components/ui/Pagination';
+import { Table } from '@/Components/ui/Table';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Customer, PaginatedData } from '@/types';
-import { useState } from 'react';
 
 interface Props {
     customers: PaginatedData<Customer>;

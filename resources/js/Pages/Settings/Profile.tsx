@@ -1,9 +1,10 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Input } from '@/Components/ui/Input';
+import type { FormEvent} from 'react';
+import { useState } from 'react';
 import { Button } from '@/Components/ui/Button';
-import type { User, PageProps } from '@/types';
-import { FormEvent, useState, useRef } from 'react';
+import { Input } from '@/Components/ui/Input';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import type { PageProps } from '@/types';
 
 interface Props extends PageProps {
     mustVerifyEmail: boolean;
@@ -13,7 +14,7 @@ interface Props extends PageProps {
 export default function Profile({ mustVerifyEmail, status }: Props) {
     const user = usePage<PageProps>().props.auth.user;
 
-    const { data, setData, patch, processing, errors, reset } = useForm({
+    const { data, setData, patch, processing, errors } = useForm({
         name: user.name,
         email: user.email,
     });
@@ -220,7 +221,7 @@ export default function Profile({ mustVerifyEmail, status }: Props) {
 
                     <Button
                         type="button"
-                        variant="destructive"
+                        variant="danger"
                         onClick={() => setShowDeleteModal(true)}
                     >
                         Delete Account
@@ -265,7 +266,7 @@ export default function Profile({ mustVerifyEmail, status }: Props) {
                             <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
                                 <Button
                                     type="button"
-                                    variant="destructive"
+                                    variant="danger"
                                     loading={deleteProcessing}
                                     onClick={deleteAccount}
                                     disabled={!deletePassword}

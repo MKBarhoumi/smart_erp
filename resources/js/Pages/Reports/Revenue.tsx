@@ -1,8 +1,6 @@
-import { Head } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, router } from '@inertiajs/react';
 import { Select } from '@/Components/ui/Select';
-import { useState } from 'react';
-import { router } from '@inertiajs/react';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 interface MonthlyData {
     month: string;

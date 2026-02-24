@@ -1,9 +1,9 @@
-import { FormEvent } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import type { FormEvent } from 'react';
+import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Select } from '@/Components/ui/Select';
-import { Button } from '@/Components/ui/Button';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 interface ProductFormData {
     code: string;
@@ -36,8 +36,10 @@ const uomOptions = [
     { value: 'J', label: 'Day' },
 ];
 
+import type { Product } from '@/types';
+
 interface Props {
-    product?: ProductFormData & { id: string };
+    product?: Partial<Product> & { id: string };
     isEdit?: boolean;
 }
 

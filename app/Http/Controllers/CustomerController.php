@@ -23,9 +23,9 @@ class CustomerController extends Controller
     {
         $customers = Customer::query()
             ->when(request('search'), function ($query, $search) {
-                $query->where('name', 'ilike', "%{$search}%")
-                    ->orWhere('identifier_value', 'ilike', "%{$search}%")
-                    ->orWhere('email', 'ilike', "%{$search}%");
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('identifier_value', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             })
             ->orderBy('name')
             ->paginate(15)

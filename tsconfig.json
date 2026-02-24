@@ -109,9 +109,10 @@
         "skipLibCheck": true /* Skip type checking all .d.ts files. */,
         "baseUrl": ".",
         "paths": {
-            "@/*": ["resources.old/js/*"]
+            "@/*": ["resources/js/*"]
         },
+        "types": ["vite/client"],
         "jsx": "react-jsx"
     },
-    "include": ["resources.old/js/**/*.ts", "resources.old/js/**/*.d.ts", "resources.old/js/**/*.tsx"]
+    "include": ["resources/js/**/*"]
 }

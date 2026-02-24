@@ -1,4 +1,3 @@
-import { Link } from '@inertiajs/react';
 
 interface Column<T> {
   key: string;

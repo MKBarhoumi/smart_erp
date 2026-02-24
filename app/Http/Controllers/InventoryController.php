@@ -18,8 +18,8 @@ class InventoryController extends Controller
     {
         $products = Product::where('track_inventory', true)
             ->when(request('search'), function ($query, $search) {
-                $query->where('name', 'ilike', "%{$search}%")
-                    ->orWhere('code', 'ilike', "%{$search}%");
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%");
             })
             ->orderBy('name')
             ->paginate(20)

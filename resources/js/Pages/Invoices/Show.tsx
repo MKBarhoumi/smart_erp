@@ -1,12 +1,13 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Button } from '@/Components/ui/Button';
+import type { FormEvent} from 'react';
+import { useState } from 'react';
 import { InvoiceStatusBadge } from '@/Components/ui/Badge';
+import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
-import { Select } from '@/Components/ui/Select';
 import { Modal } from '@/Components/ui/Modal';
+import { Select } from '@/Components/ui/Select';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Invoice, Payment, PageProps } from '@/types';
-import { FormEvent, useState } from 'react';
 
 interface Props extends PageProps {
     invoice: Invoice & {
@@ -158,10 +159,10 @@ export default function Show({ invoice, canValidate, canSign, canSubmit, canEdit
                                         <td className="px-3 py-2 text-right">{parseFloat(line.quantity).toFixed(3)}</td>
                                         <td className="px-3 py-2 text-right">{parseFloat(line.unit_price).toFixed(3)}</td>
                                         <td className="px-3 py-2 text-right">{parseFloat(line.discount_rate).toFixed(2)}%</td>
-                                        <td className="px-3 py-2 text-right">{parseFloat(line.line_total_ht).toFixed(3)}</td>
+                                        <td className="px-3 py-2 text-right">{parseFloat(line.line_total_ht ?? '0').toFixed(3)}</td>
                                         <td className="px-3 py-2 text-right">{parseFloat(line.tva_rate).toFixed(0)}%</td>
                                         <td className="px-3 py-2 text-right">{parseFloat(line.tva_amount).toFixed(3)}</td>
-                                        <td className="px-3 py-2 text-right font-medium">{parseFloat(line.line_total_ttc).toFixed(3)}</td>
+                                        <td className="px-3 py-2 text-right font-medium">{parseFloat(line.line_total_ttc ?? '0').toFixed(3)}</td>
                                     </tr>
                                 ))}
                             </tbody>

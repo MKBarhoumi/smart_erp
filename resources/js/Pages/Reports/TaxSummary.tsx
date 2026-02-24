@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Select } from '@/Components/ui/Select';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 interface QuarterData {
     quarter: number;

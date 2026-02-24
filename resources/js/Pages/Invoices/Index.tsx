@@ -1,12 +1,12 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { useState } from 'react';
+import { InvoiceStatusBadge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
-import { Select } from '@/Components/ui/Select';
-import { InvoiceStatusBadge } from '@/Components/ui/Badge';
 import { Pagination } from '@/Components/ui/Pagination';
+import { Select } from '@/Components/ui/Select';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Invoice, PaginatedData } from '@/types';
-import { useState } from 'react';
 
 interface Props {
     invoices: PaginatedData<Invoice & { customer: { id: string; name: string } | null }>;

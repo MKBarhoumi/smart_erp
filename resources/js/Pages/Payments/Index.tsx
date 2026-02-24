@@ -1,8 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Button } from '@/Components/ui/Button';
 import { Badge } from '@/Components/ui/Badge';
 import { Pagination } from '@/Components/ui/Pagination';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Payment, Invoice, PaginatedData, PageProps } from '@/types';
 
 interface PaymentWithInvoice extends Payment {

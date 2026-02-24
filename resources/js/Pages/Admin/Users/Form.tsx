@@ -1,10 +1,10 @@
 import { Head, useForm, Link } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import type { FormEvent } from 'react';
+import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Select } from '@/Components/ui/Select';
-import { Button } from '@/Components/ui/Button';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { User } from '@/types';
-import { FormEvent } from 'react';
 
 interface Props {
     user?: User;
@@ -58,7 +58,7 @@ export default function Form({ user, roles, isEdit = false }: Props) {
                         label="Role"
                         options={roles.map((r) => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) }))}
                         value={data.role}
-                        onChange={(e) => setData('role', e.target.value)}
+                        onChange={(e) => setData('role', e.target.value as User['role'])}
                         error={errors.role}
                     />
                 </div>

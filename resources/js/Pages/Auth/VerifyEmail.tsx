@@ -1,6 +1,6 @@
 import { Head, useForm, Link } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/Components/ui/Button';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { PageProps } from '@/types';
 
 interface Props extends PageProps {
