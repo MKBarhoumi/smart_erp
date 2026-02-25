@@ -222,3 +222,96 @@ export interface DashboardData {
   };
   monthly_revenue: Array<{ month: string; amount: number }>;
 }
+
+// TEIF-based Invoice types (Elfatoora format)
+export interface InvoicePartner {
+  identifier: string;
+  identifier_type: string;
+  name: string;
+  street: string | null;
+  city: string | null;
+  postal_code: string | null;
+  country: string | null;
+}
+
+export interface InvoiceLine {
+  id: string;
+  item_identifier: string;
+  item_code: string;
+  item_description: string;
+  quantity: string;
+  measurement_unit: string;
+  tax_rate: string;
+  unit_price: string;
+  line_net: string;
+}
+
+export interface InvoiceTaxSummary {
+  tax_type_code: string;
+  tax_type_name: string;
+  tax_rate: string;
+  taxable_amount: string;
+  tax_amount: string;
+}
+
+export interface Invoice {
+  id: string;
+  document_identifier: string;
+  document_type_code: string;
+  document_type_name: string;
+  invoice_date: string | null;
+  status: 'draft' | 'validated' | 'signed' | 'submitted' | 'accepted' | 'rejected';
+  total_ht: string;
+  total_tva: string;
+  total_ttc: string;
+  notes: string | null;
+  ref_ttn_value: string | null;
+  ref_cev: string | null;
+  signed_xml: string | null;
+  submitted_at: string | null;
+  accepted_at: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  sender?: InvoicePartner;
+  receiver?: InvoicePartner;
+  sender_identifier?: string;
+  sender_name?: string;
+  receiver_identifier?: string;
+  receiver_name?: string;
+  lines?: InvoiceLine[];
+  taxes?: InvoiceTaxSummary[];
+  creator?: { id: string; name: string };
+}
+
+export interface InvoiceFormLine {
+  product_id: string;
+  item_code: string;
+  item_description: string;
+  quantity: string;
+  unit_of_measure: string;
+  unit_price: string;
+  tva_rate: string;
+}
+
+export interface InvoiceFormData {
+  document_type_code: string;
+  invoice_date: string;
+  due_date: string;
+  notes: string;
+  sender_identifier: string;
+  sender_type: string;
+  sender_name: string;
+  sender_street: string;
+  sender_city: string;
+  sender_postal_code: string;
+  sender_country: string;
+  receiver_identifier: string;
+  receiver_type: string;
+  receiver_name: string;
+  receiver_street: string;
+  receiver_city: string;
+  receiver_postal_code: string;
+  receiver_country: string;
+  lines: InvoiceFormLine[];
+}
+

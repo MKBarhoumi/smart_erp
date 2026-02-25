@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\TTNSubmissionException;
+use App\Models\Invoice;
 use App\Models\OldInvoice;
 use App\Models\TTNSubmissionLog;
 use Illuminate\Support\Facades\Http;
@@ -82,6 +83,76 @@ class TTNApiClient
         } catch (\Throwable $e) {
             Log::error('TTN submission error', [
                 'oldinvoice_id' => $oldinvoice->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $log->update([
+                'status' => 'error',
+                'response' => $e->getMessage(),
+            ]);
+
+            throw new TTNSubmissionException(
+                "TTN communication error: {$e->getMessage()}",
+                previous: $e,
+            );
+        }
+    }
+
+    /**
+     * Submit a signed TEIF XML for an Invoice to TTN.
+     *
+     * @return array{ref_ttn_val: string, cev: string, status: string, response_raw: string}
+     *
+     * @throws TTNSubmissionException
+     */
+    public function submitToTTN(Invoice $invoice, string $signedXml): array
+    {
+        $log = TTNSubmissionLog::create([
+            'invoice_id' => $invoice->id,
+            'direction' => 'outbound',
+            'payload' => $signedXml,
+            'status' => 'pending',
+        ]);
+
+        try {
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Content-Type' => 'application/xml',
+                    'Authorization' => "Bearer {$this->apiKey}",
+                    'Accept' => 'application/xml',
+                ])
+                ->withBody($signedXml, 'application/xml')
+                ->post("{$this->baseUrl}/invoices");
+
+            $responseBody = $response->body();
+
+            $log->update([
+                'response' => $responseBody,
+                'http_status' => $response->status(),
+            ]);
+
+            if (!$response->successful()) {
+                $errorMessage = $this->extractErrorMessage($responseBody);
+                $log->update(['status' => 'error']);
+
+                throw new TTNSubmissionException(
+                    "TTN submission failed (HTTP {$response->status()}): {$errorMessage}"
+                );
+            }
+
+            $parsed = $this->parseSuccessResponse($responseBody);
+
+            $log->update([
+                'status' => 'success',
+                'ref_ttn_val' => $parsed['ref_ttn_val'],
+            ]);
+
+            return $parsed;
+        } catch (TTNSubmissionException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('TTN submission error', [
+                'invoice_id' => $invoice->id,
                 'error' => $e->getMessage(),
             ]);
 

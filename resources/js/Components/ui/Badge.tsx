@@ -34,3 +34,18 @@ export function OldInvoiceStatusBadge({ status }: { status: string }) {
 
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }
+
+export function InvoiceStatusBadge({ status }: { status: string }) {
+  const statusMap: Record<string, { variant: BadgeProps['variant']; label: string }> = {
+    draft: { variant: 'default', label: 'Draft' },
+    validated: { variant: 'info', label: 'Validated' },
+    signed: { variant: 'info', label: 'Signed' },
+    submitted: { variant: 'warning', label: 'Submitted' },
+    accepted: { variant: 'success', label: 'Accepted' },
+    rejected: { variant: 'danger', label: 'Rejected' },
+  };
+
+  const config = statusMap[status] || { variant: 'default' as const, label: status };
+
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+}

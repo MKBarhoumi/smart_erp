@@ -1,31 +1,17 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<con:soapui-project id="elfatoora-invoicing" activeEnvironment="Default" 
-    name="Elfatoora Invoicing API" 
-    resourceRoot="" 
-    soapui-version="5.7.0" 
-    abortOnError="false" 
-    runType="SEQUENTIAL"
-    xmlns:con="http://eviware.com/soapui/config">
+<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project id="elfatoora-invoicing" activeEnvironment="Default" name="Elfatoora Invoicing API" resourceRoot="" soapui-version="5.9.1" abortOnError="false" runType="SEQUENTIAL" xmlns:con="http://eviware.com/soapui/config">
     
     <con:settings/>
     
-    <con:interface xsi:type="con:WsdlInterface" 
-        wsaVersion="NONE" 
-        name="ElfatooraPortType" 
-        type="wsdl" 
-        bindingName="{http://elfatoora.tn/invoicing/v1}ElfatooraBinding" 
-        soapVersion="1_1" 
-        anonymous="optional" 
-        definition="http://localhost:8000/soap/invoicing?wsdl"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <con:interface xsi:type="con:WsdlInterface" wsaVersion="NONE" name="ElfatooraPortType" type="wsdl" bindingName="{http://elfatoora.tn/invoicing/v1}ElfatooraBinding" soapVersion="1_1" anonymous="optional" definition="http://localhost:8000/soap/invoicing?wsdl" id="db28001c-3152-422b-8e0d-23caf1302205" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         
         <!-- ==================== SUBMIT INVOICE ==================== -->
-        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/SubmitInvoice" name="SubmitInvoice" bindingOperationName="SubmitInvoice" type="Request-Response" outputName="SubmitInvoiceOutput" inputName="SubmitInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+        <con:settings/><con:definitionCache/><con:endpoints/><con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/SubmitInvoice" name="SubmitInvoice" bindingOperationName="SubmitInvoice" type="Request-Response" outputName="SubmitInvoiceOutput" inputName="SubmitInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional" id="0bccb597-ef82-4839-ab06-702b59510931">
             <con:settings/>
             
             <!-- Happy Path Request -->
-            <con:call name="SubmitInvoice - Happy Path">
-                <con:settings/>
+            <con:call name="SubmitInvoice - Happy Path" id="51b9f7da-f7e8-421a-a493-873bc369c0fa">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -142,12 +128,12 @@
       </v1:SubmitInvoiceRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/SubmitInvoice"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/SubmitInvoice"/>
+            <con:wsrmConfig version="1.2"/></con:call>
             
             <!-- Invalid XML Request -->
-            <con:call name="SubmitInvoice - Invalid XML">
-                <con:settings/>
+            <con:call name="SubmitInvoice - Invalid XML" id="b0f4936c-84ac-4197-85d6-4cf6ef3fe3ae">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -159,16 +145,16 @@
       </v1:SubmitInvoiceRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/SubmitInvoice"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/SubmitInvoice"/>
+            <con:wsrmConfig version="1.2"/></con:call>
         </con:operation>
         
         <!-- ==================== GET INVOICE ==================== -->
-        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/GetInvoice" name="GetInvoice" bindingOperationName="GetInvoice" type="Request-Response" outputName="GetInvoiceOutput" inputName="GetInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/GetInvoice" name="GetInvoice" bindingOperationName="GetInvoice" type="Request-Response" outputName="GetInvoiceOutput" inputName="GetInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional" id="8e7e5523-ec27-4248-b2c6-51bbf7b84c55">
             <con:settings/>
             
-            <con:call name="GetInvoice - Happy Path">
-                <con:settings/>
+            <con:call name="GetInvoice - Happy Path" id="db1a3493-bc7a-4192-ad72-5d2d96f931f0">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -179,11 +165,11 @@
       </v1:GetInvoiceRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/GetInvoice"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/GetInvoice"/>
+            <con:wsrmConfig version="1.2"/></con:call>
             
-            <con:call name="GetInvoice - Not Found">
-                <con:settings/>
+            <con:call name="GetInvoice - Not Found" id="a3a885db-a6f7-42c1-a97e-046337f669a8">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -194,36 +180,36 @@
       </v1:GetInvoiceRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/GetInvoice"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/GetInvoice"/>
+            <con:wsrmConfig version="1.2"/></con:call>
         </con:operation>
         
         <!-- ==================== VALIDATE INVOICE ==================== -->
-        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/ValidateInvoice" name="ValidateInvoice" bindingOperationName="ValidateInvoice" type="Request-Response" outputName="ValidateInvoiceOutput" inputName="ValidateInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/ValidateInvoice" name="ValidateInvoice" bindingOperationName="ValidateInvoice" type="Request-Response" outputName="ValidateInvoiceOutput" inputName="ValidateInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional" id="8cf17f4e-966f-46f6-a878-68478be1ecdd">
             <con:settings/>
             
-            <con:call name="ValidateInvoice - Happy Path">
-                <con:settings/>
+            <con:call name="ValidateInvoice - Happy Path" id="b0835647-b96f-4747-8bf2-c942aa1c3981">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
    <soapenv:Header/>
    <soapenv:Body>
       <v1:ValidateInvoiceRequest>
-         <v1:invoiceId>1</v1:invoiceId>
+         <v1:invoiceId>4</v1:invoiceId>
       </v1:ValidateInvoiceRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ValidateInvoice"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ValidateInvoice"/>
+            <con:wsrmConfig version="1.2"/></con:call>
         </con:operation>
         
         <!-- ==================== LIST INVOICES ==================== -->
-        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/ListInvoices" name="ListInvoices" bindingOperationName="ListInvoices" type="Request-Response" outputName="ListInvoicesOutput" inputName="ListInvoicesInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/ListInvoices" name="ListInvoices" bindingOperationName="ListInvoices" type="Request-Response" outputName="ListInvoicesOutput" inputName="ListInvoicesInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional" id="7ba18a32-204d-4e72-9f96-b249e196fe50">
             <con:settings/>
             
-            <con:call name="ListInvoices - All">
-                <con:settings/>
+            <con:call name="ListInvoices - All" id="447a67bb-6e6d-4cdc-8645-dff3a53bb215">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -235,11 +221,11 @@
       </v1:ListInvoicesRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
+            <con:wsrmConfig version="1.2"/></con:call>
             
-            <con:call name="ListInvoices - Filter by Sender">
-                <con:settings/>
+            <con:call name="ListInvoices - Filter by Sender" id="251f3b81-61cc-4db8-9516-1d6310d2fc83">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -252,11 +238,11 @@
       </v1:ListInvoicesRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
+            <con:wsrmConfig version="1.2"/></con:call>
             
-            <con:call name="ListInvoices - Filter by Status">
-                <con:settings/>
+            <con:call name="ListInvoices - Filter by Status" id="16f84e5d-4797-41e2-ad40-b20dc4e13384">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -269,16 +255,16 @@
       </v1:ListInvoicesRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/ListInvoices"/>
+            <con:wsrmConfig version="1.2"/></con:call>
         </con:operation>
         
         <!-- ==================== UPDATE INVOICE ==================== -->
-        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/UpdateInvoice" name="UpdateInvoice" bindingOperationName="UpdateInvoice" type="Request-Response" outputName="UpdateInvoiceOutput" inputName="UpdateInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/UpdateInvoice" name="UpdateInvoice" bindingOperationName="UpdateInvoice" type="Request-Response" outputName="UpdateInvoiceOutput" inputName="UpdateInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional" id="bba04f49-20a1-4a99-8ac4-c7a59982add6">
             <con:settings/>
             
-            <con:call name="UpdateInvoice - Happy Path">
-                <con:settings/>
+            <con:call name="UpdateInvoice - Happy Path" id="56039e6c-e472-45e6-8f58-237765ab5fe4">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -395,16 +381,16 @@
       </v1:UpdateInvoiceRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/UpdateInvoice"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/UpdateInvoice"/>
+            <con:wsrmConfig version="1.2"/></con:call>
         </con:operation>
         
         <!-- ==================== DELETE INVOICE ==================== -->
-        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/DeleteInvoice" name="DeleteInvoice" bindingOperationName="DeleteInvoice" type="Request-Response" outputName="DeleteInvoiceOutput" inputName="DeleteInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/DeleteInvoice" name="DeleteInvoice" bindingOperationName="DeleteInvoice" type="Request-Response" outputName="DeleteInvoiceOutput" inputName="DeleteInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional" id="ff9b9220-a2b9-492f-9f07-93023d98ee4a">
             <con:settings/>
             
-            <con:call name="DeleteInvoice - Happy Path">
-                <con:settings/>
+            <con:call name="DeleteInvoice - Happy Path" id="640c8241-3c49-40e1-8f37-f60bc7f9e100">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -415,16 +401,16 @@
       </v1:DeleteInvoiceRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/DeleteInvoice"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/DeleteInvoice"/>
+            <con:wsrmConfig version="1.2"/></con:call>
         </con:operation>
         
         <!-- ==================== SIGN INVOICE ==================== -->
-        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/SignInvoice" name="SignInvoice" bindingOperationName="SignInvoice" type="Request-Response" outputName="SignInvoiceOutput" inputName="SignInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/SignInvoice" name="SignInvoice" bindingOperationName="SignInvoice" type="Request-Response" outputName="SignInvoiceOutput" inputName="SignInvoiceInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional" id="37b25e78-e9cb-44de-8082-01af53677ff1">
             <con:settings/>
             
-            <con:call name="SignInvoice - Request">
-                <con:settings/>
+            <con:call name="SignInvoice - Request" id="53336dd7-5c53-4c10-85d4-372b656843fb">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -442,16 +428,16 @@ MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0Gcsi...
       </v1:SignInvoiceRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/SignInvoice"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/SignInvoice"/>
+            <con:wsrmConfig version="1.2"/></con:call>
         </con:operation>
         
         <!-- ==================== VERIFY SIGNATURE ==================== -->
-        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/VerifySignature" name="VerifySignature" bindingOperationName="VerifySignature" type="Request-Response" outputName="VerifySignatureOutput" inputName="VerifySignatureInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional">
+        <con:operation isOneWay="false" action="http://elfatoora.tn/invoicing/v1/VerifySignature" name="VerifySignature" bindingOperationName="VerifySignature" type="Request-Response" outputName="VerifySignatureOutput" inputName="VerifySignatureInput" receivesAttachments="false" sendsAttachments="false" anonymous="optional" id="d72a33af-a0f1-4906-9cda-e9bb4a111575">
             <con:settings/>
             
-            <con:call name="VerifySignature - Request">
-                <con:settings/>
+            <con:call name="VerifySignature - Request" id="127fe7d0-f31d-47e0-a2b8-01ee316ea5fe">
+                <con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings>
                 <con:encoding>UTF-8</con:encoding>
                 <con:endpoint>http://localhost:8000/soap/invoicing</con:endpoint>
                 <con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://elfatoora.tn/invoicing/v1">
@@ -462,8 +448,8 @@ MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0Gcsi...
       </v1:VerifySignatureRequest>
    </soapenv:Body>
 </soapenv:Envelope>]]></con:request>
-                <con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/VerifySignature"/>
-            </con:call>
+                <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://elfatoora.tn/invoicing/v1/VerifySignature"/>
+            <con:wsrmConfig version="1.2"/></con:call>
         </con:operation>
         
     </con:interface>
@@ -476,61 +462,60 @@ MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0Gcsi...
         <con:testCase id="test-case-1" name="Invoice CRUD Operations" searchProperties="true" failOnError="true" failTestCaseOnErrors="true" keepSession="false" maxResults="0" timeout="0" discardOkResults="false">
             <con:settings/>
             
-            <con:testStep type="request" name="1. Submit Invoice">
+            <con:testStep type="request" name="1. Submit Invoice" id="71be6cc7-8ea0-4930-a605-d4103641d13f">
                 <con:settings/>
                 <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                     <con:interface>ElfatooraPortType</con:interface>
                     <con:operation>SubmitInvoice</con:operation>
-                    <con:request name="SubmitInvoice - Happy Path"/>
+                    <con:request name="1. Submit Invoice" id="e29b3687-c78b-4701-a26e-a87e4d84b445"><con:settings/><con:encoding>UTF-8</con:encoding><con:request/><con:credentials><con:authType>No Authorization</con:authType></con:credentials></con:request>
                 </con:config>
             </con:testStep>
             
-            <con:testStep type="request" name="2. Get Invoice">
+            <con:testStep type="request" name="2. Get Invoice" id="ebe9295f-e43c-4bd3-8306-8aacfa10e888">
                 <con:settings/>
                 <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                     <con:interface>ElfatooraPortType</con:interface>
                     <con:operation>GetInvoice</con:operation>
-                    <con:request name="GetInvoice - Happy Path"/>
+                    <con:request name="2. Get Invoice" id="118aeeaa-84b3-4874-8b4d-5c1ddfeb38aa"><con:settings/><con:encoding>UTF-8</con:encoding><con:request/><con:credentials><con:authType>No Authorization</con:authType></con:credentials></con:request>
                 </con:config>
             </con:testStep>
             
-            <con:testStep type="request" name="3. Validate Invoice">
+            <con:testStep type="request" name="3. Validate Invoice" id="6e7ab0f6-3fd4-45b5-9c37-3bb6936f5e35">
                 <con:settings/>
                 <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                     <con:interface>ElfatooraPortType</con:interface>
                     <con:operation>ValidateInvoice</con:operation>
-                    <con:request name="ValidateInvoice - Happy Path"/>
+                    <con:request name="3. Validate Invoice" id="0c55211c-d210-49dc-8ef2-af6c4623c688"><con:settings/><con:encoding>UTF-8</con:encoding><con:request/><con:credentials><con:authType>No Authorization</con:authType></con:credentials></con:request>
                 </con:config>
             </con:testStep>
             
-            <con:testStep type="request" name="4. List Invoices">
+            <con:testStep type="request" name="4. List Invoices" id="7fc18ad9-0583-4160-aed3-721b2cd8b9e3">
                 <con:settings/>
                 <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                     <con:interface>ElfatooraPortType</con:interface>
                     <con:operation>ListInvoices</con:operation>
-                    <con:request name="ListInvoices - All"/>
+                    <con:request name="4. List Invoices" id="af8761a1-1ba7-46ed-8ce0-f456d1b4dca1"><con:settings/><con:encoding>UTF-8</con:encoding><con:request/><con:credentials><con:authType>No Authorization</con:authType></con:credentials></con:request>
                 </con:config>
             </con:testStep>
             
-            <con:testStep type="request" name="5. Update Invoice">
+            <con:testStep type="request" name="5. Update Invoice" id="6dacae65-7de2-4de6-a633-800929873772">
                 <con:settings/>
                 <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                     <con:interface>ElfatooraPortType</con:interface>
                     <con:operation>UpdateInvoice</con:operation>
-                    <con:request name="UpdateInvoice - Happy Path"/>
+                    <con:request name="5. Update Invoice" id="d8df3c70-b2bb-470c-ade8-c1299ede8d34"><con:settings/><con:encoding>UTF-8</con:encoding><con:request/><con:credentials><con:authType>No Authorization</con:authType></con:credentials></con:request>
                 </con:config>
             </con:testStep>
             
-            <con:testStep type="request" name="6. Delete Invoice">
+            <con:testStep type="request" name="6. Delete Invoice" id="289f05fe-1df6-4d88-9a8d-c4e6df18c00d">
                 <con:settings/>
                 <con:config xsi:type="con:RequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                     <con:interface>ElfatooraPortType</con:interface>
                     <con:operation>DeleteInvoice</con:operation>
-                    <con:request name="DeleteInvoice - Happy Path"/>
+                    <con:request name="6. Delete Invoice" id="df6822da-72d2-44d4-840f-01d3aeee451a"><con:settings/><con:encoding>UTF-8</con:encoding><con:request/><con:credentials><con:authType>No Authorization</con:authType></con:credentials></con:request>
                 </con:config>
             </con:testStep>
-        </con:testCase>
-    </con:testSuite>
+        <con:properties/></con:testCase>
+    <con:properties/></con:testSuite>
     
-</con:soapui-project>
-
+<con:properties/><con:wssContainer/><con:oAuth2ProfileContainer/><con:oAuth1ProfileContainer/></con:soapui-project>
