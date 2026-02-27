@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Invoice;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class InvoiceFactory extends Factory
@@ -12,6 +13,7 @@ class InvoiceFactory extends Factory
     public function definition(): array
     {
         return [
+            'created_by' => User::factory(),
             'version' => '1.8.8',
             'controlling_agency' => 'TTN',
             'sender_identifier' => '0736202XAM000',

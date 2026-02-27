@@ -5,6 +5,7 @@ import { Input } from '@/Components/ui/Input';
 import { Pagination } from '@/Components/ui/Pagination';
 import { Table } from '@/Components/ui/Table';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatTND, formatNumber } from '@/utils/format';
 import type { Product, PaginatedData } from '@/types';
 
 interface Props {
@@ -50,13 +51,13 @@ export default function ProductsIndex({ products, filters }: Props) {
                             </Link>
                         )},
                         { key: 'name', label: 'Name' },
-                        { key: 'unit_price', label: 'Price excl. tax', render: (p) => `${Number(p.unit_price).toFixed(3)} TND` },
+                        { key: 'unit_price', label: 'Price excl. tax', render: (p) => formatTND(p.unit_price) },
                         { key: 'tva_rate', label: 'TVA %', render: (p) => `${p.tva_rate}%` },
                         { key: 'unit_of_measure', label: 'Unit' },
                         { key: 'current_stock', label: 'Stock', render: (p) => (
                             p.track_inventory ? (
                                 <span className={Number(p.current_stock) <= Number(p.min_stock_alert) ? 'text-red-600 font-semibold' : ''}>
-                                    {Number(p.current_stock).toFixed(3)}
+                                    {formatNumber(p.current_stock)}
                                 </span>
                             ) : <span className="text-gray-400">—</span>
                         )},

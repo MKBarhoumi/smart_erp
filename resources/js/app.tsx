@@ -4,7 +4,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 
 createInertiaApp({
-  title: (title) => title ? `${title} — Smart ERP Lite` : 'Smart ERP Lite',
+  title: (title) => title ? `${title} — Novation ERP` : 'Novation ERP',
   resolve: (name) =>
     resolvePageComponent(
       `./Pages/${name}.tsx`,

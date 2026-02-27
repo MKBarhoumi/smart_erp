@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { Select } from '@/Components/ui/Select';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatTND, formatNumber } from '@/utils/format';
 
 interface QuarterData {
     quarter: number;
@@ -25,7 +26,6 @@ export default function TaxSummary({ data, year, availableYears, totals }: Props
     const safeAvailableYears = availableYears ?? [];
     const safeTotals = totals ?? { tva: '0', timbre: '0', total: '0', base: '0' };
     const safeYear = year ?? new Date().getFullYear();
-    const fmt = (v: string) => parseFloat(v || '0').toFixed(3);
 
     return (
         <AuthenticatedLayout>
@@ -47,15 +47,15 @@ export default function TaxSummary({ data, year, availableYears, totals }: Props
                 <div className="grid gap-4 sm:grid-cols-3">
                     <div className="rounded-lg bg-white p-5 shadow">
                         <p className="text-sm text-gray-500">VAT Collected</p>
-                        <p className="mt-1 text-2xl font-bold text-blue-600">{fmt(safeTotals.tva)} TND</p>
+                        <p className="mt-1 text-2xl font-bold text-blue-600">{formatTND(safeTotals.tva)}</p>
                     </div>
                     <div className="rounded-lg bg-white p-5 shadow">
                         <p className="text-sm text-gray-500">Stamp Duty</p>
-                        <p className="mt-1 text-2xl font-bold text-purple-600">{fmt(safeTotals.timbre)} TND</p>
+                        <p className="mt-1 text-2xl font-bold text-purple-600">{formatTND(safeTotals.timbre)}</p>
                     </div>
                     <div className="rounded-lg bg-white p-5 shadow">
                         <p className="text-sm text-gray-500">Total Taxes</p>
-                        <p className="mt-1 text-2xl font-bold text-gray-900">{fmt(safeTotals.total)} TND</p>
+                        <p className="mt-1 text-2xl font-bold text-gray-900">{formatTND(safeTotals.total)}</p>
                     </div>
                 </div>
 
@@ -79,10 +79,10 @@ export default function TaxSummary({ data, year, availableYears, totals }: Props
                                     <tr key={q.quarter}>
                                         <td className="px-4 py-3 font-medium">{quarterLabels[q.quarter]}</td>
                                         <td className="px-4 py-3 text-right">{q.oldinvoice_count}</td>
-                                        <td className="px-4 py-3 text-right">{fmt(q.taxable_base)}</td>
-                                        <td className="px-4 py-3 text-right">{fmt(q.tva_collected)}</td>
-                                        <td className="px-4 py-3 text-right">{fmt(q.timbre_fiscal)}</td>
-                                        <td className="px-4 py-3 text-right font-semibold">{fmt(q.total_tax)}</td>
+                                        <td className="px-4 py-3 text-right">{formatNumber(q.taxable_base)}</td>
+                                        <td className="px-4 py-3 text-right">{formatNumber(q.tva_collected)}</td>
+                                        <td className="px-4 py-3 text-right">{formatNumber(q.timbre_fiscal)}</td>
+                                        <td className="px-4 py-3 text-right font-semibold">{formatNumber(q.total_tax)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -90,10 +90,10 @@ export default function TaxSummary({ data, year, availableYears, totals }: Props
                                 <tr>
                                     <td className="px-4 py-3">Yearly Total</td>
                                     <td className="px-4 py-3 text-right">{safeData.reduce((s, q) => s + (q.oldinvoice_count || 0), 0)}</td>
-                                    <td className="px-4 py-3 text-right">{fmt(safeTotals.base)}</td>
-                                    <td className="px-4 py-3 text-right">{fmt(safeTotals.tva)}</td>
-                                    <td className="px-4 py-3 text-right">{fmt(safeTotals.timbre)}</td>
-                                    <td className="px-4 py-3 text-right">{fmt(safeTotals.total)}</td>
+                                    <td className="px-4 py-3 text-right">{formatNumber(safeTotals.base)}</td>
+                                    <td className="px-4 py-3 text-right">{formatNumber(safeTotals.tva)}</td>
+                                    <td className="px-4 py-3 text-right">{formatNumber(safeTotals.timbre)}</td>
+                                    <td className="px-4 py-3 text-right">{formatNumber(safeTotals.total)}</td>
                                 </tr>
                             </tfoot>
                         </table>

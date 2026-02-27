@@ -83,7 +83,7 @@ export default function Error404() {
                 </div>
 
                 <div className="absolute bottom-8 text-center text-sm text-gray-500">
-                    <p>Smart ERP Lite - ERP Solution for Tunisian Businesses</p>
+                    <p>Novation ERP - ERP Solution for Tunisian Businesses</p>
                 </div>
             </div>
         </>

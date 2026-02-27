@@ -48,15 +48,15 @@ const features = [
 export default function Welcome() {
     return (
         <>
-            <Head title="Smart ERP Lite - Electronic Invoicing Tunisia" />
+            <Head title="Novation ERP - Electronic Invoicing Tunisia" />
 
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
                 <header className="flex items-center justify-between px-8 py-4">
                     <div className="flex items-center gap-2">
                         <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-600/20">
-                            <span className="text-white font-bold text-lg">S</span>
+                            <span className="text-white font-bold text-lg">N</span>
                         </div>
-                        <span className="text-xl font-bold text-gray-900 tracking-tight">Smart<span className="text-indigo-600">ERP</span></span>
+                        <span className="text-xl font-bold text-gray-900 tracking-tight">Nvo<span className="text-indigo-600">ERP</span></span>
                     </div>
                     <nav className="flex items-center gap-4">
                         <Link
@@ -118,7 +118,7 @@ export default function Welcome() {
                 </main>
 
                 <footer className="py-8 text-center text-sm text-gray-500">
-                    &copy; {new Date().getFullYear()} Smart ERP Lite. All rights reserved.
+                    &copy; {new Date().getFullYear()} Novation ERP. All rights reserved.
                 </footer>
             </div>
         </>

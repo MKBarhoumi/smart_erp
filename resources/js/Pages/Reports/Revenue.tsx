@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { Select } from '@/Components/ui/Select';
+import { formatTND, formatNumber } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 interface MonthlyData {
@@ -30,7 +31,7 @@ export default function Revenue({ data = [], year, availableYears = [], yearlyTo
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Revenue</h1>
-                        <p className="mt-1 text-sm text-gray-500">Total {year}: <strong>{parseFloat(yearlyTotal).toFixed(3)} TND</strong></p>
+                        <p className="mt-1 text-sm text-gray-500">Total {year}: <strong>{formatTND(yearlyTotal)}</strong></p>
                     </div>
                     <div className="w-32">
                         <Select
@@ -52,7 +53,7 @@ export default function Revenue({ data = [], year, availableYears = [], yearlyTo
                                     <div className="flex-1">
                                         <div className="h-8 rounded bg-gray-100">
                                             <div className="flex h-8 items-center rounded bg-gradient-to-r from-indigo-600 to-indigo-400 px-2 text-xs font-medium text-white" style={{ width: `${Math.max(pct, 2)}%` }}>
-                                                {val > 0 ? `${val.toFixed(3)} TND` : ''}
+                                                {val > 0 ? formatTND(val) : ''}
                                             </div>
                                         </div>
                                     </div>
@@ -75,7 +76,7 @@ export default function Revenue({ data = [], year, availableYears = [], yearlyTo
                                 <tr key={row.month}>
                                     <td className="px-3 py-2">{row.month}</td>
                                     <td className="px-3 py-2 text-right">{row.count}</td>
-                                    <td className="px-3 py-2 text-right font-medium">{parseFloat(row.total).toFixed(3)} TND</td>
+                                    <td className="px-3 py-2 text-right font-medium">{formatTND(row.total)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -83,7 +84,7 @@ export default function Revenue({ data = [], year, availableYears = [], yearlyTo
                             <tr>
                                 <td className="px-3 py-2">Total</td>
                                 <td className="px-3 py-2 text-right">{data.reduce((s, r) => s + r.count, 0)}</td>
-                                <td className="px-3 py-2 text-right">{parseFloat(yearlyTotal).toFixed(3)} TND</td>
+                                <td className="px-3 py-2 text-right">{formatTND(yearlyTotal)}</td>
                             </tr>
                         </tfoot>
                     </table>

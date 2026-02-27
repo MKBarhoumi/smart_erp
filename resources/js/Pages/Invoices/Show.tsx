@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { InvoiceStatusBadge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
 import { Modal } from '@/Components/ui/Modal';
+import { formatTND, formatNumber } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Invoice, InvoicePartner, InvoiceLine, InvoiceTaxSummary, PageProps } from '@/types';
 
@@ -229,15 +230,15 @@ export default function Show({ invoice, canEdit, canDelete, canValidate, canSign
                         <dl className="grid gap-4 sm:grid-cols-3 text-sm">
                             <div className="rounded-lg bg-gray-50 p-4 text-center">
                                 <dt className="text-xs text-gray-500 uppercase">Total HT</dt>
-                                <dd className="mt-1 text-xl font-semibold">{parseFloat(invoice.total_ht).toFixed(3)} <span className="text-sm font-normal text-gray-500">TND</span></dd>
+                                <dd className="mt-1 text-xl font-semibold">{formatNumber(invoice.total_ht)} <span className="text-sm font-normal text-gray-500">TND</span></dd>
                             </div>
                             <div className="rounded-lg bg-blue-50 p-4 text-center">
                                 <dt className="text-xs text-blue-600 uppercase">Total TVA</dt>
-                                <dd className="mt-1 text-xl font-semibold text-blue-700">{parseFloat(invoice.total_tva).toFixed(3)} <span className="text-sm font-normal">TND</span></dd>
+                                <dd className="mt-1 text-xl font-semibold text-blue-700">{formatNumber(invoice.total_tva)} <span className="text-sm font-normal">TND</span></dd>
                             </div>
                             <div className="rounded-lg bg-indigo-50 p-4 text-center">
                                 <dt className="text-xs text-indigo-600 uppercase">Total TTC</dt>
-                                <dd className="mt-1 text-xl font-bold text-indigo-700">{parseFloat(invoice.total_ttc).toFixed(3)} <span className="text-sm font-normal">TND</span></dd>
+                                <dd className="mt-1 text-xl font-bold text-indigo-700">{formatNumber(invoice.total_ttc)} <span className="text-sm font-normal">TND</span></dd>
                             </div>
                         </dl>
                     </div>
@@ -266,11 +267,11 @@ export default function Show({ invoice, canEdit, canDelete, canValidate, canSign
                                         <td className="px-3 py-3 text-gray-500">{line.item_identifier || i + 1}</td>
                                         <td className="px-3 py-3 font-mono text-xs">{line.item_code}</td>
                                         <td className="px-3 py-3">{line.item_description}</td>
-                                        <td className="px-3 py-3 text-right">{parseFloat(line.quantity).toFixed(3)}</td>
+                                        <td className="px-3 py-3 text-right">{formatNumber(line.quantity)}</td>
                                         <td className="px-3 py-3 text-gray-500">{line.measurement_unit}</td>
-                                        <td className="px-3 py-3 text-right">{parseFloat(line.unit_price).toFixed(3)}</td>
-                                        <td className="px-3 py-3 text-right">{parseFloat(line.tax_rate).toFixed(0)}%</td>
-                                        <td className="px-3 py-3 text-right font-medium">{parseFloat(line.line_net).toFixed(3)}</td>
+                                        <td className="px-3 py-3 text-right">{formatNumber(line.unit_price)}</td>
+                                        <td className="px-3 py-3 text-right">{formatNumber(line.tax_rate, 0)}%</td>
+                                        <td className="px-3 py-3 text-right font-medium">{formatNumber(line.line_net)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -298,9 +299,9 @@ export default function Show({ invoice, canEdit, canDelete, canValidate, canSign
                                             <span className="rounded bg-gray-100 px-2 py-0.5 text-xs mr-2">{tax.tax_type_code}</span>
                                             {tax.tax_type_name}
                                         </td>
-                                        <td className="px-3 py-3 text-right">{parseFloat(tax.tax_rate).toFixed(2)}%</td>
-                                        <td className="px-3 py-3 text-right">{parseFloat(tax.taxable_amount).toFixed(3)} TND</td>
-                                        <td className="px-3 py-3 text-right font-medium">{parseFloat(tax.tax_amount).toFixed(3)} TND</td>
+                                        <td className="px-3 py-3 text-right">{formatNumber(tax.tax_rate, 2)}%</td>
+                                        <td className="px-3 py-3 text-right">{formatTND(tax.taxable_amount)}</td>
+                                        <td className="px-3 py-3 text-right font-medium">{formatTND(tax.tax_amount)}</td>
                                     </tr>
                                 ))}
                             </tbody>

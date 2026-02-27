@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/Components/ui/Button';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatTND, formatNumber } from '@/utils/format';
 import type { Product } from '@/types';
 
 interface Props {
@@ -44,7 +45,7 @@ export default function Show({ product }: Props) {
                         <h2 className="mb-4 text-lg font-semibold">Details</h2>
                         <dl className="space-y-2 text-sm">
                             <div className="flex justify-between"><dt className="text-gray-500">Code</dt><dd className="font-mono">{product.code}</dd></div>
-                            <div className="flex justify-between"><dt className="text-gray-500">Unit Price excl. tax</dt><dd>{Number(product.unit_price).toFixed(3)} TND</dd></div>
+                            <div className="flex justify-between"><dt className="text-gray-500">Unit Price excl. tax</dt><dd>{formatTND(product.unit_price)}</dd></div>
                             <div className="flex justify-between"><dt className="text-gray-500">TVA</dt><dd>{product.tva_rate}%</dd></div>
                             <div className="flex justify-between"><dt className="text-gray-500">Unit</dt><dd>{product.unit_of_measure}</dd></div>
                             <div className="flex justify-between"><dt className="text-gray-500">Stamp duty</dt><dd>{product.is_subject_to_timbre ? 'Yes' : 'No'}</dd></div>
@@ -55,8 +56,8 @@ export default function Show({ product }: Props) {
                         <div className="rounded-lg bg-white p-6 shadow">
                             <h2 className="mb-4 text-lg font-semibold">Stock</h2>
                             <dl className="space-y-2 text-sm">
-                                <div className="flex justify-between"><dt className="text-gray-500">Current Stock</dt><dd className="font-semibold">{Number(product.current_stock).toFixed(3)}</dd></div>
-                                <div className="flex justify-between"><dt className="text-gray-500">Alert Threshold</dt><dd>{Number(product.min_stock_alert).toFixed(3)}</dd></div>
+                                <div className="flex justify-between"><dt className="text-gray-500">Current Stock</dt><dd className="font-semibold">{formatNumber(product.current_stock)}</dd></div>
+                                <div className="flex justify-between"><dt className="text-gray-500">Alert Threshold</dt><dd>{formatNumber(product.min_stock_alert)}</dd></div>
                             </dl>
                         </div>
                     )}

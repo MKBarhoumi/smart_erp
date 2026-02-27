@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatTND, formatNumber } from '@/utils/format';
 import type { Customer, OldInvoice, PaginatedData, PageProps, Payment } from '@/types';
 
 interface OldInvoiceWithPayments extends OldInvoice {
@@ -30,17 +31,17 @@ export default function CustomerStatement({ customer, oldinvoices, totals, total
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-lg bg-white p-5 shadow">
             <p className="text-sm text-gray-500">Total OldInvoiced</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{parseFloat(totals?.total_oldinvoiced || '0').toFixed(3)} TND</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{formatTND(totals?.total_oldinvoiced)}</p>
             <p className="text-xs text-gray-400">{totals?.oldinvoice_count || 0} oldinvoices</p>
           </div>
           <div className="rounded-lg bg-white p-5 shadow">
             <p className="text-sm text-gray-500">Total Paid</p>
-            <p className="mt-1 text-2xl font-bold text-green-600">{parseFloat(totalPaid).toFixed(3)} TND</p>
+            <p className="mt-1 text-2xl font-bold text-green-600">{formatTND(totalPaid)}</p>
           </div>
           <div className="rounded-lg bg-white p-5 shadow">
             <p className="text-sm text-gray-500">Remaining Balance</p>
             <p className={`mt-1 text-2xl font-bold ${parseFloat(balance) > 0 ? 'text-red-600' : 'text-gray-900'}`}>
-              {parseFloat(balance).toFixed(3)} TND
+              {formatTND(balance)}
             </p>
           </div>
         </div>
@@ -71,10 +72,10 @@ export default function CustomerStatement({ customer, oldinvoices, totals, total
                     </td>
                     <td className="px-4 py-3">{inv.oldinvoice_date}</td>
                     <td className="px-4 py-3 capitalize">{inv.status}</td>
-                    <td className="px-4 py-3 text-right">{parseFloat(inv.total_ttc).toFixed(3)}</td>
-                    <td className="px-4 py-3 text-right text-green-600">{paid.toFixed(3)}</td>
+                    <td className="px-4 py-3 text-right">{formatNumber(inv.total_ttc)}</td>
+                    <td className="px-4 py-3 text-right text-green-600">{formatNumber(paid)}</td>
                     <td className={`px-4 py-3 text-right ${remaining > 0 ? 'text-red-600' : ''}`}>
-                      {remaining.toFixed(3)}
+                      {formatNumber(remaining)}
                     </td>
                   </tr>
                 );

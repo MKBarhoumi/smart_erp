@@ -14,8 +14,8 @@ use DOMXPath;
  *
  * Implements the 11-step workflow:
  * 1. Load unsigned TEIF XML
- * 2. Canonicalize <OldInvoiceBody> (Exclusive C14N)
- * 3. Compute SHA-256 digest of canonicalized OldInvoiceBody
+ * 2. Canonicalize <InvoiceBody> or <OldInvoiceBody> (Exclusive C14N)
+ * 3. Compute SHA-256 digest of canonicalized InvoiceBody
  * 4. Build <SignedInfo> with two <Reference> elements
  * 5. Compute SHA-256 digest of signing certificate
  * 6. Build <SignedProperties> (xades:SigningTime, xades:SigningCertificate)
@@ -59,18 +59,24 @@ class XadesSignatureService
             throw new SignatureException('Failed to load TEIF XML for signing.');
         }
 
-        // Step 2: Canonicalize OldInvoiceBody
+        // Step 2: Canonicalize InvoiceBody (supports both InvoiceBody and OldInvoiceBody)
         $xpath = new DOMXPath($dom);
-        $oldinvoiceBodyNodes = $xpath->query('//OldInvoiceBody');
-        if ($oldinvoiceBodyNodes === false || $oldinvoiceBodyNodes->length === 0) {
-            throw new SignatureException('OldInvoiceBody element not found in TEIF XML.');
+        
+        // Try InvoiceBody first (new invoices), then fall back to OldInvoiceBody (old invoices)
+        $invoiceBodyNodes = $xpath->query('//InvoiceBody');
+        if ($invoiceBodyNodes === false || $invoiceBodyNodes->length === 0) {
+            $invoiceBodyNodes = $xpath->query('//OldInvoiceBody');
+        }
+        
+        if ($invoiceBodyNodes === false || $invoiceBodyNodes->length === 0) {
+            throw new SignatureException('InvoiceBody element not found in TEIF XML.');
         }
 
         /** @var DOMElement $oldinvoiceBody */
-        $oldinvoiceBody = $oldinvoiceBodyNodes->item(0);
+        $oldinvoiceBody = $invoiceBodyNodes->item(0);
         $canonicalBody = $oldinvoiceBody->C14N(true, false);
 
-        // Step 3: SHA-256 digest of OldInvoiceBody
+        // Step 3: SHA-256 digest of InvoiceBody
         $bodyDigest = base64_encode(hash('sha256', $canonicalBody, true));
 
         // Step 4-5: Get certificate info

@@ -4,6 +4,7 @@ import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Select } from '@/Components/ui/Select';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatTND, formatNumber } from '@/utils/format';
 
 interface LineData {
     product_id: string;
@@ -224,7 +225,7 @@ export default function OldInvoiceForm({ customers, products, documentTypes, old
                                     <div className="sm:col-span-2 flex items-end">
                                         <div className="w-full rounded bg-gray-50 px-3 py-2 text-right">
                                             <span className="text-xs text-gray-500">Line Total</span>
-                                            <p className="font-semibold">{lineTotals[index]?.total.toFixed(3)} TND</p>
+                                            <p className="font-semibold">{formatTND(lineTotals[index]?.total)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -236,11 +237,11 @@ export default function OldInvoiceForm({ customers, products, documentTypes, old
                 {/* Totals */}
                 <div className="rounded-lg bg-white p-6 shadow">
                     <div className="ml-auto max-w-xs space-y-2">
-                        <div className="flex justify-between text-sm"><span className="text-gray-500">Total excl. tax</span><span>{totalHT.toFixed(3)} TND</span></div>
-                        <div className="flex justify-between text-sm"><span className="text-gray-500">Total VAT</span><span>{totalTVA.toFixed(3)} TND</span></div>
-                        <div className="flex justify-between text-sm"><span className="text-gray-500">Stamp duty</span><span>{timbre.toFixed(3)} TND</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500">Total excl. tax</span><span>{formatTND(totalHT)}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500">Total VAT</span><span>{formatTND(totalTVA)}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500">Stamp duty</span><span>{formatTND(timbre)}</span></div>
                         <hr />
-                        <div className="flex justify-between text-lg font-bold"><span>Total incl. tax</span><span>{totalTTC.toFixed(3)} TND</span></div>
+                        <div className="flex justify-between text-lg font-bold"><span>Total incl. tax</span><span>{formatTND(totalTTC)}</span></div>
                     </div>
                 </div>
 

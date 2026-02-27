@@ -5,6 +5,7 @@ import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Pagination } from '@/Components/ui/Pagination';
 import { Select } from '@/Components/ui/Select';
+import { formatTND } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { OldInvoice, PaginatedData } from '@/types';
 
@@ -75,7 +76,7 @@ export default function OldInvoicesIndex({ oldinvoices, filters, statuses }: Pro
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-700">{inv.customer?.name ?? '—'}</td>
                                     <td className="px-4 py-3 text-sm text-gray-500">{inv.oldinvoice_date}</td>
-                                    <td className="px-4 py-3 text-right font-medium">{Number(inv.total_ttc).toFixed(3)} TND</td>
+                                    <td className="px-4 py-3 text-right font-medium">{formatTND(inv.total_ttc)}</td>
                                     <td className="px-4 py-3 text-center"><OldInvoiceStatusBadge status={inv.status} /></td>
                                     <td className="px-4 py-3 text-right">
                                         <Link href={`/oldinvoices/${inv.id}`} className="text-sm text-blue-600 hover:underline">

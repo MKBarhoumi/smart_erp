@@ -1,11 +1,12 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import type { FormEvent} from 'react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { OldInvoiceStatusBadge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Modal } from '@/Components/ui/Modal';
 import { Select } from '@/Components/ui/Select';
+import { formatTND, formatNumber } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { OldInvoice, Payment, PageProps } from '@/types';
 
@@ -39,6 +40,18 @@ interface Props extends PageProps {
 export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canEdit, canDelete }: Props) {
     const [showPayment, setShowPayment] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
+
+    // Calculate paid amount and remaining balance
+    const paymentSummary = useMemo(() => {
+        const totalPaid = oldinvoice.payments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+        const totalTTC = parseFloat(oldinvoice.total_ttc);
+        const remaining = totalTTC - totalPaid;
+        return {
+            totalPaid,
+            remaining: Math.max(0, remaining),
+            isPaidInFull: remaining <= 0,
+        };
+    }, [oldinvoice.payments, oldinvoice.total_ttc]);
 
     const paymentForm = useForm({
         amount: '',
@@ -122,11 +135,11 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
                     <div className="rounded-lg bg-white p-6 shadow">
                         <h2 className="mb-3 text-lg font-semibold">Amounts</h2>
                         <dl className="space-y-2 text-sm">
-                            <div className="flex justify-between"><dt className="text-gray-500">Total excl. tax</dt><dd>{parseFloat(oldinvoice.total_ht).toFixed(3)} TND</dd></div>
-                            <div className="flex justify-between"><dt className="text-gray-500">Total VAT</dt><dd>{parseFloat(oldinvoice.total_tva).toFixed(3)} TND</dd></div>
-                            <div className="flex justify-between"><dt className="text-gray-500">Stamp duty</dt><dd>{parseFloat(oldinvoice.timbre_fiscal).toFixed(3)} TND</dd></div>
+                            <div className="flex justify-between"><dt className="text-gray-500">Total excl. tax</dt><dd>{formatTND(oldinvoice.total_ht)}</dd></div>
+                            <div className="flex justify-between"><dt className="text-gray-500">Total VAT</dt><dd>{formatTND(oldinvoice.total_tva)}</dd></div>
+                            <div className="flex justify-between"><dt className="text-gray-500">Stamp duty</dt><dd>{formatTND(oldinvoice.timbre_fiscal)}</dd></div>
                             <hr />
-                            <div className="flex justify-between text-lg font-bold"><dt>Total incl. tax</dt><dd>{parseFloat(oldinvoice.total_ttc).toFixed(3)} TND</dd></div>
+                            <div className="flex justify-between text-lg font-bold"><dt>Total incl. tax</dt><dd>{formatTND(oldinvoice.total_ttc)}</dd></div>
                         </dl>
                     </div>
                 </div>
@@ -156,13 +169,13 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
                                         <td className="px-3 py-2">{i + 1}</td>
                                         <td className="px-3 py-2 font-mono text-xs">{line.item_code}</td>
                                         <td className="px-3 py-2">{line.item_description}</td>
-                                        <td className="px-3 py-2 text-right">{parseFloat(line.quantity).toFixed(3)}</td>
-                                        <td className="px-3 py-2 text-right">{parseFloat(line.unit_price).toFixed(3)}</td>
+                                        <td className="px-3 py-2 text-right">{formatNumber(line.quantity)}</td>
+                                        <td className="px-3 py-2 text-right">{formatNumber(line.unit_price)}</td>
                                         <td className="px-3 py-2 text-right">{parseFloat(line.discount_rate).toFixed(2)}%</td>
-                                        <td className="px-3 py-2 text-right">{parseFloat(line.line_total_ht ?? '0').toFixed(3)}</td>
+                                        <td className="px-3 py-2 text-right">{formatNumber(line.line_total_ht)}</td>
                                         <td className="px-3 py-2 text-right">{parseFloat(line.tva_rate).toFixed(0)}%</td>
-                                        <td className="px-3 py-2 text-right">{parseFloat(line.tva_amount).toFixed(3)}</td>
-                                        <td className="px-3 py-2 text-right font-medium">{parseFloat(line.line_total_ttc ?? '0').toFixed(3)}</td>
+                                        <td className="px-3 py-2 text-right">{formatNumber(line.tva_amount)}</td>
+                                        <td className="px-3 py-2 text-right font-medium">{formatNumber(line.line_total_ttc)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -183,8 +196,8 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
                                     <tr key={i}>
                                         <td className="px-3 py-2">{tl.tax_type_code}</td>
                                         <td className="px-3 py-2 text-right">{parseFloat(tl.tax_rate).toFixed(2)}%</td>
-                                        <td className="px-3 py-2 text-right">{parseFloat(tl.taxable_amount).toFixed(3)}</td>
-                                        <td className="px-3 py-2 text-right">{parseFloat(tl.tax_amount).toFixed(3)}</td>
+                                        <td className="px-3 py-2 text-right">{formatNumber(tl.taxable_amount)}</td>
+                                        <td className="px-3 py-2 text-right">{formatNumber(tl.tax_amount)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -206,11 +219,39 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
                 {/* Payments */}
                 <div className="rounded-lg bg-white p-6 shadow">
                     <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Payments</h2>
-                        {['accepted', 'validated', 'signed', 'submitted'].includes(oldinvoice.status) && (
+                        <div>
+                            <h2 className="text-lg font-semibold">Payments</h2>
+                            <div className="mt-1 flex gap-4 text-sm">
+                                <span className="text-gray-500">
+                                    Paid: <span className="font-medium text-green-600">{formatTND(paymentSummary.totalPaid)}</span>
+                                </span>
+                                <span className="text-gray-500">
+                                    Remaining: <span className={`font-medium ${paymentSummary.isPaidInFull ? 'text-green-600' : 'text-orange-600'}`}>
+                                        {formatTND(paymentSummary.remaining)}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                        {['accepted', 'validated', 'signed', 'submitted'].includes(oldinvoice.status) && !paymentSummary.isPaidInFull && (
                             <Button size="sm" onClick={() => setShowPayment(true)}>+ Payment</Button>
                         )}
                     </div>
+
+                    {/* Payment Progress Bar */}
+                    {parseFloat(oldinvoice.total_ttc) > 0 && (
+                        <div className="mb-4">
+                            <div className="h-2 w-full rounded-full bg-gray-200">
+                                <div 
+                                    className={`h-2 rounded-full transition-all ${paymentSummary.isPaidInFull ? 'bg-green-500' : 'bg-indigo-500'}`}
+                                    style={{ width: `${Math.min(100, (paymentSummary.totalPaid / parseFloat(oldinvoice.total_ttc)) * 100)}%` }}
+                                />
+                            </div>
+                            <p className="mt-1 text-xs text-gray-400 text-right">
+                                {((paymentSummary.totalPaid / parseFloat(oldinvoice.total_ttc)) * 100).toFixed(1)}% paid
+                            </p>
+                        </div>
+                    )}
+
                     {oldinvoice.payments.length === 0 ? (
                         <p className="text-sm text-gray-500">No payments recorded.</p>
                     ) : (
@@ -224,7 +265,7 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
                                         <td className="px-3 py-2">{p.payment_date}</td>
                                         <td className="px-3 py-2 capitalize">{p.method.replace('_', ' ')}</td>
                                         <td className="px-3 py-2">{p.reference || '—'}</td>
-                                        <td className="px-3 py-2 text-right font-medium">{parseFloat(p.amount).toFixed(3)} TND</td>
+                                        <td className="px-3 py-2 text-right font-medium">{formatTND(p.amount)}</td>
                                         <td className="px-3 py-2 text-right">
                                             <button onClick={() => router.delete(`/oldinvoices/${oldinvoice.id}/payments/${p.id}`)} className="text-red-600 hover:underline text-xs">Delete</button>
                                         </td>
@@ -268,7 +309,38 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
             {/* Payment Modal */}
             <Modal show={showPayment} onClose={() => setShowPayment(false)} title="Record a Payment">
                 <form onSubmit={submitPayment} className="space-y-4">
-                    <Input label="Amount (TND)" type="number" step="0.001" value={paymentForm.data.amount} onChange={(e) => paymentForm.setData('amount', e.target.value)} error={paymentForm.errors.amount} required />
+                    <div className="rounded-lg bg-blue-50 p-3 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-blue-600">Invoice Total:</span>
+                            <span className="font-medium">{formatTND(oldinvoice.total_ttc)}</span>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                            <span className="text-blue-600">Already Paid:</span>
+                            <span className="font-medium">{formatTND(paymentSummary.totalPaid)}</span>
+                        </div>
+                        <hr className="my-2 border-blue-200" />
+                        <div className="flex justify-between">
+                            <span className="text-blue-700 font-medium">Remaining Balance:</span>
+                            <span className="font-bold text-blue-800">{formatTND(paymentSummary.remaining)}</span>
+                        </div>
+                    </div>
+                    <Input 
+                        label="Amount (TND)" 
+                        type="number" 
+                        step="0.001" 
+                        max={paymentSummary.remaining.toFixed(3)}
+                        value={paymentForm.data.amount} 
+                        onChange={(e) => paymentForm.setData('amount', e.target.value)} 
+                        error={paymentForm.errors.amount} 
+                        required 
+                    />
+                    <button 
+                        type="button" 
+                        className="text-xs text-indigo-600 hover:underline"
+                        onClick={() => paymentForm.setData('amount', paymentSummary.remaining.toFixed(3))}
+                    >
+                        Fill remaining amount ({formatNumber(paymentSummary.remaining)} TND)
+                    </button>
                     <Select label="Method" options={[
                         { value: 'cash', label: 'Cash' },
                         { value: 'bank_transfer', label: 'Bank Transfer' },

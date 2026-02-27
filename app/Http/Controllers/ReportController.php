@@ -23,25 +23,51 @@ class ReportController extends Controller
     {
         $year = $request->integer('year', (int) now()->format('Y'));
 
+        // Get the database driver to use appropriate date functions
+        $driver = DB::connection()->getDriverName();
+        switch ($driver) {
+            case 'pgsql':
+                $monthExpr = "TO_CHAR(oldinvoice_date, 'Mon')";
+                $monthOrderExpr = "EXTRACT(MONTH FROM oldinvoice_date)";
+                break;
+            case 'sqlite':
+                $monthExpr = "strftime('%m', oldinvoice_date)";
+                $monthOrderExpr = "strftime('%m', oldinvoice_date)";
+                break;
+            case 'sqlsrv':
+                $monthExpr = "FORMAT(oldinvoice_date, 'MMM')";
+                $monthOrderExpr = "MONTH(oldinvoice_date)";
+                break;
+            default: // mysql / mariadb
+                $monthExpr = "DATE_FORMAT(oldinvoice_date, '%b')";
+                $monthOrderExpr = "MONTH(oldinvoice_date)";
+        }
+
         $monthlyRevenue = OldInvoice::whereYear('oldinvoice_date', $year)
             ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
-            ->selectRaw("EXTRACT(MONTH FROM oldinvoice_date) as month, SUM(total_ht) as total_ht, SUM(total_tva) as total_tva, SUM(total_ttc) as total_ttc, COUNT(*) as oldinvoice_count")
-            ->groupByRaw("EXTRACT(MONTH FROM oldinvoice_date)")
-            ->orderBy('month')
-            ->get();
+            ->selectRaw("{$monthExpr} as month, SUM(total_ttc) as total, COUNT(*) as count")
+            ->groupByRaw("{$monthExpr}, {$monthOrderExpr}")
+            ->orderByRaw($monthOrderExpr)
+            ->get()
+            ->map(fn ($row) => [
+                'month' => $row->month,
+                'total' => number_format((float) $row->total, 3, '.', ''),
+                'count' => (int) $row->count,
+            ]);
 
         $yearlyTotal = OldInvoice::whereYear('oldinvoice_date', $year)
             ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
-            ->selectRaw("SUM(total_ht) as total_ht, SUM(total_tva) as total_tva, SUM(total_ttc) as total_ttc, SUM(timbre_fiscal) as total_timbre, COUNT(*) as oldinvoice_count")
-            ->first();
+            ->sum('total_ttc');
 
         return Inertia::render('Reports/Revenue', [
             'year' => $year,
-            'monthlyRevenue' => $monthlyRevenue,
-            'yearlyTotal' => $yearlyTotal,
-            'availableYears' => OldInvoice::selectRaw("DISTINCT EXTRACT(YEAR FROM oldinvoice_date) as year")
+            'data' => $monthlyRevenue,
+            'yearlyTotal' => number_format((float) $yearlyTotal, 3, '.', ''),
+            'availableYears' => OldInvoice::selectRaw("DISTINCT YEAR(oldinvoice_date) as year")
                 ->orderByDesc('year')
-                ->pluck('year'),
+                ->pluck('year')
+                ->values()
+                ->toArray(),
         ]);
     }
 
@@ -85,22 +111,85 @@ class ReportController extends Controller
 
     public function customerAging(): Response
     {
-        $customers = Customer::withSum(
-            ['oldinvoices' => fn ($q) => $q->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])],
-            'total_ttc'
-        )
-            ->addSelect([
-                'paid_total' => DB::table('payments')
-                    ->join('oldinvoices', 'payments.oldinvoice_id', '=', 'oldinvoices.id')
-                    ->whereColumn('oldinvoices.customer_id', 'customers.id')
-                    ->whereNull('oldinvoices.deleted_at')
-                    ->selectRaw('COALESCE(SUM(payments.amount), 0)'),
-            ])
-            ->orderByDesc('oldinvoices_sum_total_ttc')
-            ->paginate(20);
+        $today = now();
+        $days30 = $today->copy()->subDays(30);
+        $days60 = $today->copy()->subDays(60);
+        $days90 = $today->copy()->subDays(90);
+
+        // Get all customers with outstanding invoices and calculate aging buckets
+        $customers = Customer::select('customers.*')
+            ->whereHas('oldinvoices', function ($q) {
+                $q->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value]);
+            })
+            ->get()
+            ->map(function ($customer) use ($today, $days30, $days60, $days90) {
+                // Get all invoices for this customer
+                $invoices = OldInvoice::where('customer_id', $customer->id)
+                    ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+                    ->with('payments')
+                    ->get();
+
+                $current = 0;
+                $days_30_60 = 0;
+                $days_60_90 = 0;
+                $over_90 = 0;
+                $oldestDate = null;
+
+                foreach ($invoices as $inv) {
+                    $paid = $inv->payments->sum('amount');
+                    $outstanding = (float) $inv->total_ttc - (float) $paid;
+
+                    if ($outstanding <= 0) continue;
+
+                    $invDate = $inv->oldinvoice_date;
+                    if (!$oldestDate || $invDate < $oldestDate) {
+                        $oldestDate = $invDate;
+                    }
+
+                    $invDateCarbon = \Carbon\Carbon::parse($invDate);
+
+                    if ($invDateCarbon >= $days30) {
+                        $current += $outstanding;
+                    } elseif ($invDateCarbon >= $days60) {
+                        $days_30_60 += $outstanding;
+                    } elseif ($invDateCarbon >= $days90) {
+                        $days_60_90 += $outstanding;
+                    } else {
+                        $over_90 += $outstanding;
+                    }
+                }
+
+                $totalOutstanding = $current + $days_30_60 + $days_60_90 + $over_90;
+
+                if ($totalOutstanding <= 0) return null;
+
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'identifier_value' => $customer->identifier_value,
+                    'total_outstanding' => number_format($totalOutstanding, 3, '.', ''),
+                    'current' => number_format($current, 3, '.', ''),
+                    'days_30_60' => number_format($days_30_60, 3, '.', ''),
+                    'days_60_90' => number_format($days_60_90, 3, '.', ''),
+                    'over_90' => number_format($over_90, 3, '.', ''),
+                    'oldest_oldinvoice_date' => $oldestDate,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        // Calculate totals
+        $totals = [
+            'total_outstanding' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['total_outstanding'])), 3, '.', ''),
+            'current' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['current'])), 3, '.', ''),
+            'days_30_60' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['days_30_60'])), 3, '.', ''),
+            'days_60_90' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['days_60_90'])), 3, '.', ''),
+            'over_90' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['over_90'])), 3, '.', ''),
+        ];
 
         return Inertia::render('Reports/CustomerAging', [
-            'customers' => $customers,
+            'customers' => $customers->toArray(),
+            'totals' => $totals,
         ]);
     }
 

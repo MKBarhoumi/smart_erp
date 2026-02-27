@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatTND } from '@/utils/format';
 import type { PageProps } from '@/types';
 
 interface Props extends PageProps {
@@ -40,7 +41,7 @@ export default function Timbre({ year, monthlyTimbre, yearlyTotal, availableYear
         {/* Total Card */}
         <div className="rounded-lg bg-white p-6 shadow">
           <p className="text-sm text-gray-500">Total stamp duty {year}</p>
-          <p className="mt-1 text-3xl font-bold text-gray-900">{parseFloat(yearlyTotal).toFixed(3)} TND</p>
+          <p className="mt-1 text-3xl font-bold text-gray-900">{formatTND(yearlyTotal)}</p>
         </div>
 
         {/* Monthly Breakdown */}
@@ -63,7 +64,7 @@ export default function Timbre({ year, monthlyTimbre, yearlyTotal, availableYear
                   <tr key={row.month} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium">{monthNames[row.month - 1]}</td>
                     <td className="px-4 py-3 text-right">{row.oldinvoice_count}</td>
-                    <td className="px-4 py-3 text-right font-medium">{parseFloat(row.total_timbre).toFixed(3)} TND</td>
+                    <td className="px-4 py-3 text-right font-medium">{formatTND(row.total_timbre)}</td>
                   </tr>
                 ))
               )}
@@ -73,7 +74,7 @@ export default function Timbre({ year, monthlyTimbre, yearlyTotal, availableYear
                 <tr className="font-semibold">
                   <td className="px-4 py-3">Total</td>
                   <td className="px-4 py-3 text-right">{monthlyTimbre.reduce((s, r) => s + r.oldinvoice_count, 0)}</td>
-                  <td className="px-4 py-3 text-right">{parseFloat(yearlyTotal).toFixed(3)} TND</td>
+                  <td className="px-4 py-3 text-right">{formatTND(yearlyTotal)}</td>
                 </tr>
               </tfoot>
             )}

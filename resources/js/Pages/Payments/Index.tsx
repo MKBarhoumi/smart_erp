@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Badge } from '@/Components/ui/Badge';
 import { Pagination } from '@/Components/ui/Pagination';
+import { formatTND } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Payment, OldInvoice, PaginatedData, PageProps } from '@/types';
 
@@ -34,7 +35,7 @@ export default function Index({ payments, filters, totalCollected }: Props) {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
             <p className="mt-1 text-sm text-gray-500">
-              Total collected: <span className="font-semibold">{parseFloat(totalCollected || '0').toFixed(3)} TND</span>
+              Total collected: <span className="font-semibold">{formatTND(totalCollected)}</span>
             </p>
           </div>
         </div>
@@ -124,7 +125,7 @@ export default function Index({ payments, filters, totalCollected }: Props) {
                       <Badge variant="info">{methodLabels[payment.method] || payment.method}</Badge>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{payment.reference || '—'}</td>
-                    <td className="px-4 py-3 text-right font-medium">{parseFloat(payment.amount).toFixed(3)} TND</td>
+                    <td className="px-4 py-3 text-right font-medium">{formatTND(payment.amount)}</td>
                     <td className="px-4 py-3 text-gray-500">{payment.creator?.name || '—'}</td>
                     <td className="px-4 py-3 text-right">
                       <button

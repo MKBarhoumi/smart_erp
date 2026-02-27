@@ -227,7 +227,7 @@
                 <td style="border:none; padding:10px 0 0 0; vertical-align:bottom;">
                     <p style="font-size:8px; color:#888;">{{ $company->company_name }} — MF: {{ $company->matricule_fiscale }}</p>
                     <p style="font-size:8px; color:#888;">{{ $company->address_street }}, {{ $company->address_postal_code }} {{ $company->address_city }}</p>
-                    <p style="font-size:7px; color:#aaa; margin-top:4px;">Document généré le {{ now()->format('d/m/Y à H:i') }} — Smart ERP Lite</p>
+                    <p style="font-size:7px; color:#aaa; margin-top:4px;">Document généré le {{ now()->format('d/m/Y à H:i') }} — Novation ERP</p>
                 </td>
                 <td style="border:none; padding:10px 0 0 0; text-align:right; vertical-align:bottom; width:100px;">
                     @if(!empty($qrCodeBase64))

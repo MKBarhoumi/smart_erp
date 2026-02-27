@@ -23,7 +23,7 @@ export default function Login() {
             <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Sign In</h2>
                 <p className="mt-1 text-sm text-gray-600">
-                    Access your Smart ERP Lite invoicing workspace
+                    Access your Novation ERP invoicing workspace
                 </p>
             </div>
 

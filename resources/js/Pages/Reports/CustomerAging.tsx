@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatTND, formatNumber } from '@/utils/format';
 
 interface AgingCustomer {
     id: string;
@@ -34,7 +35,6 @@ const defaultTotals = {
 
 export default function CustomerAging({ customers = [], totals }: Props) {
     const safeTotals = totals ?? defaultTotals;
-    const fmt = (val: string) => parseFloat(val || '0').toFixed(3);
 
     return (
         <AuthenticatedLayout>
@@ -44,7 +44,7 @@ export default function CustomerAging({ customers = [], totals }: Props) {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Customer Aging Report</h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Total outstanding: <strong>{fmt(safeTotals.total_outstanding)} TND</strong>
+                        Total outstanding: <strong>{formatTND(safeTotals.total_outstanding)}</strong>
                     </p>
                 </div>
 
@@ -52,19 +52,19 @@ export default function CustomerAging({ customers = [], totals }: Props) {
                 <div className="grid gap-4 sm:grid-cols-4">
                     <div className="rounded-lg bg-green-50 p-4 shadow">
                         <p className="text-xs text-gray-500">0-30 days</p>
-                        <p className="mt-1 text-xl font-bold text-green-700">{fmt(safeTotals.current)} TND</p>
+                        <p className="mt-1 text-xl font-bold text-green-700">{formatTND(safeTotals.current)}</p>
                     </div>
                     <div className="rounded-lg bg-yellow-50 p-4 shadow">
                         <p className="text-xs text-gray-500">30-60 days</p>
-                        <p className="mt-1 text-xl font-bold text-yellow-700">{fmt(safeTotals.days_30_60)} TND</p>
+                        <p className="mt-1 text-xl font-bold text-yellow-700">{formatTND(safeTotals.days_30_60)}</p>
                     </div>
                     <div className="rounded-lg bg-orange-50 p-4 shadow">
                         <p className="text-xs text-gray-500">60-90 days</p>
-                        <p className="mt-1 text-xl font-bold text-orange-700">{fmt(safeTotals.days_60_90)} TND</p>
+                        <p className="mt-1 text-xl font-bold text-orange-700">{formatTND(safeTotals.days_60_90)}</p>
                     </div>
                     <div className="rounded-lg bg-red-50 p-4 shadow">
                         <p className="text-xs text-gray-500">+90 days</p>
-                        <p className="mt-1 text-xl font-bold text-red-700">{fmt(safeTotals.over_90)} TND</p>
+                        <p className="mt-1 text-xl font-bold text-red-700">{formatTND(safeTotals.over_90)}</p>
                     </div>
                 </div>
 
@@ -91,11 +91,11 @@ export default function CustomerAging({ customers = [], totals }: Props) {
                                         <tr key={c.id} className={over90 > 0 ? 'bg-red-50' : ''}>
                                             <td className="px-4 py-3 font-medium">{c.name}</td>
                                             <td className="px-4 py-3 font-mono text-xs">{c.identifier_value}</td>
-                                            <td className="px-4 py-3 text-right">{fmt(c.current)}</td>
-                                            <td className="px-4 py-3 text-right">{fmt(c.days_30_60)}</td>
-                                            <td className="px-4 py-3 text-right">{fmt(c.days_60_90)}</td>
-                                            <td className="px-4 py-3 text-right font-medium text-red-600">{fmt(c.over_90)}</td>
-                                            <td className="px-4 py-3 text-right font-semibold">{fmt(c.total_outstanding)}</td>
+                                            <td className="px-4 py-3 text-right">{formatNumber(c.current)}</td>
+                                            <td className="px-4 py-3 text-right">{formatNumber(c.days_30_60)}</td>
+                                            <td className="px-4 py-3 text-right">{formatNumber(c.days_60_90)}</td>
+                                            <td className="px-4 py-3 text-right font-medium text-red-600">{formatNumber(c.over_90)}</td>
+                                            <td className="px-4 py-3 text-right font-semibold">{formatNumber(c.total_outstanding)}</td>
                                             <td className="px-4 py-3 text-xs text-gray-500">{c.oldest_oldinvoice_date}</td>
                                         </tr>
                                     );
@@ -104,15 +104,15 @@ export default function CustomerAging({ customers = [], totals }: Props) {
                                     <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">No outstanding receivables.</td></tr>
                                 )}
                             </tbody>
-                            {customers.length > 0 && (
+                            {customers.length > 0 && safeTotals && (
                                 <tfoot className="border-t font-bold">
                                     <tr>
                                         <td className="px-4 py-3" colSpan={2}>Total</td>
-                                        <td className="px-4 py-3 text-right">{fmt(totals.current)}</td>
-                                        <td className="px-4 py-3 text-right">{fmt(totals.days_30_60)}</td>
-                                        <td className="px-4 py-3 text-right">{fmt(totals.days_60_90)}</td>
-                                        <td className="px-4 py-3 text-right text-red-600">{fmt(totals.over_90)}</td>
-                                        <td className="px-4 py-3 text-right">{fmt(totals.total_outstanding)}</td>
+                                        <td className="px-4 py-3 text-right">{formatNumber(safeTotals.current)}</td>
+                                        <td className="px-4 py-3 text-right">{formatNumber(safeTotals.days_30_60)}</td>
+                                        <td className="px-4 py-3 text-right">{formatNumber(safeTotals.days_60_90)}</td>
+                                        <td className="px-4 py-3 text-right text-red-600">{formatNumber(safeTotals.over_90)}</td>
+                                        <td className="px-4 py-3 text-right">{formatNumber(safeTotals.total_outstanding)}</td>
                                         <td></td>
                                     </tr>
                                 </tfoot>

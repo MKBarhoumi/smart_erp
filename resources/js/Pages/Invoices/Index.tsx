@@ -5,6 +5,7 @@ import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Pagination } from '@/Components/ui/Pagination';
 import { Select } from '@/Components/ui/Select';
+import { formatTND } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Invoice, PaginatedData } from '@/types';
 
@@ -139,7 +140,7 @@ export default function InvoicesIndex({ invoices, filters, statuses }: Props) {
                                         <div className="text-xs text-gray-500 font-mono">{inv.receiver_identifier}</div>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-500">{inv.invoice_date || '—'}</td>
-                                    <td className="px-4 py-3 text-right font-medium">{Number(inv.total_ttc).toFixed(3)} TND</td>
+                                    <td className="px-4 py-3 text-right font-medium">{formatTND(inv.total_ttc)}</td>
                                     <td className="px-4 py-3 text-center"><InvoiceStatusBadge status={inv.status} /></td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex justify-end gap-2">

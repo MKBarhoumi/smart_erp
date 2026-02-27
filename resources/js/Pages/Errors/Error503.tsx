@@ -105,12 +105,12 @@ export default function Error503() {
 
                     <div className="mt-8 text-sm text-gray-500">
                         <p>For emergencies, contact:</p>
-                        <p className="mt-1 font-medium text-blue-400">support@smarterp.tn</p>
+                        <p className="mt-1 font-medium text-blue-400">support@novationerp.tn</p>
                     </div>
                 </div>
 
                 <div className="absolute bottom-8 text-center text-sm text-gray-500">
-                    <p>Smart ERP Lite - ERP Solution for Tunisian Businesses</p>
+                    <p>Novation ERP - ERP Solution for Tunisian Businesses</p>
                 </div>
             </div>
         </>
