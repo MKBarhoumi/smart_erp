@@ -1,11 +1,22 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useState, useMemo, FormEvent } from 'react';
 import { InvoiceStatusBadge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
+import { Input } from '@/Components/ui/Input';
 import { Modal } from '@/Components/ui/Modal';
-import { formatTND, formatNumber } from '@/utils/format';
+import { Select } from '@/Components/ui/Select';
+import { formatTND, formatNumber, formatDate } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Invoice, InvoicePartner, InvoiceLine, InvoiceTaxSummary, PageProps } from '@/types';
+
+interface PaymentData {
+    id: string;
+    payment_date: string;
+    amount: string;
+    method: string;
+    reference: string | null;
+    creator: string | null;
+}
 
 interface Props extends PageProps {
     invoice: Invoice & {
@@ -13,34 +24,103 @@ interface Props extends PageProps {
         receiver: InvoicePartner | null;
         lines: InvoiceLine[];
         taxes: InvoiceTaxSummary[];
+        payments: PaymentData[];
         creator: { id: string; name: string } | null;
+        validation_rejection_reason: string | null;
     };
     canEdit: boolean;
     canDelete: boolean;
+    canRequestValidation: boolean;
     canValidate: boolean;
+    canDirectValidate: boolean;
     canSign: boolean;
     canSubmit: boolean;
+    isAdmin: boolean;
+    validationInfo: {
+        requested_by: string | null;
+        requested_at: string | null;
+        validated_by: string | null;
+        validated_at: string | null;
+        rejection_reason: string | null;
+    };
 }
 
-export default function Show({ invoice, canEdit, canDelete, canValidate, canSign, canSubmit }: Props) {
-    const [showDelete, setShowDelete] = useState(false);
-    const [actionLoading, setActionLoading] = useState<string | null>(null);
+const methodStyles: Record<string, { bg: string; text: string; label: string }> = {
+    cash: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Cash' },
+    bank_transfer: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Bank Transfer' },
+    cheque: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Cheque' },
+    effect: { bg: 'bg-violet-100', text: 'text-violet-700', label: 'Bill of Exchange' },
+};
 
-    const performAction = (route: string, method: 'post' | 'delete' = 'post', actionName?: string) => {
-        setActionLoading(actionName || route);
-        router[method](route, {}, {
-            onFinish: () => setActionLoading(null),
+export default function Show({ invoice, canEdit, canDelete, canRequestValidation, canValidate, canDirectValidate, canSign, canSubmit, isAdmin, validationInfo }: Props) {
+    const [showDelete, setShowDelete] = useState(false);
+    const [showPayment, setShowPayment] = useState(false);
+    const [showReject, setShowReject] = useState(false);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
+
+    // Payment calculations
+    const paymentSummary = useMemo(() => {
+        const totalPaid = invoice.payments?.reduce((sum, p) => sum + parseFloat(p.amount), 0) || 0;
+        const totalTTC = parseFloat(invoice.total_ttc);
+        const remaining = totalTTC - totalPaid;
+        return {
+            totalPaid,
+            remaining: Math.max(0, remaining),
+            isPaidInFull: remaining <= 0,
+        };
+    }, [invoice.payments, invoice.total_ttc]);
+
+    const paymentForm = useForm({
+        amount: '',
+        method: 'bank_transfer',
+        reference: '',
+        payment_date: new Date().toISOString().split('T')[0],
+    });
+
+    const submitPayment = (e: FormEvent) => {
+        e.preventDefault();
+        paymentForm.post(`/invoices/${invoice.id}/payments`, {
+            onSuccess: () => {
+                setShowPayment(false);
+                paymentForm.reset();
+            },
         });
+    };
+
+    const performAction = (route: string, method: 'post' | 'delete' = 'post', actionName?: string, data?: Record<string, unknown>) => {
+        setActionLoading(actionName || route);
+        if (method === 'post') {
+            router.post(route, data || {}, {
+                onFinish: () => setActionLoading(null),
+            });
+        } else {
+            router.delete(route, {
+                onFinish: () => setActionLoading(null),
+            });
+        }
+    };
+
+    const handleReject = () => {
+        if (!rejectReason.trim()) {
+            return;
+        }
+        performAction(`/invoices/${invoice.id}/reject-validation`, 'post', 'reject', { reason: rejectReason });
+        setShowReject(false);
+        setRejectReason('');
     };
 
     const statusColors: Record<string, string> = {
         draft: 'bg-gray-50 border-gray-200',
+        pending_validation: 'bg-orange-50 border-orange-200',
         validated: 'bg-blue-50 border-blue-200',
         signed: 'bg-indigo-50 border-indigo-200',
         submitted: 'bg-yellow-50 border-yellow-200',
         accepted: 'bg-green-50 border-green-200',
         rejected: 'bg-red-50 border-red-200',
     };
+
+    const canAddPayment = ['validated', 'signed', 'submitted', 'accepted'].includes(invoice.status) && !paymentSummary.isPaidInFull;
 
     return (
         <AuthenticatedLayout>
@@ -70,7 +150,19 @@ export default function Show({ invoice, canEdit, canDelete, canValidate, canSign
                                     <Button size="sm">Edit</Button>
                                 </Link>
                             )}
-                            {canValidate && (
+                            {/* Regular user: Request Validation */}
+                            {canRequestValidation && (
+                                <Button 
+                                    size="sm" 
+                                    variant="secondary" 
+                                    onClick={() => performAction(`/invoices/${invoice.id}/request-validation`, 'post', 'requestValidation')}
+                                    loading={actionLoading === 'requestValidation'}
+                                >
+                                    Request Validation
+                                </Button>
+                            )}
+                            {/* Admin: Direct Validate from Draft */}
+                            {canDirectValidate && (
                                 <Button 
                                     size="sm" 
                                     variant="secondary" 
@@ -79,6 +171,26 @@ export default function Show({ invoice, canEdit, canDelete, canValidate, canSign
                                 >
                                     Validate
                                 </Button>
+                            )}
+                            {/* Admin: Approve/Reject Pending Validation */}
+                            {canValidate && (
+                                <>
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => performAction(`/invoices/${invoice.id}/validate`, 'post', 'approve')}
+                                        loading={actionLoading === 'approve'}
+                                        className="bg-green-600 hover:bg-green-700"
+                                    >
+                                        Approve
+                                    </Button>
+                                    <Button 
+                                        size="sm" 
+                                        variant="danger" 
+                                        onClick={() => setShowReject(true)}
+                                    >
+                                        Reject
+                                    </Button>
+                                </>
                             )}
                             {canSign && (
                                 <Button 
@@ -121,30 +233,57 @@ export default function Show({ invoice, canEdit, canDelete, canValidate, canSign
                         </div>
                     </div>
 
+                    {/* Validation Info for pending_validation */}
+                    {invoice.status === 'pending_validation' && validationInfo.requested_by && (
+                        <div className="mt-4 p-3 bg-orange-100 rounded-lg text-sm">
+                            <p className="font-medium text-orange-800">⏳ Pending Validation</p>
+                            <p className="text-orange-700 mt-1">
+                                Requested by <span className="font-medium">{validationInfo.requested_by}</span>
+                                {validationInfo.requested_at && ` on ${formatDate(validationInfo.requested_at)}`}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Show validation rejection reason */}
+                    {invoice.validation_rejection_reason && invoice.status === 'draft' && (
+                        <div className="mt-4 p-3 bg-red-100 rounded-lg text-sm">
+                            <p className="font-medium text-red-800">❌ Validation Rejected</p>
+                            <p className="text-red-700 mt-1">{invoice.validation_rejection_reason}</p>
+                            {validationInfo.validated_by && (
+                                <p className="text-red-600 text-xs mt-2">
+                                    Rejected by {validationInfo.validated_by}
+                                    {validationInfo.validated_at && ` on ${formatDate(validationInfo.validated_at)}`}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {/* Workflow status indicator */}
                     <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="flex items-center justify-between text-xs">
-                            {['draft', 'validated', 'signed', 'submitted', 'accepted'].map((step, idx) => {
-                                const steps = ['draft', 'validated', 'signed', 'submitted', 'accepted'];
+                        <div className="flex items-center justify-between text-xs overflow-x-auto">
+                            {['draft', 'pending_validation', 'validated', 'signed', 'submitted', 'accepted'].map((step, idx) => {
+                                const steps = ['draft', 'pending_validation', 'validated', 'signed', 'submitted', 'accepted'];
                                 const currentIdx = steps.indexOf(invoice.status);
-                                const isCompleted = idx <= currentIdx;
+                                const isCompleted = idx < currentIdx || (idx === currentIdx && invoice.status === 'accepted');
                                 const isCurrent = step === invoice.status;
                                 const isRejected = invoice.status === 'rejected';
+                                const isPending = step === 'pending_validation';
 
                                 return (
-                                    <div key={step} className="flex items-center">
+                                    <div key={step} className="flex items-center flex-shrink-0">
                                         <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
-                                            isRejected && step === invoice.status ? 'bg-red-500 text-white' :
-                                            isCompleted ? 'bg-green-500 text-white' : 
+                                            isRejected && isCurrent ? 'bg-red-500 text-white' :
+                                            isCurrent && isPending ? 'bg-orange-500 text-white' :
+                                            isCompleted || isCurrent ? 'bg-green-500 text-white' : 
                                             'bg-gray-200 text-gray-500'
                                         }`}>
-                                            {isCompleted ? '✓' : idx + 1}
+                                            {isCompleted ? '✓' : isCurrent && isPending ? '⏳' : idx + 1}
                                         </div>
-                                        <span className={`ml-2 capitalize ${isCurrent ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
-                                            {step}
+                                        <span className={`ml-2 capitalize whitespace-nowrap ${isCurrent ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+                                            {step === 'pending_validation' ? 'Pending' : step}
                                         </span>
-                                        {idx < 4 && (
-                                            <div className={`mx-4 h-0.5 w-12 ${isCompleted && idx < currentIdx ? 'bg-green-500' : 'bg-gray-200'}`} />
+                                        {idx < 5 && (
+                                            <div className={`mx-3 h-0.5 w-8 ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`} />
                                         )}
                                     </div>
                                 );
@@ -339,6 +478,86 @@ export default function Show({ invoice, canEdit, canDelete, canValidate, canSign
                     </div>
                 )}
 
+                {/* Payments Section */}
+                <div className="rounded-lg bg-white p-6 shadow">
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold">Payments</h2>
+                            <div className="mt-1 flex gap-4 text-sm">
+                                <span className="text-gray-500">
+                                    Paid: <span className="font-medium text-green-600">{formatTND(paymentSummary.totalPaid)}</span>
+                                </span>
+                                <span className="text-gray-500">
+                                    Remaining: <span className={`font-medium ${paymentSummary.isPaidInFull ? 'text-green-600' : 'text-orange-600'}`}>
+                                        {formatTND(paymentSummary.remaining)}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                        {canAddPayment && (
+                            <Button size="sm" onClick={() => setShowPayment(true)}>+ Payment</Button>
+                        )}
+                    </div>
+
+                    {/* Payment Progress Bar */}
+                    {parseFloat(invoice.total_ttc) > 0 && (
+                        <div className="mb-4">
+                            <div className="h-2 w-full rounded-full bg-gray-200">
+                                <div 
+                                    className={`h-2 rounded-full transition-all ${paymentSummary.isPaidInFull ? 'bg-green-500' : 'bg-indigo-500'}`}
+                                    style={{ width: `${Math.min(100, (paymentSummary.totalPaid / parseFloat(invoice.total_ttc)) * 100)}%` }}
+                                />
+                            </div>
+                            <p className="mt-1 text-xs text-gray-400 text-right">
+                                {((paymentSummary.totalPaid / parseFloat(invoice.total_ttc)) * 100).toFixed(1)}% paid
+                            </p>
+                        </div>
+                    )}
+
+                    {(!invoice.payments || invoice.payments.length === 0) ? (
+                        <p className="text-sm text-gray-500">No payments recorded.</p>
+                    ) : (
+                        <table className="min-w-full text-sm">
+                            <thead className="border-b text-left text-xs uppercase text-gray-500">
+                                <tr>
+                                    <th className="px-3 py-2">Date</th>
+                                    <th className="px-3 py-2">Method</th>
+                                    <th className="px-3 py-2">Ref.</th>
+                                    <th className="px-3 py-2">By</th>
+                                    <th className="px-3 py-2 text-right">Amount</th>
+                                    <th className="px-3 py-2"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {invoice.payments.map((p) => {
+                                    const style = methodStyles[p.method] || methodStyles.cash;
+                                    return (
+                                        <tr key={p.id}>
+                                            <td className="px-3 py-2">{formatDate(p.payment_date)}</td>
+                                            <td className="px-3 py-2">
+                                                <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.text}`}>
+                                                    {style.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-2">{p.reference || '—'}</td>
+                                            <td className="px-3 py-2 text-gray-500">{p.creator || '—'}</td>
+                                            <td className="px-3 py-2 text-right font-medium">{formatTND(p.amount)}</td>
+                                            <td className="px-3 py-2 text-right">
+                                                <button 
+                                                    onClick={() => router.delete(`/invoices/${invoice.id}/payments/${p.id}`)} 
+                                                    className="text-red-600 hover:underline text-xs"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
                 {/* Notes */}
                 {invoice.notes && (
                     <div className="rounded-lg bg-white p-6 shadow">
@@ -364,6 +583,82 @@ export default function Show({ invoice, canEdit, canDelete, canValidate, canSign
                 <div className="mt-4 flex justify-end gap-3">
                     <Button variant="secondary" onClick={() => setShowDelete(false)}>Cancel</Button>
                     <Button variant="danger" onClick={() => router.delete(`/invoices/${invoice.id}`)}>Delete Invoice</Button>
+                </div>
+            </Modal>
+
+            {/* Payment Modal */}
+            <Modal show={showPayment} onClose={() => setShowPayment(false)} title="Record a Payment">
+                <form onSubmit={submitPayment} className="space-y-4">
+                    <div className="rounded-lg bg-blue-50 p-3 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-blue-600">Invoice Total:</span>
+                            <span className="font-medium">{formatTND(invoice.total_ttc)}</span>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                            <span className="text-blue-600">Already Paid:</span>
+                            <span className="font-medium">{formatTND(paymentSummary.totalPaid)}</span>
+                        </div>
+                        <hr className="my-2 border-blue-200" />
+                        <div className="flex justify-between">
+                            <span className="text-blue-700 font-medium">Remaining Balance:</span>
+                            <span className="font-bold text-blue-800">{formatTND(paymentSummary.remaining)}</span>
+                        </div>
+                    </div>
+                    <Input 
+                        label="Amount (TND)" 
+                        type="number" 
+                        step="0.001" 
+                        max={paymentSummary.remaining.toFixed(3)}
+                        value={paymentForm.data.amount} 
+                        onChange={(e) => paymentForm.setData('amount', e.target.value)} 
+                        error={paymentForm.errors.amount} 
+                        required 
+                    />
+                    <button 
+                        type="button" 
+                        className="text-xs text-indigo-600 hover:underline"
+                        onClick={() => paymentForm.setData('amount', paymentSummary.remaining.toFixed(3))}
+                    >
+                        Fill remaining amount ({formatNumber(paymentSummary.remaining)} TND)
+                    </button>
+                    <Select label="Method" options={[
+                        { value: 'cash', label: 'Cash' },
+                        { value: 'bank_transfer', label: 'Bank Transfer' },
+                        { value: 'cheque', label: 'Cheque' },
+                        { value: 'effect', label: 'Bill of Exchange' },
+                    ]} value={paymentForm.data.method} onChange={(e) => paymentForm.setData('method', e.target.value)} />
+                    <Input label="Reference" value={paymentForm.data.reference} onChange={(e) => paymentForm.setData('reference', e.target.value)} />
+                    <Input label="Payment Date" type="date" value={paymentForm.data.payment_date} onChange={(e) => paymentForm.setData('payment_date', e.target.value)} required />
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button type="button" variant="secondary" onClick={() => setShowPayment(false)}>Cancel</Button>
+                        <Button type="submit" loading={paymentForm.processing}>Record Payment</Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Reject Validation Modal */}
+            <Modal show={showReject} onClose={() => setShowReject(false)} title="Reject Validation Request">
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                        Please provide a reason for rejecting the validation request. The user will be able to see this reason and make corrections.
+                    </p>
+                    <textarea 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                        rows={4}
+                        placeholder="Enter rejection reason..."
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                    />
+                    <div className="flex justify-end gap-3">
+                        <Button variant="secondary" onClick={() => setShowReject(false)}>Cancel</Button>
+                        <Button 
+                            variant="danger" 
+                            onClick={handleReject}
+                            disabled={!rejectReason.trim()}
+                        >
+                            Reject Validation
+                        </Button>
+                    </div>
                 </div>
             </Modal>
         </AuthenticatedLayout>

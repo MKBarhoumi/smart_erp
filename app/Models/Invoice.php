@@ -24,6 +24,8 @@ class Invoice extends Model
         'ref_ttn_id', 'ref_ttn_value', 'ref_cev', 'ref_ttn_dates',
         'signatures', 'status', 'signed_xml', 'submitted_at', 'accepted_at',
         'rejection_reason', 'notes', 'created_by',
+        'validation_requested_by', 'validation_requested_at',
+        'validated_by', 'validated_at', 'validation_rejection_reason',
     ];
 
     protected $casts = [
@@ -38,6 +40,8 @@ class Invoice extends Model
         'signatures'          => 'array',
         'submitted_at'        => 'datetime',
         'accepted_at'         => 'datetime',
+        'validation_requested_at' => 'datetime',
+        'validated_at'        => 'datetime',
     ];
 
     public function partners(): HasMany
@@ -73,6 +77,21 @@ class Invoice extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function validationRequestedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'validation_requested_by');
+    }
+
+    public function validatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 
     /**

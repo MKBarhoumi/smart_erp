@@ -255,6 +255,9 @@ class InvoiceController extends Controller
             'lines',
             'taxes',
             'creator:id,name',
+            'payments.creator:id,name',
+            'validationRequestedBy:id,name',
+            'validatedBy:id,name',
         ]);
 
         $senderPartner = $invoice->partners->where('function_code', 'I-62')->first();
@@ -278,6 +281,7 @@ class InvoiceController extends Controller
                 'submitted_at' => $invoice->submitted_at,
                 'accepted_at' => $invoice->accepted_at,
                 'rejection_reason' => $invoice->rejection_reason,
+                'validation_rejection_reason' => $invoice->validation_rejection_reason,
                 'created_at' => $invoice->created_at,
                 'creator' => $invoice->creator,
                 'sender' => $senderPartner ? [
@@ -316,12 +320,30 @@ class InvoiceController extends Controller
                     'taxable_amount' => $this->getAmountFromJson($tax->amounts, 'I-177'),
                     'tax_amount' => $this->getAmountFromJson($tax->amounts, 'I-178'),
                 ]),
+                'payments' => $invoice->payments->map(fn ($payment) => [
+                    'id' => $payment->id,
+                    'payment_date' => $payment->payment_date?->format('Y-m-d'),
+                    'amount' => $payment->amount,
+                    'method' => $payment->method,
+                    'reference' => $payment->reference,
+                    'creator' => $payment->creator?->name,
+                ]),
             ],
             'canEdit' => $invoice->isEditable(),
             'canDelete' => $invoice->isDeletable(),
-            'canValidate' => $invoice->status === InvoiceStatus::DRAFT->value,
+            'canRequestValidation' => $invoice->status === InvoiceStatus::DRAFT->value && !auth()->user()->hasAnyRole('admin', 'super_admin'),
+            'canValidate' => $invoice->status === InvoiceStatus::PENDING_VALIDATION->value && auth()->user()->hasAnyRole('admin', 'super_admin'),
+            'canDirectValidate' => $invoice->status === InvoiceStatus::DRAFT->value && auth()->user()->hasAnyRole('admin', 'super_admin'),
             'canSign' => $invoice->status === InvoiceStatus::VALIDATED->value,
             'canSubmit' => $invoice->status === InvoiceStatus::SIGNED->value,
+            'isAdmin' => auth()->user()->hasAnyRole('admin', 'super_admin'),
+            'validationInfo' => [
+                'requested_by' => $invoice->validationRequestedBy?->name,
+                'requested_at' => $invoice->validation_requested_at,
+                'validated_by' => $invoice->validatedBy?->name,
+                'validated_at' => $invoice->validated_at,
+                'rejection_reason' => $invoice->validation_rejection_reason,
+            ],
         ]);
     }
 
@@ -549,17 +571,100 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Validate invoice (DRAFT → VALIDATED).
+     * Request validation for invoice (DRAFT → PENDING_VALIDATION).
+     * For non-admin users.
+     */
+    public function requestValidation(Invoice $invoice): RedirectResponse
+    {
+        if ($invoice->status !== InvoiceStatus::DRAFT->value) {
+            return back()->with('error', 'Only draft invoices can be submitted for validation.');
+        }
+
+        $user = auth()->user();
+        
+        // Admins should use direct validation
+        if ($user->hasAnyRole('admin', 'super_admin')) {
+            return back()->with('error', 'Admins can validate directly.');
+        }
+
+        try {
+            $invoice->update([
+                'validation_requested_by' => $user->id,
+                'validation_requested_at' => now(),
+                'validation_rejection_reason' => null, // Clear any previous rejection
+            ]);
+            $invoice->transitionTo(InvoiceStatus::PENDING_VALIDATION);
+        } catch (InvoiceStateException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Validation request submitted. An administrator will review your invoice.');
+    }
+
+    /**
+     * Validate invoice (DRAFT/PENDING_VALIDATION → VALIDATED).
+     * For admin users only.
      */
     public function validateInvoice(Invoice $invoice): RedirectResponse
     {
+        $user = auth()->user();
+        
+        // Only admins can validate
+        if (!$user->hasAnyRole('admin', 'super_admin')) {
+            return back()->with('error', 'Only administrators can validate invoices.');
+        }
+
+        if (!in_array($invoice->status, [InvoiceStatus::DRAFT->value, InvoiceStatus::PENDING_VALIDATION->value])) {
+            return back()->with('error', 'This invoice cannot be validated.');
+        }
+
         try {
+            $invoice->update([
+                'validated_by' => $user->id,
+                'validated_at' => now(),
+            ]);
             $invoice->transitionTo(InvoiceStatus::VALIDATED);
         } catch (InvoiceStateException $e) {
             return back()->with('error', $e->getMessage());
         }
 
         return back()->with('success', 'Invoice validated successfully.');
+    }
+
+    /**
+     * Reject validation request (PENDING_VALIDATION → DRAFT).
+     * For admin users only.
+     */
+    public function rejectValidation(Invoice $invoice): RedirectResponse
+    {
+        $user = auth()->user();
+        
+        // Only admins can reject
+        if (!$user->hasAnyRole('admin', 'super_admin')) {
+            return back()->with('error', 'Only administrators can reject validation requests.');
+        }
+
+        if ($invoice->status !== InvoiceStatus::PENDING_VALIDATION->value) {
+            return back()->with('error', 'This invoice has no pending validation request.');
+        }
+
+        $reason = request()->input('reason');
+        if (empty($reason)) {
+            return back()->with('error', 'Please provide a reason for rejection.');
+        }
+
+        try {
+            $invoice->update([
+                'validation_rejection_reason' => $reason,
+                'validated_by' => $user->id,
+                'validated_at' => now(),
+            ]);
+            $invoice->transitionTo(InvoiceStatus::DRAFT);
+        } catch (InvoiceStateException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Validation request rejected. The user has been notified.');
     }
 
     /**
@@ -828,5 +933,48 @@ class InvoiceController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
+    }
+
+    /**
+     * Store a payment for an invoice.
+     */
+    public function storePayment(Invoice $invoice): RedirectResponse
+    {
+        // Only allow payments on accepted/validated/signed/submitted invoices
+        if (!in_array($invoice->status, [InvoiceStatus::VALIDATED->value, InvoiceStatus::SIGNED->value, InvoiceStatus::SUBMITTED->value, InvoiceStatus::ACCEPTED->value])) {
+            return back()->with('error', 'Payments can only be recorded for validated, signed, submitted, or accepted invoices.');
+        }
+
+        $validated = request()->validate([
+            'amount' => 'required|numeric|min:0.001',
+            'method' => 'required|in:cash,bank_transfer,cheque,effect',
+            'reference' => 'nullable|string|max:255',
+            'payment_date' => 'required|date',
+        ]);
+
+        $invoice->payments()->create([
+            'id' => \Illuminate\Support\Str::uuid(),
+            'created_by' => auth()->id(),
+            'amount' => $validated['amount'],
+            'method' => $validated['method'],
+            'reference' => $validated['reference'] ?? null,
+            'payment_date' => $validated['payment_date'],
+        ]);
+
+        return back()->with('success', 'Payment recorded successfully.');
+    }
+
+    /**
+     * Delete a payment for an invoice.
+     */
+    public function destroyPayment(Invoice $invoice, \App\Models\Payment $payment): RedirectResponse
+    {
+        if ($payment->invoice_id !== $invoice->id) {
+            return back()->with('error', 'Payment does not belong to this invoice.');
+        }
+
+        $payment->delete();
+
+        return back()->with('success', 'Payment deleted successfully.');
     }
 }

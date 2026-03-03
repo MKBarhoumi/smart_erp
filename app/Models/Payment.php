@@ -14,6 +14,7 @@ class Payment extends Model
 
     protected $fillable = [
         'oldinvoice_id',
+        'invoice_id',
         'created_by',
         'payment_date',
         'amount',
@@ -38,6 +39,14 @@ class Payment extends Model
     public function oldinvoice(): BelongsTo
     {
         return $this->belongsTo(OldInvoice::class);
+    }
+
+    /**
+     * @return BelongsTo<Invoice, $this>
+     */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
     }
 
     /**

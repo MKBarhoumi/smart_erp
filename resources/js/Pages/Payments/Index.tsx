@@ -1,6 +1,6 @@
 ﻿import { Head, Link, router } from '@inertiajs/react';
 import { Pagination } from '@/Components/ui/Pagination';
-import { formatTND } from '@/utils/format';
+import { formatTND, formatDate } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Payment, OldInvoice, PaginatedData, PageProps } from '@/types';
 
@@ -120,7 +120,7 @@ export default function Index({ payments, filters, totalCollected }: Props) {
                     const style = methodStyles[payment.method] || methodStyles.cash;
                     return (
                       <tr key={payment.id} className={`transition-colors hover:bg-user-50/30 ${idx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.payment_date}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDate(payment.payment_date)}</td>
                         <td className="px-6 py-4">
                           <Link href={`/oldinvoices/${payment.oldinvoice.id}`} className="font-semibold text-user-600 hover:text-user-700 transition-colors">{payment.oldinvoice.oldinvoice_number}</Link>
                         </td>

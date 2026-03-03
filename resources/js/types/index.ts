@@ -260,7 +260,7 @@ export interface Invoice {
   document_type_code: string;
   document_type_name: string;
   invoice_date: string | null;
-  status: 'draft' | 'validated' | 'signed' | 'submitted' | 'accepted' | 'rejected';
+  status: 'draft' | 'pending_validation' | 'validated' | 'signed' | 'submitted' | 'accepted' | 'rejected';
   total_ht: string;
   total_tva: string;
   total_ttc: string;

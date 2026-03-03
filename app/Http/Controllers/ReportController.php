@@ -243,6 +243,23 @@ class ReportController extends Controller
         ]);
     }
 
+    public function customerStatementSelect(Request $request): Response
+    {
+        $search = $request->input('search', '');
+        
+        $customers = Customer::query()
+            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%")
+                ->orWhere('identifier_value', 'like', "%{$search}%"))
+            ->orderBy('name')
+            ->limit(50)
+            ->get(['id', 'name', 'identifier_value']);
+        
+        return Inertia::render('Reports/CustomerStatementSelect', [
+            'customers' => $customers,
+            'search' => $search,
+        ]);
+    }
+
     public function customerStatement(Request $request, Customer $customer): Response
     {
         $oldinvoices = OldInvoice::where('customer_id', $customer->id)

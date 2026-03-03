@@ -60,7 +60,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/tax-summary', [ReportController::class, 'taxSummary'])->name('tax-summary');
         Route::get('/customer-aging', [ReportController::class, 'customerAging'])->name('customer-aging');
         Route::get('/timbre', [ReportController::class, 'timbre'])->name('timbre');
-        Route::get('/customer-statement/{customer}', [ReportController::class, 'customerStatement'])->name('customer-statement');
+        Route::get('/customer-statement', [ReportController::class, 'customerStatementSelect'])->name('customer-statement');
+        Route::get('/customer-statement/{customer}', [ReportController::class, 'customerStatement'])->name('customer-statement.show');
 
         // PDF Downloads
         Route::get('/revenue/pdf', [ReportController::class, 'revenuePdf'])->name('revenue.pdf');
