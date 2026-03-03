@@ -1,0 +1,990 @@
+
+---
+
+## FILE 2: API_DOCUMENTATION.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elfatoora Invoicing SOAP API Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        .info-bar {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .info-item {
+            margin: 0.5rem;
+        }
+        .info-item strong {
+            color: #3498db;
+        }
+        nav {
+            background: #34495e;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        nav a:hover {
+            background: #667eea;
+        }
+        .content {
+            padding: 2rem;
+        }
+        .operation {
+            margin: 2rem 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .operation-header {
+            background: #667eea;
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .operation-header h2 {
+            font-size: 1.8rem;
+        }
+        .badge {
+            background: #2ecc71;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .badge.warning {
+            background: #f39c12;
+        }
+        .operation-body {
+            padding: 1.5rem;
+        }
+        .section {
+            margin: 1.5rem 0;
+        }
+        .section h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1.5rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        code {
+            font-family: 'Courier New', monospace;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            padding: 0.8rem;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .alert {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #0c5460;
+            color: #0c5460;
+        }
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #856404;
+            color: #856404;
+        }
+        .alert-error {
+            background: #f8d7da;
+            border-color: #721c24;
+            color: #721c24;
+        }
+        .alert-success {
+            background: #d4edda;
+            border-color: #155724;
+            color: #155724;
+        }
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+        .curl-example {
+            background: #1e1e1e;
+            color: #dcdcdc;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧾 Elfatoora Invoicing API</h1>
+            <p>Complete SOAP API Documentation for TEIF 1.8.8 Electronic Invoicing</p>
+        </header>
+
+        <div class="info-bar">
+            <div class="info-item"><strong>Protocol:</strong> SOAP 1.1</div>
+            <div class="info-item"><strong>Format:</strong> XML</div>
+            <div class="info-item"><strong>TEIF Version:</strong> 1.8.8</div>
+            <div class="info-item"><strong>Dev URL:</strong> http://localhost:8000/soap/invoicing</div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="#submit">SubmitInvoice</a></li>
+                <li><a href="#get">GetInvoice</a></li>
+                <li><a href="#validate">ValidateInvoice</a></li>
+                <li><a href="#list">ListInvoices</a></li>
+                <li><a href="#update">UpdateInvoice</a></li>
+                <li><a href="#delete">DeleteInvoice</a></li>
+                <li><a href="#sign">SignInvoice</a></li>
+                <li><a href="#verify">VerifySignature</a></li>
+                <li><a href="#codes">Code Tables</a></li>
+            </ul>
+        </nav>
+
+        <div class="content">
+            <!-- GET WSDL -->
+            <div class="operation">
+                <div class="operation-header">
+                    <h2>GET WSDL Definition</h2>
+                    <span class="badge">GET</span>
+                </div>
+                <div class="operation-body">
+                    <div class="alert alert-info">
+                        <strong>Endpoint:</strong> GET /soap/invoicing?wsdl
+                    </div>
+                    <div class="section">
+                        <h3>cURL Example</h3>
+                        <div class="curl-example">curl http://localhost:8000/soap/invoicing?wsdl</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. SubmitInvoice -->
+            <div class="operation" id="submit">
+                <div class="operation-header">
+                    <h2>1. SubmitInvoice</h2>
+                    <span class="badge">POST</span>
+                </div>
+                <div class="operation-body">
+                    <p><strong>Description:</strong> Creates a new invoice from TEIF XML with XSD validation.</p>
+
+                    <div class="section">
+                        <h3>Request Parameters</h3>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>teifXml</td>
+                                <td>string</td>
+                                <td>Yes</td>
+                                <td>TEIF XML document (CDATA wrapped)</td>
+                            </tr>
+                            <tr>
+                                <td>withSignature</td>
+                                <td>boolean</td>
+                                <td>Yes</td>
+                                <td>true if contains digital signature</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Example</h3>
+                        <pre><code>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;soapenv:Body&gt;
+      &lt;v1:SubmitInvoiceRequest&gt;
+         &lt;v1:teifXml&gt;&lt;![CDATA[&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;TEIF controlingAgency="TTN" version="1.8.8"&gt;
+  &lt;OldInvoiceHeader&gt;
+    &lt;MessageSenderIdentifier type="I-01"&gt;0736202XAM000&lt;/MessageSenderIdentifier&gt;
+    &lt;MessageRecieverIdentifier type="I-01"&gt;0914089JAM000&lt;/MessageRecieverIdentifier&gt;
+  &lt;/OldInvoiceHeader&gt;
+  &lt;OldInvoiceBody&gt;
+    &lt;Bgm&gt;
+      &lt;DocumentIdentifier&gt;INV-2026-001&lt;/DocumentIdentifier&gt;
+      &lt;DocumentType code="I-11"&gt;Facture&lt;/DocumentType&gt;
+    &lt;/Bgm&gt;
+    &lt;!-- More content --&gt;
+  &lt;/OldInvoiceBody&gt;
+&lt;/TEIF&gt;]]&gt;&lt;/v1:teifXml&gt;
+         &lt;v1:withSignature&gt;false&lt;/v1:withSignature&gt;
+      &lt;/v1:SubmitInvoiceRequest&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Success Response</h3>
+                        <div class="alert alert-success">HTTP 200 OK</div>
+                        <pre><code>&lt;tns:SubmitInvoiceResponse xmlns:tns="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;tns:invoiceId&gt;1&lt;/tns:invoiceId&gt;
+   &lt;tns:status&gt;draft&lt;/tns:status&gt;
+   &lt;tns:message&gt;Invoice submitted successfully.&lt;/tns:message&gt;
+&lt;/tns:SubmitInvoiceResponse&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Error Response</h3>
+                        <div class="alert alert-error">HTTP 500 - CLIENT Fault</div>
+                        <pre><code>&lt;SOAP-ENV:Fault&gt;
+   &lt;faultcode&gt;CLIENT&lt;/faultcode&gt;
+   &lt;faultstring&gt;XSD validation failed: Element 'InvalidElement' is not expected.&lt;/faultstring&gt;
+&lt;/SOAP-ENV:Fault&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>cURL Example</h3>
+                        <div class="curl-example">curl -X POST http://localhost:8000/soap/invoicing \
+  -H "Content-Type: text/xml" \
+  -H "SOAPAction: SubmitInvoice" \
+  -d @request.xml</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. GetInvoice -->
+            <div class="operation" id="get">
+                <div class="operation-header">
+                    <h2>2. GetInvoice</h2>
+                    <span class="badge">POST</span>
+                </div>
+                <div class="operation-body">
+                    <p><strong>Description:</strong> Retrieves an invoice by ID and returns TEIF XML.</p>
+
+                    <div class="section">
+                        <h3>Request Parameters</h3>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>invoiceId</td>
+                                <td>integer</td>
+                                <td>Yes</td>
+                                <td>Invoice database ID</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Example</h3>
+                        <pre><code>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;soapenv:Body&gt;
+      &lt;v1:GetInvoiceRequest&gt;
+         &lt;v1:invoiceId&gt;1&lt;/v1:invoiceId&gt;
+      &lt;/v1:GetInvoiceRequest&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Success Response</h3>
+                        <div class="alert alert-success">HTTP 200 OK</div>
+                        <pre><code>&lt;tns:GetInvoiceResponse xmlns:tns="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;tns:teifXml&gt;&lt;![CDATA[&lt;?xml version="1.0"?&gt;
+&lt;TEIF controlingAgency="TTN" version="1.8.8"&gt;
+  &lt;!-- Full invoice XML --&gt;
+&lt;/TEIF&gt;]]&gt;&lt;/tns:teifXml&gt;
+   &lt;tns:status&gt;draft&lt;/tns:status&gt;
+&lt;/tns:GetInvoiceResponse&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Error Response</h3>
+                        <div class="alert alert-error">HTTP 500 - CLIENT Fault</div>
+                        <pre><code>&lt;SOAP-ENV:Fault&gt;
+   &lt;faultcode&gt;CLIENT&lt;/faultcode&gt;
+   &lt;faultstring&gt;Invoice not found.&lt;/faultstring&gt;
+&lt;/SOAP-ENV:Fault&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>cURL Example</h3>
+                        <div class="curl-example">curl -X POST http://localhost:8000/soap/invoicing \
+  -H "Content-Type: text/xml" \
+  -H "SOAPAction: GetInvoice" \
+  -d @request.xml</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. ValidateInvoice -->
+            <div class="operation" id="validate">
+                <div class="operation-header">
+                    <h2>3. ValidateInvoice</h2>
+                    <span class="badge">POST</span>
+                </div>
+                <div class="operation-body">
+                    <p><strong>Description:</strong> Validates invoice against XSD schema.</p>
+
+                    <div class="section">
+                        <h3>Request Parameters</h3>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>invoiceId</td>
+                                <td>integer</td>
+                                <td>Yes</td>
+                                <td>Invoice database ID</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Example</h3>
+                        <pre><code>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;soapenv:Body&gt;
+      &lt;v1:ValidateInvoiceRequest&gt;
+         &lt;v1:invoiceId&gt;1&lt;/v1:invoiceId&gt;
+      &lt;/v1:ValidateInvoiceRequest&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Success Response (Valid)</h3>
+                        <div class="alert alert-success">HTTP 200 OK</div>
+                        <pre><code>&lt;tns:ValidateInvoiceResponse xmlns:tns="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;tns:valid&gt;true&lt;/tns:valid&gt;
+   &lt;tns:errors&gt;&lt;/tns:errors&gt;
+&lt;/tns:ValidateInvoiceResponse&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Response (Invalid)</h3>
+                        <div class="alert alert-error">HTTP 200 OK (with validation errors)</div>
+                        <pre><code>&lt;tns:ValidateInvoiceResponse xmlns:tns="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;tns:valid&gt;false&lt;/tns:valid&gt;
+   &lt;tns:errors&gt;Element 'Amount': Missing attribute 'currencyIdentifier'
+Element 'TaxRate' must be positive number&lt;/tns:errors&gt;
+&lt;/tns:ValidateInvoiceResponse&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>cURL Example</h3>
+                        <div class="curl-example">curl -X POST http://localhost:8000/soap/invoicing \
+  -H "Content-Type: text/xml" \
+  -H "SOAPAction: ValidateInvoice" \
+  -d @request.xml</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. ListInvoices -->
+            <div class="operation" id="list">
+                <div class="operation-header">
+                    <h2>4. ListInvoices</h2>
+                    <span class="badge">POST</span>
+                </div>
+                <div class="operation-body">
+                    <p><strong>Description:</strong> Lists invoices with pagination and filters.</p>
+
+                    <div class="section">
+                        <h3>Request Parameters</h3>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>senderIdentifier</td>
+                                <td>string</td>
+                                <td>No</td>
+                                <td>null</td>
+                                <td>Filter by sender TTN ID</td>
+                            </tr>
+                            <tr>
+                                <td>status</td>
+                                <td>string</td>
+                                <td>No</td>
+                                <td>null</td>
+                                <td>Filter by status (draft/signed/validated)</td>
+                            </tr>
+                            <tr>
+                                <td>page</td>
+                                <td>integer</td>
+                                <td>No</td>
+                                <td>1</td>
+                                <td>Page number</td>
+                            </tr>
+                            <tr>
+                                <td>perPage</td>
+                                <td>integer</td>
+                                <td>No</td>
+                                <td>20</td>
+                                <td>Items per page (max 100)</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Example</h3>
+                        <pre><code>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;soapenv:Body&gt;
+      &lt;v1:ListInvoicesRequest&gt;
+         &lt;v1:senderIdentifier&gt;0736202XAM000&lt;/v1:senderIdentifier&gt;
+         &lt;v1:status&gt;draft&lt;/v1:status&gt;
+         &lt;v1:page&gt;1&lt;/v1:page&gt;
+         &lt;v1:perPage&gt;20&lt;/v1:perPage&gt;
+      &lt;/v1:ListInvoicesRequest&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Success Response</h3>
+                        <div class="alert alert-success">HTTP 200 OK</div>
+                        <pre><code>&lt;tns:ListInvoicesResponse xmlns:tns="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;tns:invoicesJson&gt;[
+  {
+    "id": 1,
+    "document_identifier": "INV-2026-001",
+    "sender_identifier": "0736202XAM000",
+    "receiver_identifier": "0914089JAM000",
+    "status": "draft",
+    "created_at": "2026-02-28T10:30:00Z"
+  }
+]&lt;/tns:invoicesJson&gt;
+   &lt;tns:total&gt;1&lt;/tns:total&gt;
+&lt;/tns:ListInvoicesResponse&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>cURL Example</h3>
+                        <div class="curl-example">curl -X POST http://localhost:8000/soap/invoicing \
+  -H "Content-Type: text/xml" \
+  -H "SOAPAction: ListInvoices" \
+  -d @request.xml</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. UpdateInvoice -->
+            <div class="operation" id="update">
+                <div class="operation-header">
+                    <h2>5. UpdateInvoice</h2>
+                    <span class="badge">POST</span>
+                </div>
+                <div class="operation-body">
+                    <p><strong>Description:</strong> Updates invoice (draft/signed only).</p>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Warning:</strong> Cannot update validated invoices.
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Parameters</h3>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>invoiceId</td>
+                                <td>integer</td>
+                                <td>Yes</td>
+                                <td>Invoice database ID</td>
+                            </tr>
+                            <tr>
+                                <td>teifXml</td>
+                                <td>string</td>
+                                <td>Yes</td>
+                                <td>Updated TEIF XML</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Example</h3>
+                        <pre><code>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;soapenv:Body&gt;
+      &lt;v1:UpdateInvoiceRequest&gt;
+         &lt;v1:invoiceId&gt;1&lt;/v1:invoiceId&gt;
+         &lt;v1:teifXml&gt;&lt;![CDATA[&lt;TEIF...&gt;...&lt;/TEIF&gt;]]&gt;&lt;/v1:teifXml&gt;
+      &lt;/v1:UpdateInvoiceRequest&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Success Response</h3>
+                        <div class="alert alert-success">HTTP 200 OK</div>
+                        <pre><code>&lt;tns:UpdateInvoiceResponse xmlns:tns="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;tns:success&gt;true&lt;/tns:success&gt;
+   &lt;tns:message&gt;Invoice updated successfully.&lt;/tns:message&gt;
+&lt;/tns:UpdateInvoiceResponse&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Error Response</h3>
+                        <div class="alert alert-error">HTTP 500 - CLIENT Fault</div>
+                        <pre><code>&lt;SOAP-ENV:Fault&gt;
+   &lt;faultcode&gt;CLIENT&lt;/faultcode&gt;
+   &lt;faultstring&gt;Cannot update a validated invoice.&lt;/faultstring&gt;
+&lt;/SOAP-ENV:Fault&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>cURL Example</h3>
+                        <div class="curl-example">curl -X POST http://localhost:8000/soap/invoicing \
+  -H "Content-Type: text/xml" \
+  -H "SOAPAction: UpdateInvoice" \
+  -d @request.xml</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. DeleteInvoice -->
+            <div class="operation" id="delete">
+                <div class="operation-header">
+                    <h2>6. DeleteInvoice</h2>
+                    <span class="badge">POST</span>
+                </div>
+                <div class="operation-body">
+                    <p><strong>Description:</strong> Deletes invoice (draft/signed only).</p>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Warning:</strong> Cannot delete validated invoices.
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Parameters</h3>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>invoiceId</td>
+                                <td>integer</td>
+                                <td>Yes</td>
+                                <td>Invoice database ID</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Example</h3>
+                        <pre><code>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;soapenv:Body&gt;
+      &lt;v1:DeleteInvoiceRequest&gt;
+         &lt;v1:invoiceId&gt;1&lt;/v1:invoiceId&gt;
+      &lt;/v1:DeleteInvoiceRequest&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Success Response</h3>
+                        <div class="alert alert-success">HTTP 200 OK</div>
+                        <pre><code>&lt;tns:DeleteInvoiceResponse xmlns:tns="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;tns:success&gt;true&lt;/tns:success&gt;
+   &lt;tns:message&gt;Invoice deleted.&lt;/tns:message&gt;
+&lt;/tns:DeleteInvoiceResponse&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Error Response</h3>
+                        <div class="alert alert-error">HTTP 500 - CLIENT Fault</div>
+                        <pre><code>&lt;SOAP-ENV:Fault&gt;
+   &lt;faultcode&gt;CLIENT&lt;/faultcode&gt;
+   &lt;faultstring&gt;Cannot delete a validated invoice.&lt;/faultstring&gt;
+&lt;/SOAP-ENV:Fault&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>cURL Example</h3>
+                        <div class="curl-example">curl -X POST http://localhost:8000/soap/invoicing \
+  -H "Content-Type: text/xml" \
+  -H "SOAPAction: DeleteInvoice" \
+  -d @request.xml</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. SignInvoice -->
+            <div class="operation" id="sign">
+                <div class="operation-header">
+                    <h2>7. SignInvoice</h2>
+                    <span class="badge warning">NOT IMPLEMENTED</span>
+                </div>
+                <div class="operation-body">
+                    <p><strong>Description:</strong> Signs invoice with digital signature.</p>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Status:</strong> Not yet implemented. Placeholder returns success=false.
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Parameters</h3>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>invoiceId</td>
+                                <td>integer</td>
+                                <td>Yes</td>
+                                <td>Invoice database ID</td>
+                            </tr>
+                            <tr>
+                                <td>signerRole</td>
+                                <td>string</td>
+                                <td>Yes</td>
+                                <td>supplier or buyer</td>
+                            </tr>
+                            <tr>
+                                <td>privateKeyPem</td>
+                                <td>string</td>
+                                <td>Yes</td>
+                                <td>PEM-encoded private key</td>
+                            </tr>
+                            <tr>
+                                <td>certificatePem</td>
+                                <td>string</td>
+                                <td>Yes</td>
+                                <td>PEM-encoded certificate</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Example</h3>
+                        <pre><code>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;soapenv:Body&gt;
+      &lt;v1:SignInvoiceRequest&gt;
+         &lt;v1:invoiceId&gt;1&lt;/v1:invoiceId&gt;
+         &lt;v1:signerRole&gt;supplier&lt;/v1:signerRole&gt;
+         &lt;v1:privateKeyPem&gt;&lt;![CDATA[-----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----]]&gt;&lt;/v1:privateKeyPem&gt;
+         &lt;v1:certificatePem&gt;&lt;![CDATA[-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----]]&gt;&lt;/v1:certificatePem&gt;
+      &lt;/v1:SignInvoiceRequest&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Current Response</h3>
+                        <div class="alert alert-warning">HTTP 200 OK (Not Implemented)</div>
+                        <pre><code>&lt;tns:SignInvoiceResponse xmlns:tns="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;tns:signedXml&gt;&lt;/tns:signedXml&gt;
+   &lt;tns:success&gt;false&lt;/tns:success&gt;
+   &lt;tns:message&gt;Signing not yet implemented in this demo.&lt;/tns:message&gt;
+&lt;/tns:SignInvoiceResponse&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. VerifySignature -->
+            <div class="operation" id="verify">
+                <div class="operation-header">
+                    <h2>8. VerifySignature</h2>
+                    <span class="badge warning">NOT IMPLEMENTED</span>
+                </div>
+                <div class="operation-body">
+                    <p><strong>Description:</strong> Verifies digital signature of invoice.</p>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Status:</strong> Not yet implemented. Placeholder returns valid=false.
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Parameters</h3>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>invoiceId</td>
+                                <td>integer</td>
+                                <td>Yes</td>
+                                <td>Invoice database ID</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Request Example</h3>
+                        <pre><code>&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:v1="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;soapenv:Body&gt;
+      &lt;v1:VerifySignatureRequest&gt;
+         &lt;v1:invoiceId&gt;1&lt;/v1:invoiceId&gt;
+      &lt;/v1:VerifySignatureRequest&gt;
+   &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h3>Current Response</h3>
+                        <div class="alert alert-warning">HTTP 200 OK (Not Implemented)</div>
+                        <pre><code>&lt;tns:VerifySignatureResponse xmlns:tns="http://elfatoora.tn/invoicing/v1"&gt;
+   &lt;tns:valid&gt;false&lt;/tns:valid&gt;
+   &lt;tns:message&gt;Signature verification not yet implemented.&lt;/tns:message&gt;
+&lt;/tns:VerifySignatureResponse&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Tables -->
+            <div class="operation" id="codes">
+                <div class="operation-header">
+                    <h2>📋 Code Reference Tables</h2>
+                </div>
+                <div class="operation-body">
+                    <div class="section">
+                        <h3>Document Type Codes</h3>
+                        <table>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>I-11</td>
+                                <td>Facture</td>
+                                <td>Standard invoice</td>
+                            </tr>
+                            <tr>
+                                <td>I-12</td>
+                                <td>Facture rectificative</td>
+                                <td>Corrective invoice</td>
+                            </tr>
+                            <tr>
+                                <td>I-13</td>
+                                <td>Avoir</td>
+                                <td>Credit note</td>
+                            </tr>
+                            <tr>
+                                <td>I-14</td>
+                                <td>Note de débit</td>
+                                <td>Debit note</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Tax Type Codes</h3>
+                        <table>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                            </tr>
+                            <tr>
+                                <td>I-1602</td>
+                                <td>TVA (Value Added Tax)</td>
+                            </tr>
+                            <tr>
+                                <td>I-1601</td>
+                                <td>Droit de timbre (Stamp duty)</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Amount Type Codes</h3>
+                        <table>
+                            <tr>
+                                <th>Code</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>I-176</td>
+                                <td>Taxable amount</td>
+                            </tr>
+                            <tr>
+                                <td>I-177</td>
+                                <td>Tax base amount</td>
+                            </tr>
+                            <tr>
+                                <td>I-178</td>
+                                <td>Tax amount</td>
+                            </tr>
+                            <tr>
+                                <td>I-180</td>
+                                <td>Grand total (with tax)</td>
+                            </tr>
+                            <tr>
+                                <td>I-181</td>
+                                <td>Total tax amount</td>
+                            </tr>
+                            <tr>
+                                <td>I-183</td>
+                                <td>Line amount</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>Invoice Status Values</h3>
+                        <table>
+                            <tr>
+                                <th>Status</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>draft</td>
+                                <td>Invoice created, not yet signed</td>
+                            </tr>
+                            <tr>
+                                <td>signed</td>
+                                <td>Invoice has digital signature</td>
+                            </tr>
+                            <tr>
+                                <td>validated</td>
+                                <td>Invoice validated by TTN system</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3>SOAP Fault Codes</h3>
+                        <table>
+                            <tr>
+                                <th>Code</th>
+                                <th>Description</th>
+                                <th>Cause</th>
+                            </tr>
+                            <tr>
+                                <td>CLIENT</td>
+                                <td>Client-side error</td>
+                                <td>Invalid input, validation failure, resource not found</td>
+                            </tr>
+                            <tr>
+                                <td>SERVER</td>
+                                <td>Server-side error</td>
+                                <td>Database failure, internal processing error</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer>
+            <p><strong>Elfatoora Invoicing SOAP API v1.0</strong></p>
+            <p>Tunisia TradeNet (TTN) TEIF 1.8.8 Compliance</p>
+            <p>© 2026 Smart ERP Solutions</p>
+        </footer>
+    </div>
+</body>
+</html>

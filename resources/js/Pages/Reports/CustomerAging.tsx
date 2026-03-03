@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { formatTND, formatNumber } from '@/utils/format';
 
@@ -41,11 +41,30 @@ export default function CustomerAging({ customers = [], totals }: Props) {
             <Head title="Customer Aging" />
 
             <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Customer Aging Report</h1>
-                    <p className="mt-1 text-sm text-gray-500">
-                        Total outstanding: <strong>{formatTND(safeTotals.total_outstanding)}</strong>
-                    </p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <Link href="/reports" className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Reports
+                        </Link>
+                        <h1 className="mt-2 text-2xl font-bold text-gray-900">Customer Aging Report</h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Total outstanding: <strong>{formatTND(safeTotals.total_outstanding)}</strong>
+                        </p>
+                    </div>
+                    <a
+                        href="/reports/customer-aging/pdf"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download PDF
+                    </a>
                 </div>
 
                 {/* Summary cards */}

@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Select } from '@/Components/ui/Select';
 import { formatTND, formatNumber } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -30,15 +30,34 @@ export default function Revenue({ data = [], year, availableYears = [], yearlyTo
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Revenue</h1>
+                        <Link href="/reports" className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Reports
+                        </Link>
+                        <h1 className="mt-2 text-2xl font-bold text-gray-900">Revenue</h1>
                         <p className="mt-1 text-sm text-gray-500">Total {year}: <strong>{formatTND(yearlyTotal)}</strong></p>
                     </div>
-                    <div className="w-32">
-                        <Select
-                            options={availableYears.map((y) => ({ value: String(y), label: String(y) }))}
-                            value={String(year)}
-                            onChange={(e) => changeYear(e.target.value)}
-                        />
+                    <div className="flex items-center gap-3">
+                        <a
+                            href={`/reports/revenue/pdf?year=${year}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Download PDF
+                        </a>
+                        <div className="w-32">
+                            <Select
+                                options={availableYears.map((y) => ({ value: String(y), label: String(y) }))}
+                                value={String(year)}
+                                onChange={(e) => changeYear(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </div>
 

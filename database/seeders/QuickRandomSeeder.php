@@ -123,7 +123,7 @@ class QuickRandomSeeder extends Seeder
     private function createCompanySettings(): void
     {
         CompanySetting::create([
-            'company_name' => 'SmartERP Solutions SARL',
+            'company_name' => 'NovERP Solutions SARL',
             'matricule_fiscal' => '1234567A',
             'category_type' => 'A',
             'person_type' => 'M',
@@ -137,8 +137,8 @@ class QuickRandomSeeder extends Seeder
             'country_code' => 'TN',
             'phone' => '+216 71 123 456',
             'fax' => '+216 71 123 457',
-            'email' => 'contact@smarterp.tn',
-            'website' => 'https://smarterp.tn',
+            'email' => 'contact@noverp.tn',
+            'website' => 'https://noverp.tn',
             'bank_rib' => '07040001001001234567',
             'bank_name' => 'BIAT',
             'bank_branch_code' => '040',
@@ -153,7 +153,7 @@ class QuickRandomSeeder extends Seeder
     {
         $adminUser = User::factory()->admin()->create([
             'name' => 'Ahmed Ben Ali',
-            'email' => 'admin@smarterp.tn',
+            'email' => 'admin@noverp.tn',
         ]);
 
         $accountants = User::factory()->count(4)->create([

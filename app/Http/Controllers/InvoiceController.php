@@ -19,6 +19,7 @@ use App\Models\InvoiceLine;
 use App\Models\InvoicePartner;
 use App\Models\InvoiceTax;
 use App\Models\Product;
+use App\Services\InvoicePdfService;
 use App\Services\TeifXmlBuilder;
 use App\Services\XadesSignatureService;
 use App\Services\TTNApiClient;
@@ -34,6 +35,7 @@ class InvoiceController extends Controller
         private readonly TeifXmlBuilder $xmlBuilder,
         private readonly XadesSignatureService $signatureService,
         private readonly TTNApiClient $ttnClient,
+        private readonly InvoicePdfService $pdfService,
     ) {
     }
 
@@ -811,5 +813,20 @@ class InvoiceController extends Controller
             'postal_code' => $settings->postal_code ?? '',
             'country' => $settings->country_code ?? 'TN',
         ];
+    }
+
+    /**
+     * Download invoice as PDF
+     */
+    public function downloadPdf(Invoice $invoice): HttpResponse
+    {
+        $pdfContent = $this->pdfService->generate($invoice);
+        
+        $filename = "invoice_{$invoice->document_identifier}_" . now()->format('Ymd') . '.pdf';
+        
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 }

@@ -102,6 +102,9 @@ export default function Show({ invoice, canEdit, canDelete, canValidate, canSign
                             <a href={`/invoices/${invoice.id}/xml`} target="_blank" rel="noopener noreferrer">
                                 <Button size="sm" variant="ghost">Download XML</Button>
                             </a>
+                            <a href={`/invoices/${invoice.id}/pdf`} target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" variant="ghost">Download PDF</Button>
+                            </a>
                             <Button 
                                 size="sm" 
                                 variant="ghost" 

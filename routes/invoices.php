@@ -13,6 +13,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/sign', [InvoiceController::class, 'sign'])->name('sign');
         Route::post('/submit', [InvoiceController::class, 'submit'])->name('submit');
         Route::get('/xml', [InvoiceController::class, 'downloadXml'])->name('xml');
+        Route::get('/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
         Route::post('/duplicate', [InvoiceController::class, 'duplicate'])->name('duplicate');
     });
 });

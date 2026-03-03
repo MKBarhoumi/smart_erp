@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\OldInvoiceStatus;
 use App\Models\Customer;
 use App\Models\OldInvoice;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -74,38 +75,87 @@ class ReportController extends Controller
     public function taxSummary(Request $request): Response
     {
         $year = $request->integer('year', (int) now()->format('Y'));
-        $quarter = $request->integer('quarter', (int) ceil(now()->month / 3));
 
-        $startMonth = ($quarter - 1) * 3 + 1;
-        $endMonth = $quarter * 3;
+        // Get driver-specific quarter extraction
+        $driver = DB::connection()->getDriverName();
+        switch ($driver) {
+            case 'pgsql':
+                $quarterExpr = "CEIL(EXTRACT(MONTH FROM oldinvoice_date) / 3)::integer";
+                $yearExpr = "EXTRACT(YEAR FROM oldinvoice_date)::integer";
+                break;
+            case 'sqlite':
+                $quarterExpr = "((CAST(strftime('%m', oldinvoice_date) AS INTEGER) + 2) / 3)";
+                $yearExpr = "CAST(strftime('%Y', oldinvoice_date) AS INTEGER)";
+                break;
+            case 'sqlsrv':
+                $quarterExpr = "DATEPART(QUARTER, oldinvoice_date)";
+                $yearExpr = "YEAR(oldinvoice_date)";
+                break;
+            default: // mysql / mariadb
+                $quarterExpr = "QUARTER(oldinvoice_date)";
+                $yearExpr = "YEAR(oldinvoice_date)";
+        }
 
-        $taxSummary = DB::table('oldinvoice_tax_lines')
-            ->join('oldinvoices', 'oldinvoice_tax_lines.oldinvoice_id', '=', 'oldinvoices.id')
-            ->whereYear('oldinvoices.oldinvoice_date', $year)
-            ->whereRaw("EXTRACT(MONTH FROM oldinvoices.oldinvoice_date) BETWEEN ? AND ?", [$startMonth, $endMonth])
-            ->whereNotIn('oldinvoices.status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
-            ->whereNull('oldinvoices.deleted_at')
-            ->selectRaw("
-                oldinvoice_tax_lines.tax_type_code,
-                oldinvoice_tax_lines.tax_type_name,
-                oldinvoice_tax_lines.tax_rate,
-                SUM(oldinvoice_tax_lines.taxable_amount) as total_taxable,
-                SUM(oldinvoice_tax_lines.tax_amount) as total_tax
-            ")
-            ->groupBy('oldinvoice_tax_lines.tax_type_code', 'oldinvoice_tax_lines.tax_type_name', 'oldinvoice_tax_lines.tax_rate')
-            ->orderBy('oldinvoice_tax_lines.tax_rate')
-            ->get();
-
-        $totalTimbre = OldInvoice::whereYear('oldinvoice_date', $year)
-            ->whereRaw("EXTRACT(MONTH FROM oldinvoice_date) BETWEEN ? AND ?", [$startMonth, $endMonth])
+        // Get quarterly data
+        $quarterlyData = OldInvoice::whereYear('oldinvoice_date', $year)
             ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
-            ->sum('timbre_fiscal');
+            ->selectRaw("{$quarterExpr} as quarter, SUM(total_tva) as tva_collected, SUM(timbre_fiscal) as timbre_fiscal, COUNT(*) as oldinvoice_count, SUM(total_ht) as taxable_base")
+            ->groupByRaw($quarterExpr)
+            ->orderByRaw($quarterExpr)
+            ->get()
+            ->map(fn ($row) => [
+                'quarter' => (int) $row->quarter,
+                'tva_collected' => number_format((float) $row->tva_collected, 3, '.', ''),
+                'timbre_fiscal' => number_format((float) $row->timbre_fiscal, 3, '.', ''),
+                'total_tax' => number_format((float) $row->tva_collected + (float) $row->timbre_fiscal, 3, '.', ''),
+                'taxable_base' => number_format((float) $row->taxable_base, 3, '.', ''),
+                'oldinvoice_count' => (int) $row->oldinvoice_count,
+            ])
+            ->keyBy('quarter');
+
+        // Ensure all 4 quarters are present
+        $data = collect([1, 2, 3, 4])->map(function ($q) use ($quarterlyData) {
+            return $quarterlyData->get($q, [
+                'quarter' => $q,
+                'tva_collected' => '0.000',
+                'timbre_fiscal' => '0.000',
+                'total_tax' => '0.000',
+                'taxable_base' => '0.000',
+                'oldinvoice_count' => 0,
+            ]);
+        })->values();
+
+        // Calculate yearly totals
+        $yearlyTotals = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->selectRaw('SUM(total_tva) as tva, SUM(timbre_fiscal) as timbre, SUM(total_ht) as base')
+            ->first();
+
+        $totals = [
+            'tva' => number_format((float) ($yearlyTotals->tva ?? 0), 3, '.', ''),
+            'timbre' => number_format((float) ($yearlyTotals->timbre ?? 0), 3, '.', ''),
+            'total' => number_format((float) ($yearlyTotals->tva ?? 0) + (float) ($yearlyTotals->timbre ?? 0), 3, '.', ''),
+            'base' => number_format((float) ($yearlyTotals->base ?? 0), 3, '.', ''),
+        ];
+
+        // Get available years for filtering
+        $availableYears = OldInvoice::selectRaw("DISTINCT {$yearExpr} as year")
+            ->whereNotNull('oldinvoice_date')
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->values()
+            ->toArray();
+
+        // If no years available, use current year
+        if (empty($availableYears)) {
+            $availableYears = [(int) now()->format('Y')];
+        }
 
         return Inertia::render('Reports/TaxSummary', [
             'year' => $year,
-            'quarter' => $quarter,
-            'taxSummary' => $taxSummary,
-            'totalTimbre' => number_format((float) $totalTimbre, 3, '.', ''),
+            'data' => $data,
+            'totals' => $totals,
+            'availableYears' => $availableYears,
         ]);
     }
 
@@ -225,11 +275,31 @@ class ReportController extends Controller
     {
         $year = $request->integer('year', (int) now()->format('Y'));
 
+        // Get driver-specific month extraction
+        $driver = DB::connection()->getDriverName();
+        switch ($driver) {
+            case 'pgsql':
+                $monthExpr = "EXTRACT(MONTH FROM oldinvoice_date)::integer";
+                $yearExpr = "EXTRACT(YEAR FROM oldinvoice_date)::integer";
+                break;
+            case 'sqlite':
+                $monthExpr = "CAST(strftime('%m', oldinvoice_date) AS INTEGER)";
+                $yearExpr = "CAST(strftime('%Y', oldinvoice_date) AS INTEGER)";
+                break;
+            case 'sqlsrv':
+                $monthExpr = "MONTH(oldinvoice_date)";
+                $yearExpr = "YEAR(oldinvoice_date)";
+                break;
+            default: // mysql / mariadb
+                $monthExpr = "MONTH(oldinvoice_date)";
+                $yearExpr = "YEAR(oldinvoice_date)";
+        }
+
         $monthlyTimbre = OldInvoice::whereYear('oldinvoice_date', $year)
             ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
             ->where('timbre_fiscal', '>', 0)
-            ->selectRaw("EXTRACT(MONTH FROM oldinvoice_date) as month, SUM(timbre_fiscal) as total_timbre, COUNT(*) as oldinvoice_count")
-            ->groupByRaw("EXTRACT(MONTH FROM oldinvoice_date)")
+            ->selectRaw("{$monthExpr} as month, SUM(timbre_fiscal) as total_timbre, COUNT(*) as oldinvoice_count")
+            ->groupByRaw($monthExpr)
             ->orderBy('month')
             ->get();
 
@@ -237,13 +307,284 @@ class ReportController extends Controller
             ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
             ->sum('timbre_fiscal');
 
+        $availableYears = OldInvoice::selectRaw("DISTINCT {$yearExpr} as year")
+            ->whereNotNull('oldinvoice_date')
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->values()
+            ->toArray();
+
+        if (empty($availableYears)) {
+            $availableYears = [(int) now()->format('Y')];
+        }
+
         return Inertia::render('Reports/Timbre', [
             'year' => $year,
             'monthlyTimbre' => $monthlyTimbre,
             'yearlyTotal' => number_format((float) $yearlyTotal, 3, '.', ''),
-            'availableYears' => OldInvoice::selectRaw("DISTINCT EXTRACT(YEAR FROM oldinvoice_date) as year")
-                ->orderByDesc('year')
-                ->pluck('year'),
+            'availableYears' => $availableYears,
+        ]);
+    }
+
+    // ============ PDF DOWNLOAD METHODS ============
+
+    public function revenuePdf(Request $request): \Illuminate\Http\Response
+    {
+        $year = $request->integer('year', (int) now()->format('Y'));
+
+        $driver = DB::connection()->getDriverName();
+        switch ($driver) {
+            case 'pgsql':
+                $monthExpr = "TO_CHAR(oldinvoice_date, 'Mon')";
+                $monthOrderExpr = "EXTRACT(MONTH FROM oldinvoice_date)";
+                break;
+            case 'sqlite':
+                $monthExpr = "strftime('%m', oldinvoice_date)";
+                $monthOrderExpr = "strftime('%m', oldinvoice_date)";
+                break;
+            case 'sqlsrv':
+                $monthExpr = "FORMAT(oldinvoice_date, 'MMM')";
+                $monthOrderExpr = "MONTH(oldinvoice_date)";
+                break;
+            default:
+                $monthExpr = "DATE_FORMAT(oldinvoice_date, '%b')";
+                $monthOrderExpr = "MONTH(oldinvoice_date)";
+        }
+
+        $data = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->selectRaw("{$monthExpr} as month, SUM(total_ttc) as total, COUNT(*) as count")
+            ->groupByRaw("{$monthExpr}, {$monthOrderExpr}")
+            ->orderByRaw($monthOrderExpr)
+            ->get();
+
+        $yearlyTotal = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->sum('total_ttc');
+
+        $pdf = Pdf::loadView('pdf.reports.revenue', [
+            'year' => $year,
+            'data' => $data,
+            'yearlyTotal' => number_format((float) $yearlyTotal, 3, '.', ''),
+            'generatedAt' => now()->format('d/m/Y H:i'),
+        ]);
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"revenue_report_{$year}.pdf\"",
+        ]);
+    }
+
+    public function taxSummaryPdf(Request $request): \Illuminate\Http\Response
+    {
+        $year = $request->integer('year', (int) now()->format('Y'));
+
+        $driver = DB::connection()->getDriverName();
+        switch ($driver) {
+            case 'pgsql':
+                $quarterExpr = "CEIL(EXTRACT(MONTH FROM oldinvoice_date) / 3)::integer";
+                break;
+            case 'sqlite':
+                $quarterExpr = "((CAST(strftime('%m', oldinvoice_date) AS INTEGER) + 2) / 3)";
+                break;
+            case 'sqlsrv':
+                $quarterExpr = "DATEPART(QUARTER, oldinvoice_date)";
+                break;
+            default:
+                $quarterExpr = "QUARTER(oldinvoice_date)";
+        }
+
+        $quarterlyData = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->selectRaw("{$quarterExpr} as quarter, SUM(total_tva) as tva_collected, SUM(timbre_fiscal) as timbre_fiscal, COUNT(*) as oldinvoice_count, SUM(total_ht) as taxable_base")
+            ->groupByRaw($quarterExpr)
+            ->orderByRaw($quarterExpr)
+            ->get()
+            ->keyBy('quarter');
+
+        $data = collect([1, 2, 3, 4])->map(function ($q) use ($quarterlyData) {
+            $row = $quarterlyData->get($q);
+            return [
+                'quarter' => $q,
+                'tva_collected' => number_format((float) ($row->tva_collected ?? 0), 3, '.', ''),
+                'timbre_fiscal' => number_format((float) ($row->timbre_fiscal ?? 0), 3, '.', ''),
+                'total_tax' => number_format((float) ($row->tva_collected ?? 0) + (float) ($row->timbre_fiscal ?? 0), 3, '.', ''),
+                'taxable_base' => number_format((float) ($row->taxable_base ?? 0), 3, '.', ''),
+                'oldinvoice_count' => (int) ($row->oldinvoice_count ?? 0),
+            ];
+        });
+
+        $yearlyTotals = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->selectRaw('SUM(total_tva) as tva, SUM(timbre_fiscal) as timbre, SUM(total_ht) as base')
+            ->first();
+
+        $totals = [
+            'tva' => number_format((float) ($yearlyTotals->tva ?? 0), 3, '.', ''),
+            'timbre' => number_format((float) ($yearlyTotals->timbre ?? 0), 3, '.', ''),
+            'total' => number_format((float) ($yearlyTotals->tva ?? 0) + (float) ($yearlyTotals->timbre ?? 0), 3, '.', ''),
+            'base' => number_format((float) ($yearlyTotals->base ?? 0), 3, '.', ''),
+        ];
+
+        $pdf = Pdf::loadView('pdf.reports.tax-summary', [
+            'year' => $year,
+            'data' => $data,
+            'totals' => $totals,
+            'generatedAt' => now()->format('d/m/Y H:i'),
+        ]);
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"tax_summary_{$year}.pdf\"",
+        ]);
+    }
+
+    public function customerAgingPdf(): \Illuminate\Http\Response
+    {
+        $today = now();
+        $days30 = $today->copy()->subDays(30);
+        $days60 = $today->copy()->subDays(60);
+        $days90 = $today->copy()->subDays(90);
+
+        $customers = Customer::select('customers.*')
+            ->whereHas('oldinvoices', function ($q) {
+                $q->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value]);
+            })
+            ->get()
+            ->map(function ($customer) use ($days30, $days60, $days90) {
+                $invoices = OldInvoice::where('customer_id', $customer->id)
+                    ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+                    ->with('payments')
+                    ->get();
+
+                $current = $days_30_60 = $days_60_90 = $over_90 = 0;
+
+                foreach ($invoices as $inv) {
+                    $paid = $inv->payments->sum('amount');
+                    $outstanding = (float) $inv->total_ttc - (float) $paid;
+                    if ($outstanding <= 0) continue;
+
+                    $invDateCarbon = \Carbon\Carbon::parse($inv->oldinvoice_date);
+
+                    if ($invDateCarbon >= $days30) {
+                        $current += $outstanding;
+                    } elseif ($invDateCarbon >= $days60) {
+                        $days_30_60 += $outstanding;
+                    } elseif ($invDateCarbon >= $days90) {
+                        $days_60_90 += $outstanding;
+                    } else {
+                        $over_90 += $outstanding;
+                    }
+                }
+
+                $totalOutstanding = $current + $days_30_60 + $days_60_90 + $over_90;
+                if ($totalOutstanding <= 0) return null;
+
+                return [
+                    'name' => $customer->name,
+                    'identifier_value' => $customer->identifier_value,
+                    'total_outstanding' => number_format($totalOutstanding, 3, '.', ''),
+                    'current' => number_format($current, 3, '.', ''),
+                    'days_30_60' => number_format($days_30_60, 3, '.', ''),
+                    'days_60_90' => number_format($days_60_90, 3, '.', ''),
+                    'over_90' => number_format($over_90, 3, '.', ''),
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $totals = [
+            'total_outstanding' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['total_outstanding'])), 3, '.', ''),
+            'current' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['current'])), 3, '.', ''),
+            'days_30_60' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['days_30_60'])), 3, '.', ''),
+            'days_60_90' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['days_60_90'])), 3, '.', ''),
+            'over_90' => number_format($customers->sum(fn ($c) => (float) str_replace(',', '', $c['over_90'])), 3, '.', ''),
+        ];
+
+        $pdf = Pdf::loadView('pdf.reports.customer-aging', [
+            'customers' => $customers,
+            'totals' => $totals,
+            'generatedAt' => now()->format('d/m/Y H:i'),
+        ]);
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="customer_aging_report.pdf"',
+        ]);
+    }
+
+    public function timbrePdf(Request $request): \Illuminate\Http\Response
+    {
+        $year = $request->integer('year', (int) now()->format('Y'));
+
+        $driver = DB::connection()->getDriverName();
+        switch ($driver) {
+            case 'pgsql':
+                $monthExpr = "EXTRACT(MONTH FROM oldinvoice_date)::integer";
+                break;
+            case 'sqlite':
+                $monthExpr = "CAST(strftime('%m', oldinvoice_date) AS INTEGER)";
+                break;
+            case 'sqlsrv':
+                $monthExpr = "MONTH(oldinvoice_date)";
+                break;
+            default:
+                $monthExpr = "MONTH(oldinvoice_date)";
+        }
+
+        $monthlyData = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->where('timbre_fiscal', '>', 0)
+            ->selectRaw("{$monthExpr} as month, SUM(timbre_fiscal) as total_timbre, COUNT(*) as oldinvoice_count")
+            ->groupByRaw($monthExpr)
+            ->orderBy('month')
+            ->get();
+
+        $yearlyTotal = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->sum('timbre_fiscal');
+
+        $pdf = Pdf::loadView('pdf.reports.timbre', [
+            'year' => $year,
+            'monthlyData' => $monthlyData,
+            'yearlyTotal' => number_format((float) $yearlyTotal, 3, '.', ''),
+            'generatedAt' => now()->format('d/m/Y H:i'),
+        ]);
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"timbre_report_{$year}.pdf\"",
+        ]);
+    }
+
+    public function customerStatementPdf(Customer $customer): \Illuminate\Http\Response
+    {
+        $invoices = OldInvoice::where('customer_id', $customer->id)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+            ->with('payments')
+            ->orderByDesc('oldinvoice_date')
+            ->get();
+
+        $totalInvoiced = $invoices->sum(fn ($i) => (float) $i->total_ttc);
+        $totalPaid = $invoices->sum(fn ($i) => $i->payments->sum('amount'));
+        $balance = $totalInvoiced - $totalPaid;
+
+        $totals = [
+            'total_invoiced' => number_format($totalInvoiced, 3, '.', ''),
+            'total_paid' => number_format($totalPaid, 3, '.', ''),
+            'balance' => number_format($balance, 3, '.', ''),
+        ];
+
+        $pdf = Pdf::loadView('pdf.reports.customer-statement', [
+            'customer' => $customer,
+            'invoices' => $invoices,
+            'totals' => $totals,
+            'generatedAt' => now()->format('d/m/Y H:i'),
+        ]);
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"statement_{$customer->id}.pdf\"",
         ]);
     }
 }

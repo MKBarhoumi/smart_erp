@@ -1,10 +1,8 @@
-import { Head, Link, router } from '@inertiajs/react';
+﻿import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { InvoiceStatusBadge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
-import { Input } from '@/Components/ui/Input';
 import { Pagination } from '@/Components/ui/Pagination';
-import { Select } from '@/Components/ui/Select';
 import { formatTND } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Invoice, PaginatedData } from '@/types';
@@ -43,131 +41,106 @@ export default function InvoicesIndex({ invoices, filters, statuses }: Props) {
     };
 
     const clearFilters = () => {
-        setSearch('');
-        setStatus('');
-        setDateFrom('');
-        setDateTo('');
+        setSearch(''); setStatus(''); setDateFrom(''); setDateTo('');
         router.get('/invoices', {}, { preserveState: true, replace: true });
     };
 
     return (
         <AuthenticatedLayout>
-            <Head title="Invoices" />
+            <Head title="TEIF Invoices" />
 
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-                        <p className="text-sm text-gray-500">TEIF-compliant electronic invoices for Tunisia Tax Network</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">TEIF Invoices</h1>
+                        <p className="mt-1 text-gray-500">TEIF-compliant electronic invoices for Tunisia Tax Network</p>
                     </div>
                     <Link href="/invoices/create">
-                        <Button>New Invoice</Button>
+                        <Button icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}>
+                            New Invoice
+                        </Button>
                     </Link>
                 </div>
 
                 {/* Filters */}
-                <div className="rounded-lg bg-white p-4 shadow">
-                    <div className="grid gap-3 sm:grid-cols-6">
-                        <div className="sm:col-span-2">
-                            <Input 
-                                placeholder="Search by ID, sender, receiver..." 
-                                value={search} 
-                                onChange={(e) => setSearch(e.target.value)} 
-                                onKeyDown={(e) => e.key === 'Enter' && applyFilters()} 
-                            />
+                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-5">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                        <div className="lg:col-span-2 relative">
+                            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                            </svg>
+                            <input type="text" placeholder="Search by ID, sender, receiver..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && applyFilters()} className="w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-gray-50/80 ring-1 ring-gray-200 focus:ring-2 focus:ring-user-500 focus:bg-white transition-all text-sm" />
                         </div>
-                        <Select
-                            options={[{ value: '', label: 'All statuses' }, ...statuses]}
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                        />
-                        <Input type="date" placeholder="From" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-                        <Input type="date" placeholder="To" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                        <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full py-3 px-4 rounded-xl border-0 bg-gray-50/80 ring-1 ring-gray-200 focus:ring-2 focus:ring-user-500 text-sm">
+                            <option value="">All statuses</option>
+                            {statuses.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full py-3 px-4 rounded-xl border-0 bg-gray-50/80 ring-1 ring-gray-200 focus:ring-2 focus:ring-user-500 text-sm" placeholder="From" />
+                        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full py-3 px-4 rounded-xl border-0 bg-gray-50/80 ring-1 ring-gray-200 focus:ring-2 focus:ring-user-500 text-sm" placeholder="To" />
                         <div className="flex gap-2">
-                            <Button onClick={applyFilters}>Filter</Button>
+                            <Button onClick={applyFilters} className="flex-1">Filter</Button>
                             <Button variant="ghost" onClick={clearFilters}>Clear</Button>
                         </div>
                     </div>
                 </div>
 
-                {/* Invoice table */}
-                <div className="overflow-x-auto rounded-lg bg-white shadow">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Invoice #</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Type</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Sender</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Receiver</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Date</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Total TTC</th>
-                                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">Status</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {invoices.data.length === 0 && (
-                                <tr>
-                                    <td colSpan={8} className="px-4 py-12 text-center">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <svg className="h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                                            </svg>
-                                            <p className="text-gray-500">No invoices found.</p>
-                                            <Link href="/invoices/create">
-                                                <Button size="sm">Create your first invoice</Button>
-                                            </Link>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                            {invoices.data.map((inv) => (
-                                <tr key={inv.id} className="hover:bg-gray-50">
-                                    <td className="px-4 py-3">
-                                        <Link href={`/invoices/${inv.id}`} className="font-medium text-blue-600 hover:underline">
-                                            {inv.document_identifier}
-                                        </Link>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-gray-500">
-                                        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">{inv.document_type_code}</span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="text-sm font-medium text-gray-900">{inv.sender_name || '—'}</div>
-                                        <div className="text-xs text-gray-500 font-mono">{inv.sender_identifier}</div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="text-sm font-medium text-gray-900">{inv.receiver_name || '—'}</div>
-                                        <div className="text-xs text-gray-500 font-mono">{inv.receiver_identifier}</div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-gray-500">{inv.invoice_date || '—'}</td>
-                                    <td className="px-4 py-3 text-right font-medium">{formatTND(inv.total_ttc)}</td>
-                                    <td className="px-4 py-3 text-center"><InvoiceStatusBadge status={inv.status} /></td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Link href={`/invoices/${inv.id}`} className="text-sm text-blue-600 hover:underline">
-                                                View
-                                            </Link>
-                                            {inv.status === 'draft' && (
-                                                <Link href={`/invoices/${inv.id}/edit`} className="text-sm text-gray-600 hover:underline">
-                                                    Edit
-                                                </Link>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                <Pagination links={invoices.links} />
-
-                {/* Summary stats */}
-                {invoices.total > 0 && (
-                    <div className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                        Showing {invoices.from} to {invoices.to} of {invoices.total} invoices
+                {/* Table */}
+                {invoices.data.length === 0 ? (
+                    <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-12 text-center">
+                        <div className="mx-auto w-16 h-16 rounded-2xl bg-user-100 flex items-center justify-center mb-4">
+                            <svg className="w-8 h-8 text-user-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">No invoices found</h3>
+                        <p className="mt-1 text-sm text-gray-500">Create your first TEIF-compliant invoice.</p>
+                        <Link href="/invoices/create" className="mt-4 inline-block"><Button size="sm">Create Invoice</Button></Link>
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-100">
+                                <thead>
+                                    <tr className="bg-gradient-to-r from-gray-50 to-gray-50/50">
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Invoice</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Parties</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Total</th>
+                                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {invoices.data.map((inv, idx) => (
+                                        <tr key={inv.id} className={`transition-colors hover:bg-user-50/50 ${idx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
+                                            <td className="px-6 py-4">
+                                                <Link href={`/invoices/${inv.id}`} className="font-semibold text-user-600 hover:text-user-700 hover:underline">{inv.document_identifier}</Link>
+                                            </td>
+                                            <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-xs font-medium text-gray-700">{inv.document_type_code}</span></td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm">
+                                                    <p className="font-medium text-gray-900">{inv.sender_name || '—'}</p>
+                                                    <p className="text-gray-500 text-xs">→ {inv.receiver_name || inv.receiver_identifier}</p>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{inv.invoice_date || '—'}</td>
+                                            <td className="px-6 py-4 text-right font-semibold text-gray-900">{formatTND(inv.total_ttc)}</td>
+                                            <td className="px-6 py-4 text-center"><InvoiceStatusBadge status={inv.status} /></td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    <Link href={`/invoices/${inv.id}`} className="p-2 rounded-lg text-gray-500 hover:text-user-600 hover:bg-user-50 transition-all" title="View"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></Link>
+                                                    {inv.status === 'draft' && <Link href={`/invoices/${inv.id}/edit`} className="p-2 rounded-lg text-gray-500 hover:text-amber-600 hover:bg-amber-50 transition-all" title="Edit"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></Link>}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
+
+                <Pagination links={invoices.links} />
             </div>
         </AuthenticatedLayout>
     );

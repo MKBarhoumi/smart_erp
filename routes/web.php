@@ -61,6 +61,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/customer-aging', [ReportController::class, 'customerAging'])->name('customer-aging');
         Route::get('/timbre', [ReportController::class, 'timbre'])->name('timbre');
         Route::get('/customer-statement/{customer}', [ReportController::class, 'customerStatement'])->name('customer-statement');
+
+        // PDF Downloads
+        Route::get('/revenue/pdf', [ReportController::class, 'revenuePdf'])->name('revenue.pdf');
+        Route::get('/tax-summary/pdf', [ReportController::class, 'taxSummaryPdf'])->name('tax-summary.pdf');
+        Route::get('/customer-aging/pdf', [ReportController::class, 'customerAgingPdf'])->name('customer-aging.pdf');
+        Route::get('/timbre/pdf', [ReportController::class, 'timbrePdf'])->name('timbre.pdf');
+        Route::get('/customer-statement/{customer}/pdf', [ReportController::class, 'customerStatementPdf'])->name('customer-statement.pdf');
     });
 
     // Company Settings (admin only)
