@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Concerns\LogsActivity;
 use App\Enums\DocumentTypeCode;
 use App\Enums\OldInvoiceStatus;
 use App\Exceptions\OldInvoiceStateException;
@@ -17,6 +18,7 @@ class OldInvoice extends Model
 {
     use HasFactory;
     use HasUuids;
+    use LogsActivity;
     use SoftDeletes;
 
     /**

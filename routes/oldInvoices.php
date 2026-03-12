@@ -5,6 +5,9 @@ use Inertia\Inertia;
    // OldInvoices
     Route::resource('oldinvoices', OldInvoiceController::class);
     Route::prefix('oldinvoices/{oldinvoice}')->name('oldinvoices.')->group(function () {
+        Route::post('/request-validation', [OldInvoiceController::class, 'requestValidation'])->name('requestValidation');
+        Route::post('/approve-validation', [OldInvoiceController::class, 'approveValidation'])->name('approveValidation');
+        Route::post('/reject-validation', [OldInvoiceController::class, 'rejectValidation'])->name('rejectValidation');
         Route::post('/validate', [OldInvoiceController::class, 'validateOldInvoice'])->name('validate');
         Route::post('/sign', [OldInvoiceController::class, 'sign'])->name('sign');
         Route::post('/submit', [OldInvoiceController::class, 'submit'])->name('submit');

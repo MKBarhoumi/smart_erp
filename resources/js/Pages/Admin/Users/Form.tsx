@@ -19,6 +19,7 @@ export default function Form({ user, roles, isEdit = false }: Props) {
         password: '',
         password_confirmation: '',
         role: user?.role ?? 'accountant',
+        is_active: user?.is_active ?? true,
     });
 
     const submit = (e: FormEvent) => {
@@ -61,6 +62,44 @@ export default function Form({ user, roles, isEdit = false }: Props) {
                         onChange={(e) => setData('role', e.target.value as User['role'])}
                         error={errors.role}
                     />
+                    
+                    {/* Active Status Toggle */}
+                    <div className="pt-4 border-t border-gray-100">
+                        <label className="flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span className="text-sm font-medium text-gray-900">Account Status</span>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                    {data.is_active 
+                                        ? 'User can access the system' 
+                                        : 'User cannot log in or access any features'
+                                    }
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={data.is_active}
+                                onClick={() => setData('is_active', !data.is_active)}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
+                                    data.is_active ? 'bg-emerald-500' : 'bg-gray-200'
+                                }`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                        data.is_active ? 'translate-x-5' : 'translate-x-0'
+                                    }`}
+                                />
+                            </button>
+                        </label>
+                        <div className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
+                            data.is_active 
+                                ? 'bg-emerald-100 text-emerald-700' 
+                                : 'bg-red-100 text-red-700'
+                        }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${data.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                            {data.is_active ? 'Active' : 'Inactive'}
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-3">

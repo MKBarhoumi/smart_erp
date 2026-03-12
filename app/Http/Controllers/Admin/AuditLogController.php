@@ -13,19 +13,28 @@ class AuditLogController extends Controller
     {
         $logs = AuditLog::query()
             ->with('user')
-            ->when($request->search, fn ($q, $search) => $q->where('event', 'like', "%{$search}%")
+            ->when($request->search, fn ($q, $search) => $q->where('action', 'like', "%{$search}%")
                 ->orWhere('auditable_type', 'like', "%{$search}%"))
             ->when($request->user_id, fn ($q, $userId) => $q->where('user_id', $userId))
-            ->when($request->event, fn ($q, $event) => $q->where('event', $event))
+            ->when($request->action, fn ($q, $action) => $q->where('action', $action))
             ->when($request->date_from, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($request->date_to, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
             ->orderByDesc('created_at')
             ->paginate(50)
             ->withQueryString();
 
+        // Get stats for all events, not just current page
+        $stats = [
+            'total' => AuditLog::count(),
+            'created' => AuditLog::where('action', 'created')->count(),
+            'updated' => AuditLog::where('action', 'updated')->count(),
+            'deleted' => AuditLog::where('action', 'deleted')->count(),
+        ];
+
         return Inertia::render('Admin/AuditLog/Index', [
             'logs' => $logs,
-            'filters' => $request->only('search', 'user_id', 'event', 'date_from', 'date_to'),
+            'stats' => $stats,
+            'filters' => $request->only('search', 'user_id', 'action', 'date_from', 'date_to'),
         ]);
     }
 }

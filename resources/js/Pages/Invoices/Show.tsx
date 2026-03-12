@@ -88,10 +88,10 @@ export default function Show({ invoice, canEdit, canDelete, canRequestValidation
         });
     };
 
-    const performAction = (route: string, method: 'post' | 'delete' = 'post', actionName?: string, data?: Record<string, unknown>) => {
+    const performAction = (route: string, method: 'post' | 'delete' = 'post', actionName?: string, data?: Record<string, string | number | boolean>) => {
         setActionLoading(actionName || route);
         if (method === 'post') {
-            router.post(route, data || {}, {
+            router.post(route, data, {
                 onFinish: () => setActionLoading(null),
             });
         } else {

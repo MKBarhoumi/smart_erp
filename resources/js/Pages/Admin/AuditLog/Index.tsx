@@ -8,7 +8,7 @@ interface AuditLogEntry {
     id: string;
     user_id: string;
     user?: { name: string; email: string };
-    event: string;
+    action: string;
     auditable_type: string;
     auditable_id: string;
     old_values: Record<string, unknown> | null;
@@ -20,7 +20,8 @@ interface AuditLogEntry {
 
 interface Props extends PageProps {
     logs: PaginatedData<AuditLogEntry>;
-    filters: { search?: string; date_from?: string; date_to?: string };
+    stats: { total: number; created: number; updated: number; deleted: number };
+    filters: { search?: string; date_from?: string; date_to?: string; action?: string };
 }
 
 function formatAuditValue(key: string, value: unknown): string {
@@ -54,7 +55,7 @@ function ValueChangeDisplay({ label, oldVal, newVal }: { label: string; oldVal?:
     );
 }
 
-export default function Index({ logs, filters }: Props) {
+export default function Index({ logs, stats, filters }: Props) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [dateFrom, setDateFrom] = useState(filters.date_from ?? '');
     const [dateTo, setDateTo] = useState(filters.date_to ?? '');
@@ -65,7 +66,7 @@ export default function Index({ logs, filters }: Props) {
         router.get('/admin/audit-log', { search, date_from: dateFrom, date_to: dateTo }, { preserveState: true });
     };
 
-    const eventStyles: Record<string, { bg: string; text: string; dot: string }> = {
+    const actionStyles: Record<string, { bg: string; text: string; dot: string }> = {
         created: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
         updated: { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500' },
         deleted: { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
@@ -89,7 +90,7 @@ export default function Index({ logs, filters }: Props) {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                         <svg className="w-5 h-5 text-admin-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <span>{logs.total} events recorded</span>
+                        <span>{stats.total} events recorded</span>
                     </div>
                 </div>
 
@@ -112,19 +113,19 @@ export default function Index({ logs, filters }: Props) {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-soft">
                         <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-gray-400"></span><p className="text-sm text-gray-500">Total Events</p></div>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">{logs.total}</p>
+                        <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
                     </div>
                     <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-200/50">
                         <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500"></span><p className="text-sm text-emerald-600">Created</p></div>
-                        <p className="text-2xl font-bold text-emerald-700 mt-1">{logs.data.filter(l => l.event === 'created').length}</p>
+                        <p className="text-2xl font-bold text-emerald-700 mt-1">{stats.created}</p>
                     </div>
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200/50">
                         <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-blue-500"></span><p className="text-sm text-blue-600">Updated</p></div>
-                        <p className="text-2xl font-bold text-blue-700 mt-1">{logs.data.filter(l => l.event === 'updated').length}</p>
+                        <p className="text-2xl font-bold text-blue-700 mt-1">{stats.updated}</p>
                     </div>
                     <div className="bg-gradient-to-r from-red-50 to-rose-50 rounded-xl p-4 border border-red-200/50">
                         <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-500"></span><p className="text-sm text-red-600">Deleted</p></div>
-                        <p className="text-2xl font-bold text-red-700 mt-1">{logs.data.filter(l => l.event === 'deleted').length}</p>
+                        <p className="text-2xl font-bold text-red-700 mt-1">{stats.deleted}</p>
                     </div>
                 </div>
 
@@ -144,7 +145,7 @@ export default function Index({ logs, filters }: Props) {
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {logs.data.map((log, idx) => {
-                                    const style = eventStyles[log.event] ?? { bg: 'bg-gray-100', text: 'text-gray-700', dot: 'bg-gray-400' };
+                                    const style = actionStyles[log.action] ?? { bg: 'bg-gray-100', text: 'text-gray-700', dot: 'bg-gray-400' };
                                     return (
                                         <>
                                             <tr key={log.id} className={`cursor-pointer transition-colors hover:bg-admin-50/30 ${idx % 2 === 0 ? '' : 'bg-gray-50/30'} ${expandedId === log.id ? 'bg-admin-50' : ''}`} onClick={() => setExpandedId(expandedId === log.id ? null : log.id)}>
@@ -161,7 +162,7 @@ export default function Index({ logs, filters }: Props) {
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${style.bg} ${style.text}`}>
                                                         <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-                                                        {log.event}
+                                                        {log.action}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">

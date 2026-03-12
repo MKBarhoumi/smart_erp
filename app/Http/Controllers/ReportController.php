@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\InvoiceStatus;
 use App\Enums\OldInvoiceStatus;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\OldInvoice;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -23,6 +25,11 @@ class ReportController extends Controller
     public function revenue(Request $request): Response
     {
         $year = $request->integer('year', (int) now()->format('Y'));
+        $month = $request->input('month');
+        $quarter = $request->input('quarter');
+        $customerId = $request->input('customer_id');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
         // Get the database driver to use appropriate date functions
         $driver = DB::connection()->getDriverName();
@@ -44,31 +51,142 @@ class ReportController extends Controller
                 $monthOrderExpr = "MONTH(oldinvoice_date)";
         }
 
-        $monthlyRevenue = OldInvoice::whereYear('oldinvoice_date', $year)
-            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
+        // OldInvoice query
+        $query = OldInvoice::whereYear('oldinvoice_date', $year)
+            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value]);
+
+        // Apply filters
+        if ($month) {
+            $query->whereMonth('oldinvoice_date', $month);
+        }
+        if ($quarter) {
+            $quarterMonths = match ((int) $quarter) {
+                1 => [1, 2, 3],
+                2 => [4, 5, 6],
+                3 => [7, 8, 9],
+                4 => [10, 11, 12],
+                default => [],
+            };
+            if ($quarterMonths) {
+                $query->whereIn(DB::raw('MONTH(oldinvoice_date)'), $quarterMonths);
+            }
+        }
+        if ($customerId) {
+            $query->where('customer_id', $customerId);
+        }
+        if ($startDate) {
+            $query->where('oldinvoice_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->where('oldinvoice_date', '<=', $endDate);
+        }
+
+        // Get OldInvoice monthly revenue
+        $oldMonthlyRevenue = (clone $query)
             ->selectRaw("{$monthExpr} as month, SUM(total_ttc) as total, COUNT(*) as count")
             ->groupByRaw("{$monthExpr}, {$monthOrderExpr}")
             ->orderByRaw($monthOrderExpr)
             ->get()
-            ->map(fn ($row) => [
-                'month' => $row->month,
-                'total' => number_format((float) $row->total, 3, '.', ''),
-                'count' => (int) $row->count,
-            ]);
+            ->keyBy('month')
+            ->toArray();
 
-        $yearlyTotal = OldInvoice::whereYear('oldinvoice_date', $year)
-            ->whereNotIn('status', [OldInvoiceStatus::DRAFT->value, OldInvoiceStatus::REJECTED->value])
-            ->sum('total_ttc');
+        $oldYearlyTotal = (float) (clone $query)->sum('total_ttc');
+
+        // Invoice query (new TEIF invoices) - uses created_at as date reference
+        // Only include non-draft and non-rejected invoices
+        $invoiceQuery = Invoice::whereYear('created_at', $year)
+            ->whereIn('status', [InvoiceStatus::ACCEPTED->value, InvoiceStatus::VALIDATED->value, InvoiceStatus::SUBMITTED->value]);
+
+        if ($month) {
+            $invoiceQuery->whereMonth('created_at', $month);
+        }
+        if ($quarter) {
+            $quarterMonths = match ((int) $quarter) {
+                1 => [1, 2, 3],
+                2 => [4, 5, 6],
+                3 => [7, 8, 9],
+                4 => [10, 11, 12],
+                default => [],
+            };
+            if ($quarterMonths) {
+                $invoiceQuery->whereIn(DB::raw('MONTH(created_at)'), $quarterMonths);
+            }
+        }
+        if ($startDate) {
+            $invoiceQuery->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $invoiceQuery->where('created_at', '<=', $endDate);
+        }
+
+        // Get Invoice monthly revenue - process in PHP due to JSON amount fields
+        $invoices = $invoiceQuery->get();
+        $invoiceMonthlyTotals = [];
+        $invoiceYearlyTotal = 0.0;
+        
+        foreach ($invoices as $invoice) {
+            $monthKey = $invoice->created_at->format('M');
+            $total = (float) $invoice->total_ttc; // Uses accessor
+            
+            if (!isset($invoiceMonthlyTotals[$monthKey])) {
+                $invoiceMonthlyTotals[$monthKey] = ['total' => 0.0, 'count' => 0];
+            }
+            $invoiceMonthlyTotals[$monthKey]['total'] += $total;
+            $invoiceMonthlyTotals[$monthKey]['count']++;
+            $invoiceYearlyTotal += $total;
+        }
+
+        // Combine OldInvoice and Invoice data
+        $allMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $combinedRevenue = [];
+        
+        foreach ($allMonths as $monthKey) {
+            $oldData = $oldMonthlyRevenue[$monthKey] ?? null;
+            $newData = $invoiceMonthlyTotals[$monthKey] ?? null;
+            
+            if ($oldData || $newData) {
+                $total = ((float) ($oldData['total'] ?? 0)) + (($newData['total'] ?? 0));
+                $count = ((int) ($oldData['count'] ?? 0)) + (($newData['count'] ?? 0));
+                
+                $combinedRevenue[] = [
+                    'month' => $monthKey,
+                    'total' => number_format($total, 3, '.', ''),
+                    'count' => $count,
+                ];
+            }
+        }
+
+        $yearlyTotal = $oldYearlyTotal + $invoiceYearlyTotal;
+
+        // Get customers for filter dropdown
+        $customers = Customer::orderBy('name')->get(['id', 'name']);
+
+        // Get available years from both sources
+        $oldYears = OldInvoice::selectRaw("DISTINCT YEAR(oldinvoice_date) as year")
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->toArray();
+        $newYears = Invoice::selectRaw("DISTINCT YEAR(created_at) as year")
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->toArray();
+        $availableYears = array_values(array_unique(array_merge($oldYears, $newYears)));
+        rsort($availableYears);
 
         return Inertia::render('Reports/Revenue', [
             'year' => $year,
-            'data' => $monthlyRevenue,
-            'yearlyTotal' => number_format((float) $yearlyTotal, 3, '.', ''),
-            'availableYears' => OldInvoice::selectRaw("DISTINCT YEAR(oldinvoice_date) as year")
-                ->orderByDesc('year')
-                ->pluck('year')
-                ->values()
-                ->toArray(),
+            'data' => $combinedRevenue,
+            'yearlyTotal' => number_format($yearlyTotal, 3, '.', ''),
+            'availableYears' => $availableYears,
+            'customers' => $customers,
+            'filters' => [
+                'year' => $year,
+                'month' => $month,
+                'quarter' => $quarter,
+                'customer_id' => $customerId,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
         ]);
     }
 

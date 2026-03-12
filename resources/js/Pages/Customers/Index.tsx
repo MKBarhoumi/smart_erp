@@ -1,22 +1,40 @@
-﻿import { Head, Link, router } from '@inertiajs/react';
+﻿import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Pagination } from '@/Components/ui/Pagination';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Customer, PaginatedData } from '@/types';
+import type { Customer, PaginatedData, User } from '@/types';
 
 interface Props {
     customers: PaginatedData<Customer>;
-    filters: { search?: string };
+    filters: { search?: string; identifier_type?: string; city?: string };
 }
 
 export default function CustomersIndex({ customers, filters }: Props) {
+    const { auth } = usePage<{ auth: { user: User } }>().props;
+    const canModify = auth.user?.can_modify ?? auth.user?.role !== 'viewer';
+    
     const [search, setSearch] = useState(filters.search ?? '');
+    const [identifierType, setIdentifierType] = useState(filters.identifier_type ?? '');
+    const [city, setCity] = useState(filters.city ?? '');
 
-    const handleSearch = () => {
-        router.get('/customers', { search }, { preserveState: true, replace: true });
+    const applyFilters = () => {
+        router.get('/customers', { 
+            search: search || undefined, 
+            identifier_type: identifierType || undefined,
+            city: city || undefined 
+        }, { preserveState: true, replace: true });
     };
+
+    const clearFilters = () => {
+        setSearch('');
+        setIdentifierType('');
+        setCity('');
+        router.get('/customers', {}, { preserveState: true, replace: true });
+    };
+
+    const hasActiveFilters = search || identifierType || city;
 
     return (
         <AuthenticatedLayout>
@@ -29,30 +47,65 @@ export default function CustomersIndex({ customers, filters }: Props) {
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900">Customers</h1>
                         <p className="mt-1 text-gray-500">Manage your customer relationships and contacts</p>
                     </div>
-                    <Link href="/customers/create">
-                        <Button icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}>
-                            Add Customer
-                        </Button>
-                    </Link>
+                    {canModify && (
+                        <Link href="/customers/create">
+                            <Button icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}>
+                                Add Customer
+                            </Button>
+                        </Link>
+                    )}
                 </div>
 
                 {/* Search & Filters */}
-                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-4">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1 relative">
-                            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                            </svg>
+                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-5">
+                    <div className="flex flex-wrap items-end gap-4">
+                        <div className="flex-1 min-w-[200px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Search</label>
+                            <div className="relative">
+                                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder="Search by name, identifier, email, phone..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                                    className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm"
+                                />
+                            </div>
+                        </div>
+                        <div className="min-w-[150px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Identifier Type</label>
+                            <select
+                                value={identifierType}
+                                onChange={(e) => setIdentifierType(e.target.value)}
+                                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm"
+                            >
+                                <option value="">All Types</option>
+                                <option value="TN">TN (Tax Number)</option>
+                                <option value="CIN">CIN (National ID)</option>
+                                <option value="PASSPORT">Passport</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        <div className="min-w-[150px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">City</label>
                             <input
                                 type="text"
-                                placeholder="Search by name, identifier, email, phone..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                className="w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-gray-50/80 ring-1 ring-gray-200 focus:ring-2 focus:ring-user-500 focus:bg-white transition-all text-sm"
+                                placeholder="Filter by city..."
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm"
                             />
                         </div>
-                        <Button variant="secondary" onClick={handleSearch}>Search</Button>
+                        <div className="flex gap-2">
+                            <Button onClick={applyFilters}>Apply Filters</Button>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" onClick={clearFilters}>Clear</Button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -110,9 +163,11 @@ export default function CustomersIndex({ customers, filters }: Props) {
                                                     <Link href={`/customers/${customer.id}`} className="p-2 rounded-lg text-gray-500 hover:text-user-600 hover:bg-user-50 transition-all" title="View">
                                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                                     </Link>
-                                                    <Link href={`/customers/${customer.id}/edit`} className="p-2 rounded-lg text-gray-500 hover:text-amber-600 hover:bg-amber-50 transition-all" title="Edit">
-                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
-                                                    </Link>
+                                                    {canModify && (
+                                                        <Link href={`/customers/${customer.id}/edit`} className="p-2 rounded-lg text-gray-500 hover:text-amber-600 hover:bg-amber-50 transition-all" title="Edit">
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
+                                                        </Link>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

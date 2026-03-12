@@ -7,6 +7,7 @@ namespace App\Enums;
 enum OldInvoiceStatus: string
 {
     case DRAFT = 'draft';
+    case PENDING_VALIDATION = 'pending_validation';
     case VALIDATED = 'validated';
     case SIGNED = 'signed';
     case SUBMITTED = 'submitted';
@@ -18,6 +19,7 @@ enum OldInvoiceStatus: string
     {
         return match ($this) {
             self::DRAFT => 'Draft',
+            self::PENDING_VALIDATION => 'Pending Validation',
             self::VALIDATED => 'Validated',
             self::SIGNED => 'Signed',
             self::SUBMITTED => 'Submitted',
@@ -30,7 +32,8 @@ enum OldInvoiceStatus: string
     public function canTransitionTo(self $target): bool
     {
         return match ($this) {
-            self::DRAFT => in_array($target, [self::VALIDATED]),
+            self::DRAFT => in_array($target, [self::PENDING_VALIDATION, self::VALIDATED]),
+            self::PENDING_VALIDATION => in_array($target, [self::VALIDATED, self::REJECTED, self::DRAFT]),
             self::VALIDATED => in_array($target, [self::SIGNED, self::DRAFT]),
             self::SIGNED => in_array($target, [self::SUBMITTED]),
             self::SUBMITTED => in_array($target, [self::ACCEPTED, self::REJECTED, self::SUBMITTED]),

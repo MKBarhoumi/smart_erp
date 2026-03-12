@@ -34,6 +34,7 @@ export function Badge({ variant = 'default', children, dot, icon }: BadgeProps) 
 export function OldInvoiceStatusBadge({ status }: { status: string }) {
   const statusMap: Record<string, { variant: BadgeProps['variant']; label: string }> = {
     draft: { variant: 'default', label: 'Draft' },
+    pending_validation: { variant: 'warning', label: 'Pending Validation' },
     validated: { variant: 'info', label: 'Validated' },
     signed: { variant: 'info', label: 'Signed' },
     submitted: { variant: 'warning', label: 'Submitted' },

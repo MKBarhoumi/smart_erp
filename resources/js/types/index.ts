@@ -4,7 +4,27 @@ export interface User {
   email: string;
   role: 'super_admin' | 'admin' | 'accountant' | 'sales' | 'inventory_manager' | 'viewer';
   is_active: boolean;
+  is_viewer?: boolean;
+  can_modify?: boolean;
+  is_admin?: boolean;
+  unread_notifications_count?: number;
   email_verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  message: string;
+  icon: string | null;
+  link: string | null;
+  notifiable_type: string | null;
+  notifiable_id: string | null;
+  data: Record<string, unknown> | null;
+  read_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -106,7 +126,12 @@ export interface OldInvoice {
   total_tva: string;
   timbre_fiscal: string;
   total_ttc: string;
-  status: 'draft' | 'validated' | 'signed' | 'submitted' | 'accepted' | 'rejected' | 'archived';
+  status: 'draft' | 'pending_validation' | 'validated' | 'signed' | 'submitted' | 'accepted' | 'rejected' | 'archived';
+  validation_requested_by?: string | null;
+  validation_requested_at?: string | null;
+  validated_by?: string | null;
+  validated_at?: string | null;
+  validation_rejection_reason?: string | null;
   ref_ttn_val: string | null;
   cev_qr_content: string | null;
   signed_xml: string | null;

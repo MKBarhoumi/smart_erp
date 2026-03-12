@@ -362,20 +362,32 @@ class InvoiceController extends Controller
         $senderPartner = $invoice->partners->where('function_code', 'I-62')->first();
         $receiverPartner = $invoice->partners->where('function_code', 'I-64')->first();
 
-        // Format dates from array
+        // Format dates from array - handle both old and new date formats
         $invoiceDate = null;
         $dueDate = null;
         foreach ($invoice->dates ?? [] as $date) {
-            if ($date['function_code'] === 'I-31') {
-                $value = $date['value'];
+            // Support both formats: function_code/value and date_type_code/date_value
+            $typeCode = $date['function_code'] ?? $date['date_type_code'] ?? null;
+            $value = $date['value'] ?? $date['date_value'] ?? null;
+            
+            if (!$typeCode || !$value) continue;
+            
+            // I-31 = Invoice date (old format), I-124 = Invoice date (new format)
+            if (in_array($typeCode, ['I-31', 'I-124'])) {
+                // Handle different date formats
                 if (strlen($value) === 6) {
                     $invoiceDate = '20' . substr($value, 4, 2) . '-' . substr($value, 2, 2) . '-' . substr($value, 0, 2);
+                } elseif (strlen($value) === 10) {
+                    // Already in YYYY-MM-DD format
+                    $invoiceDate = $value;
                 }
             }
-            if ($date['function_code'] === 'I-35') {
-                $value = $date['value'];
+            // I-35 = Due date (old format), I-13 = Due date (new format)
+            if (in_array($typeCode, ['I-35', 'I-13'])) {
                 if (strlen($value) === 6) {
                     $dueDate = '20' . substr($value, 4, 2) . '-' . substr($value, 2, 2) . '-' . substr($value, 0, 2);
+                } elseif (strlen($value) === 10) {
+                    $dueDate = $value;
                 }
             }
         }
@@ -953,7 +965,6 @@ class InvoiceController extends Controller
         ]);
 
         $invoice->payments()->create([
-            'id' => \Illuminate\Support\Str::uuid(),
             'created_by' => auth()->id(),
             'amount' => $validated['amount'],
             'method' => $validated['method'],

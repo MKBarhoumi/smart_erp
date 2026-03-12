@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\Product;
@@ -19,16 +21,28 @@ class ProductPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'accountant']);
+        // Viewers cannot create
+        if ($user->isViewer()) {
+            return false;
+        }
+        return $user->hasAnyRole(['admin', 'accountant', 'inventory_manager']);
     }
 
     public function update(User $user, Product $product): bool
     {
-        return $user->hasAnyRole(['admin', 'accountant']);
+        // Viewers cannot update
+        if ($user->isViewer()) {
+            return false;
+        }
+        return $user->hasAnyRole(['admin', 'accountant', 'inventory_manager']);
     }
 
     public function delete(User $user, Product $product): bool
     {
+        // Viewers cannot delete
+        if ($user->isViewer()) {
+            return false;
+        }
         return $user->hasRole('admin');
     }
 }

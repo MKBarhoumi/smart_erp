@@ -1,22 +1,43 @@
-﻿import { Head, Link, router } from '@inertiajs/react';
+﻿import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Pagination } from '@/Components/ui/Pagination';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { formatTND, formatNumber } from '@/utils/format';
-import type { Product, PaginatedData } from '@/types';
+import type { Product, PaginatedData, User } from '@/types';
 
 interface Props {
     products: PaginatedData<Product>;
-    filters: { search?: string };
+    filters: { search?: string; tva_rate?: string; track_inventory?: string; is_active?: string };
 }
 
 export default function ProductsIndex({ products, filters }: Props) {
+    const { auth } = usePage<{ auth: { user: User } }>().props;
+    const canModify = auth.user?.can_modify ?? auth.user?.role !== 'viewer';
+    
     const [search, setSearch] = useState(filters.search ?? '');
+    const [tvaRate, setTvaRate] = useState(filters.tva_rate ?? '');
+    const [trackInventory, setTrackInventory] = useState(filters.track_inventory ?? '');
+    const [isActive, setIsActive] = useState(filters.is_active ?? '');
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        router.get('/products', { search }, { preserveState: true, replace: true });
+    const applyFilters = (e?: React.FormEvent) => {
+        e?.preventDefault();
+        router.get('/products', { 
+            search: search || undefined, 
+            tva_rate: tvaRate || undefined,
+            track_inventory: trackInventory || undefined,
+            is_active: isActive || undefined
+        }, { preserveState: true, replace: true });
     };
+
+    const clearFilters = () => {
+        setSearch('');
+        setTvaRate('');
+        setTrackInventory('');
+        setIsActive('');
+        router.get('/products', {}, { preserveState: true, replace: true });
+    };
+
+    const hasActiveFilters = search || tvaRate || trackInventory || isActive;
 
     return (
         <AuthenticatedLayout>
@@ -36,12 +57,14 @@ export default function ProductsIndex({ products, filters }: Props) {
                             </div>
                         </div>
                     </div>
-                    <Link href="/products/create">
-                        <button className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-user-600 to-user-500 text-white text-sm font-semibold rounded-xl hover:from-user-700 hover:to-user-600 transition-all shadow-lg shadow-user-500/25 hover:shadow-xl hover:shadow-user-500/30 hover:-translate-y-0.5">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                            New Product
-                        </button>
-                    </Link>
+                    {canModify && (
+                        <Link href="/products/create">
+                            <button className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-user-600 to-user-500 text-white text-sm font-semibold rounded-xl hover:from-user-700 hover:to-user-600 transition-all shadow-lg shadow-user-500/25 hover:shadow-xl hover:shadow-user-500/30 hover:-translate-y-0.5">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                New Product
+                            </button>
+                        </Link>
+                    )}
                 </div>
 
                 {/* Stats */}
@@ -64,14 +87,48 @@ export default function ProductsIndex({ products, filters }: Props) {
                     </div>
                 </div>
 
-                {/* Search */}
-                <form onSubmit={handleSearch} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1 relative">
-                            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                            <input type="text" placeholder="Search by name or code..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm" />
+                {/* Search & Filters */}
+                <form onSubmit={applyFilters} className="bg-white rounded-2xl border border-gray-100 shadow-soft p-5">
+                    <div className="flex flex-wrap items-end gap-4">
+                        <div className="flex-1 min-w-[200px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Search</label>
+                            <div className="relative">
+                                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                                <input type="text" placeholder="Search by name or code..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm" />
+                            </div>
                         </div>
-                        <button type="submit" className="px-5 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all">Search</button>
+                        <div className="min-w-[120px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">TVA Rate</label>
+                            <select value={tvaRate} onChange={(e) => setTvaRate(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm">
+                                <option value="">All Rates</option>
+                                <option value="0">0%</option>
+                                <option value="7">7%</option>
+                                <option value="13">13%</option>
+                                <option value="19">19%</option>
+                            </select>
+                        </div>
+                        <div className="min-w-[120px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Inventory</label>
+                            <select value={trackInventory} onChange={(e) => setTrackInventory(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm">
+                                <option value="">All</option>
+                                <option value="1">Tracked</option>
+                                <option value="0">Not Tracked</option>
+                            </select>
+                        </div>
+                        <div className="min-w-[120px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                            <select value={isActive} onChange={(e) => setIsActive(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm">
+                                <option value="">All</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-2">
+                            <button type="submit" className="px-5 py-2.5 bg-user-600 text-white font-semibold rounded-xl hover:bg-user-700 transition-all">Apply</button>
+                            {hasActiveFilters && (
+                                <button type="button" onClick={clearFilters} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all">Clear</button>
+                            )}
+                        </div>
                     </div>
                 </form>
 

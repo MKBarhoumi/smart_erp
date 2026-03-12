@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +20,20 @@ class InventoryController extends Controller
     {
         $products = Product::where('track_inventory', true)
             ->when(request('search'), function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            })
+            ->when(request('stock_status') === 'low', function ($query) {
+                $query->whereColumn('current_stock', '<=', 'min_stock_alert')
+                    ->where('min_stock_alert', '>', 0);
+            })
+            ->when(request('stock_status') === 'ok', function ($query) {
+                $query->where(function ($q) {
+                    $q->whereColumn('current_stock', '>', 'min_stock_alert')
+                        ->orWhere('min_stock_alert', '<=', 0);
+                });
             })
             ->orderBy('name')
             ->paginate(20)
@@ -39,7 +53,7 @@ class InventoryController extends Controller
             'products' => $products,
             'lowStockCount' => $lowStockCount,
             'recentMovements' => $recentMovements,
-            'filters' => request()->only('search'),
+            'filters' => request()->only('search', 'stock_status'),
         ]);
     }
 
@@ -71,6 +85,7 @@ class InventoryController extends Controller
 
     public function adjustment(Request $request): RedirectResponse
     {
+        $this->authorize('create', \App\Models\StockMovement::class);
         $validated = $request->validate([
             'product_id' => ['required', 'uuid', 'exists:products,id'],
             'type' => ['required', 'string', 'in:in,out,adjustment'],
@@ -108,6 +123,17 @@ class InventoryController extends Controller
                 'reason' => $validated['reason'] ?? null,
                 'performed_by' => $request->user()->id,
             ]);
+
+            // Send low stock alert to inventory managers and admins
+            if ($product->min_stock_alert && (float) $newStock <= (float) $product->min_stock_alert) {
+                $recipients = User::whereIn('role', ['admin', 'super_admin', 'inventory_manager'])
+                    ->where('is_active', true)
+                    ->get();
+                
+                foreach ($recipients as $user) {
+                    Notification::createLowStockAlert($user, $product, (float) $newStock);
+                }
+            }
 
             return back()->with('success', 'Mouvement de stock enregistré.');
         });

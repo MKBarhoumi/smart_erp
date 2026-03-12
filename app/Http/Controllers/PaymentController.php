@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
 use App\Models\OldInvoice;
 use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -45,6 +47,7 @@ class PaymentController extends Controller
 
     public function store(Request $request, OldInvoice $oldinvoice): RedirectResponse
     {
+        $this->authorize('create', \App\Models\Payment::class);
         $validated = $request->validate([
             'payment_date' => ['required', 'date'],
             'amount' => ['required', 'numeric', 'gt:0'],
@@ -61,7 +64,7 @@ class PaymentController extends Controller
             ]);
         }
 
-        Payment::create([
+        $payment = Payment::create([
             'oldinvoice_id' => $oldinvoice->id,
             'created_by' => $request->user()->id,
             'payment_date' => $validated['payment_date'],
@@ -71,11 +74,27 @@ class PaymentController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
+        // Notify accountants and admins about the payment
+        $recipients = User::whereIn('role', ['admin', 'super_admin', 'accountant'])
+            ->where('is_active', true)
+            ->where('id', '!=', $request->user()->id)
+            ->get();
+        
+        foreach ($recipients as $user) {
+            Notification::createPaymentReceived(
+                $user,
+                $oldinvoice,
+                (float) $validated['amount'],
+                $oldinvoice->customer->name ?? 'Unknown Customer'
+            );
+        }
+
         return back()->with('success', 'Payment recorded successfully.');
     }
 
     public function destroy(Payment $payment): RedirectResponse
     {
+        $this->authorize('delete', $payment);
         $oldinvoice = $payment->oldinvoice;
 
         if (!$oldinvoice->isEditable() && $oldinvoice->status !== 'accepted') {

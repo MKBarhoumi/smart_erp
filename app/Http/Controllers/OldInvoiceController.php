@@ -20,6 +20,8 @@ use App\Services\OldInvoicePdfService;
 use App\Services\TeifXmlBuilder;
 use App\Services\TTNApiClient;
 use App\Services\XadesSignatureService;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\DB;
@@ -66,6 +68,7 @@ class OldInvoiceController extends Controller
 
     public function create(): Response
     {
+        $this->authorize('create', OldInvoice::class);
         return Inertia::render('OldInvoices/Create', [
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'identifier_value']),
             'products' => Product::where('is_active', true)->orderBy('name')->get([
@@ -80,6 +83,7 @@ class OldInvoiceController extends Controller
 
     public function store(StoreOldInvoiceRequest $request): RedirectResponse
     {
+        $this->authorize('create', OldInvoice::class);
         $validated = $request->validated();
 
         return DB::transaction(function () use ($validated, $request) {
@@ -179,6 +183,7 @@ class OldInvoiceController extends Controller
 
     public function edit(OldInvoice $oldinvoice)
     {
+        $this->authorize('update', $oldinvoice);
         if (!$oldinvoice->isEditable()) {
             return redirect()->route('oldinvoices.show', $oldinvoice)
                 ->with('error', 'This oldinvoice can no longer be edited.');
@@ -201,6 +206,7 @@ class OldInvoiceController extends Controller
 
     public function update(StoreOldInvoiceRequest $request, OldInvoice $oldinvoice): RedirectResponse
     {
+        $this->authorize('update', $oldinvoice);
         if (!$oldinvoice->isEditable()) {
             return back()->with('error', 'This oldinvoice can no longer be edited.');
         }
@@ -281,6 +287,7 @@ class OldInvoiceController extends Controller
 
     public function destroy(OldInvoice $oldinvoice): RedirectResponse
     {
+        $this->authorize('delete', $oldinvoice);
         if (!$oldinvoice->isEditable()) {
             return back()->with('error', 'This oldinvoice can no longer be deleted.');
         }
@@ -296,6 +303,7 @@ class OldInvoiceController extends Controller
      */
     public function validateOldInvoice(OldInvoice $oldinvoice): RedirectResponse
     {
+        $this->authorize('validate', $oldinvoice);
         try {
             $oldinvoice->transitionTo(OldInvoiceStatus::VALIDATED);
         } catch (OldInvoiceStateException $e) {
@@ -310,6 +318,7 @@ class OldInvoiceController extends Controller
      */
     public function sign(OldInvoice $oldinvoice): RedirectResponse
     {
+        $this->authorize('sign', $oldinvoice);
         try {
             // Build TEIF XML
             $unsignedXml = $this->xmlBuilder->build($oldinvoice);
@@ -333,6 +342,7 @@ class OldInvoiceController extends Controller
      */
     public function submit(OldInvoice $oldinvoice): RedirectResponse
     {
+        $this->authorize('submit', $oldinvoice);
         if (empty($oldinvoice->signed_xml)) {
             return back()->with('error', 'The oldinvoice must be signed before submission.');
         }
@@ -431,5 +441,125 @@ class OldInvoiceController extends Controller
             return redirect()->route('oldinvoices.edit', $newOldInvoice)
                 ->with('success', 'OldInvoice duplicated as draft.');
         });
+    }
+
+    /**
+     * Request validation for an invoice (DRAFT → PENDING_VALIDATION).
+     * Used by accountants to request admin approval.
+     */
+    public function requestValidation(OldInvoice $oldinvoice): RedirectResponse
+    {
+        if ($oldinvoice->status !== OldInvoiceStatus::DRAFT->value) {
+            return back()->with('error', 'Only draft invoices can be submitted for validation.');
+        }
+
+        try {
+            $oldinvoice->transitionTo(OldInvoiceStatus::PENDING_VALIDATION);
+            $oldinvoice->update(['validation_requested_at' => now(), 'validation_requested_by' => auth()->id()]);
+            
+            // Send notification to admin users
+            $adminUsers = User::whereIn('role', ['admin', 'super_admin'])->where('is_active', true)->get();
+            foreach ($adminUsers as $admin) {
+                Notification::createValidationRequest(
+                    $admin,
+                    $oldinvoice,
+                    auth()->user()->name
+                );
+            }
+            
+        } catch (OldInvoiceStateException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Validation request submitted. Awaiting admin approval.');
+    }
+
+    /**
+     * Approve validation request (PENDING_VALIDATION → VALIDATED).
+     * Used by admins to approve accountant validation requests.
+     */
+    public function approveValidation(OldInvoice $oldinvoice): RedirectResponse
+    {
+        if (!auth()->user()->hasAnyRole(['admin', 'super_admin'])) {
+            return back()->with('error', 'Only administrators can approve validation requests.');
+        }
+
+        if ($oldinvoice->status !== OldInvoiceStatus::PENDING_VALIDATION->value) {
+            return back()->with('error', 'This invoice is not pending validation.');
+        }
+
+        try {
+            $oldinvoice->transitionTo(OldInvoiceStatus::VALIDATED);
+            $oldinvoice->update([
+                'validated_at' => now(),
+                'validated_by' => auth()->id(),
+            ]);
+            
+            // Send notification to requester
+            if ($oldinvoice->validation_requested_by) {
+                $requester = User::find($oldinvoice->validation_requested_by);
+                if ($requester) {
+                    Notification::createValidationResponse(
+                        $requester,
+                        $oldinvoice,
+                        true,
+                        auth()->user()->name
+                    );
+                }
+            }
+            
+        } catch (OldInvoiceStateException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Invoice validation approved.');
+    }
+
+    /**
+     * Reject validation request (PENDING_VALIDATION → REJECTED or back to DRAFT).
+     * Used by admins to reject accountant validation requests with a reason.
+     */
+    public function rejectValidation(OldInvoice $oldinvoice): RedirectResponse
+    {
+        if (!auth()->user()->hasAnyRole(['admin', 'super_admin'])) {
+            return back()->with('error', 'Only administrators can reject validation requests.');
+        }
+
+        if ($oldinvoice->status !== OldInvoiceStatus::PENDING_VALIDATION->value) {
+            return back()->with('error', 'This invoice is not pending validation.');
+        }
+
+        $reason = request('rejection_reason');
+        if (empty($reason)) {
+            return back()->with('error', 'A rejection reason is required.');
+        }
+
+        try {
+            $oldinvoice->transitionTo(OldInvoiceStatus::DRAFT);
+            $oldinvoice->update([
+                'rejection_reason' => $reason,
+                'rejected_at' => now(),
+                'rejected_by' => auth()->id(),
+            ]);
+            
+            // Send notification to requester with reason
+            if ($oldinvoice->validation_requested_by) {
+                $requester = User::find($oldinvoice->validation_requested_by);
+                if ($requester) {
+                    Notification::createValidationResponse(
+                        $requester,
+                        $oldinvoice,
+                        false,
+                        auth()->user()->name,
+                        $reason
+                    );
+                }
+            }
+            
+        } catch (OldInvoiceStateException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Invoice validation rejected.');
     }
 }

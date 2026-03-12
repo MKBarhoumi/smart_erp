@@ -1,4 +1,5 @@
-﻿import { Head, Link } from '@inertiajs/react';
+﻿import type { ReactNode } from 'react';
+import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { formatTND } from '@/utils/format';
 import type { PageProps } from '@/types';
@@ -6,6 +7,7 @@ import type { PageProps } from '@/types';
 interface Props extends PageProps {
     stats: {
         monthly_revenue: string;
+        yearly_revenue: string;
         outstanding_balance: string;
         total_customers: number;
         total_products: number;
@@ -19,6 +21,7 @@ interface Props extends PageProps {
         total_ttc: string;
         status: string;
         oldinvoice_date: string;
+        type?: string;
     }>;
     revenueChart: Record<string, string>;
     statusDistribution: Record<string, number>;
@@ -38,6 +41,7 @@ interface Props extends PageProps {
 
 const statusColors: Record<string, { bg: string; text: string; dot: string }> = {
     draft: { bg: 'bg-gray-100', text: 'text-gray-700', dot: 'bg-gray-400' },
+    pending_validation: { bg: 'bg-orange-100', text: 'text-orange-700', dot: 'bg-orange-500' },
     validated: { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500' },
     signed: { bg: 'bg-indigo-100', text: 'text-indigo-700', dot: 'bg-indigo-500' },
     submitted: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' },
@@ -47,7 +51,7 @@ const statusColors: Record<string, { bg: string; text: string; dot: string }> = 
 };
 
 export default function Dashboard({
-    stats = { monthly_revenue: '0.000', outstanding_balance: '0.000', total_customers: 0, total_products: 0, oldinvoices_this_month: 0, pending_oldinvoices: 0 },
+    stats = { monthly_revenue: '0.000', yearly_revenue: '0.000', outstanding_balance: '0.000', total_customers: 0, total_products: 0, oldinvoices_this_month: 0, pending_oldinvoices: 0 },
     recentOldInvoices = [],
     revenueChart = {},
     topCustomers = [],
@@ -73,13 +77,16 @@ export default function Dashboard({
                 </div>
 
                 {/* Stats Grid */}
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <StatCard label="Monthly Revenue" value={formatTND(stats.monthly_revenue)} icon="revenue" color="emerald" />
+                    <StatCard label="Year-to-Date Revenue" value={formatTND(stats.yearly_revenue)} icon="revenue" color="blue" />
+                    <StatCard label="Outstanding Balance" value={formatTND(stats.outstanding_balance)} icon="balance" color="rose" />
+                    <StatCard label="Invoices This Month" value={String(stats.oldinvoices_this_month)} icon="invoices" color="indigo" />
+                </div>
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    <StatCard label="Monthly Revenue" value={formatTND(stats.monthly_revenue)} icon="revenue" color="emerald" trend="+12.5%" />
-                    <StatCard label="Outstanding Balance" value={formatTND(stats.outstanding_balance)} icon="balance" color="rose" trend="-3.2%" />
-                    <StatCard label="Invoices This Month" value={String(stats.oldinvoices_this_month)} icon="invoices" color="blue" />
                     <StatCard label="Pending Drafts" value={String(stats.pending_oldinvoices)} icon="pending" color="amber" />
-                    <StatCard label="Total Customers" value={String(stats.total_customers)} icon="customers" color="indigo" />
-                    <StatCard label="Total Products" value={String(stats.total_products)} icon="products" color="purple" />
+                    <StatCard label="Total Customers" value={String(stats.total_customers)} icon="customers" color="purple" />
+                    <StatCard label="Total Products" value={String(stats.total_products)} icon="products" color="indigo" />
                 </div>
 
                 {/* Main Content Grid */}
@@ -107,8 +114,9 @@ export default function Dashboard({
                             ) : (
                                 recentOldInvoices.map((inv) => {
                                     const status = statusColors[inv.status] ?? statusColors.draft;
+                                    const invoiceLink = inv.type === 'new' ? `/invoices/${inv.id}` : `/oldinvoices/${inv.id}`;
                                     return (
-                                        <Link key={inv.id} href={`/oldinvoices/${inv.id}`} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50/80 transition-colors group">
+                                        <Link key={`${inv.type || 'old'}-${inv.id}`} href={invoiceLink} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50/80 transition-colors group">
                                             <div className="flex items-center gap-4">
                                                 <div className={`w-10 h-10 rounded-xl ${status.bg} flex items-center justify-center`}>
                                                     <span className={`w-2.5 h-2.5 rounded-full ${status.dot}`} />
@@ -189,39 +197,119 @@ export default function Dashboard({
                     </div>
                 )}
 
-                {/* Revenue Chart */}
-                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-emerald-100">
-                                <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+                {/* Revenue Chart - Modern Design */}
+                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
+                    <div className="px-6 py-5 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/25">
+                                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">Revenue Overview</h2>
+                                    <p className="text-sm text-gray-500">Last 12 months performance</p>
+                                </div>
                             </div>
-                            <h2 className="text-lg font-semibold text-gray-900">Monthly Revenue</h2>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <span className="w-3 h-3 rounded-full bg-gradient-to-r from-user-500 to-purple-500" />
-                            Revenue (TND)
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-green-500" />
+                                    <span className="text-xs font-medium text-gray-500">Monthly Revenue</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div className="flex h-64 items-end gap-3">
-                        {(() => {
-                            const maxVal = Math.max(...Object.values(revenueChart).map(Number), 1);
-                            return Object.entries(revenueChart).map(([month, total]) => {
-                                const heightPx = Math.max((Number(total) / maxVal) * 200, 8);
-                                return (
-                                    <div key={month} className="flex flex-1 flex-col items-center justify-end group">
-                                        <div className="relative w-full flex items-end justify-center" style={{ height: '200px' }}>
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">{formatTND(total)}</div>
-                                            <div className="w-full rounded-t-lg bg-gradient-to-t from-user-600 to-purple-500 transition-all duration-300 group-hover:from-user-500 group-hover:to-purple-400" style={{ height: `${heightPx}px` }} />
-                                        </div>
-                                        <span className="mt-3 text-xs font-medium text-gray-500">{month.slice(5)}</span>
+                    
+                    <div className="p-6">
+                        {Object.keys(revenueChart).length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16">
+                                <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+                                    <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+                                </div>
+                                <p className="text-gray-500 font-medium">No revenue data available</p>
+                                <p className="text-sm text-gray-400 mt-1">Start creating invoices to see your revenue</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {/* Chart Summary */}
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-100">
+                                        <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Total Revenue</p>
+                                        <p className="text-xl font-bold text-emerald-700 mt-1">
+                                            {formatTND(Object.values(revenueChart).reduce((a, b) => a + Number(b), 0).toString())}
+                                        </p>
                                     </div>
-                                );
-                            });
-                        })()}
-                        {Object.keys(revenueChart).length === 0 && (
-                            <div className="flex-1 flex items-center justify-center">
-                                <p className="text-sm text-gray-400">No revenue data available</p>
+                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                                        <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Average Monthly</p>
+                                        <p className="text-xl font-bold text-blue-700 mt-1">
+                                            {formatTND((Object.values(revenueChart).reduce((a, b) => a + Number(b), 0) / Object.keys(revenueChart).length).toFixed(3))}
+                                        </p>
+                                    </div>
+                                    <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl p-4 border border-purple-100">
+                                        <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">Best Month</p>
+                                        <p className="text-xl font-bold text-purple-700 mt-1">
+                                            {formatTND(Math.max(...Object.values(revenueChart).map(Number)).toString())}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Modern Bar Chart */}
+                                <div className="relative">
+                                    <div className="flex h-72 items-end gap-2">
+                                        {(() => {
+                                            const entries = Object.entries(revenueChart);
+                                            const values = entries.map(([, v]) => Number(v));
+                                            const maxVal = Math.max(...values, 1);
+                                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                            
+                                            return entries.map(([month, total], idx) => {
+                                                const value = Number(total);
+                                                const heightPercent = (value / maxVal) * 100;
+                                                const monthNum = parseInt(month.slice(5)) - 1;
+                                                const monthName = monthNames[monthNum] || month.slice(5);
+                                                const isHighest = value === maxVal;
+                                                
+                                                return (
+                                                    <div key={month} className="flex flex-1 flex-col items-center justify-end group">
+                                                        {/* Tooltip */}
+                                                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-20 shadow-xl whitespace-nowrap" style={{ transform: 'translateX(-50%)' }}>
+                                                            <div className="font-semibold">{monthName} {month.slice(0, 4)}</div>
+                                                            <div className="text-emerald-400 font-bold">{formatTND(total)}</div>
+                                                        </div>
+                                                        
+                                                        {/* Bar Container */}
+                                                        <div className="relative w-full h-56 flex items-end justify-center px-0.5">
+                                                            <div 
+                                                                className={`w-full rounded-t-xl transition-all duration-500 ease-out cursor-pointer ${
+                                                                    isHighest 
+                                                                        ? 'bg-gradient-to-t from-emerald-600 via-emerald-500 to-green-400 shadow-lg shadow-emerald-500/30' 
+                                                                        : 'bg-gradient-to-t from-emerald-500/80 to-emerald-400/60 group-hover:from-emerald-600 group-hover:to-emerald-500'
+                                                                }`}
+                                                                style={{ 
+                                                                    height: `${Math.max(heightPercent, 2)}%`,
+                                                                    minHeight: value > 0 ? '8px' : '0'
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        
+                                                        {/* Month Label */}
+                                                        <div className={`mt-3 text-center ${isHighest ? 'font-bold text-emerald-600' : 'text-gray-500'}`}>
+                                                            <span className="text-xs font-medium">{monthName}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            });
+                                        })()}
+                                    </div>
+                                    
+                                    {/* Y-axis grid lines */}
+                                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none" style={{ height: 'calc(100% - 2rem)' }}>
+                                        {[100, 75, 50, 25, 0].map((pct) => (
+                                            <div key={pct} className="flex items-center">
+                                                <div className="w-full border-t border-dashed border-gray-100" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -231,7 +319,7 @@ export default function Dashboard({
     );
 }
 
-const icons: Record<string, JSX.Element> = {
+const icons: Record<string, ReactNode> = {
     revenue: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>,
     balance: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
     invoices: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>,
@@ -252,6 +340,9 @@ const colorMap: Record<string, { iconBg: string; iconText: string; valueBg: stri
 function StatCard({ label, value, icon, color, trend }: { label: string; value: string; icon: string; color: string; trend?: string }) {
     const c = colorMap[color] ?? colorMap.blue;
     const isPositive = trend?.startsWith('+');
+    // Use smaller font for long currency values
+    const valueLength = value.replace(/[^0-9]/g, '').length;
+    const textSize = valueLength > 8 ? 'text-xl' : valueLength > 6 ? 'text-2xl' : 'text-3xl';
 
     return (
         <div className="relative bg-white rounded-2xl p-6 shadow-soft border border-gray-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden group">
@@ -259,7 +350,7 @@ function StatCard({ label, value, icon, color, trend }: { label: string; value: 
             <div className="relative flex items-start justify-between">
                 <div className="flex-1">
                     <p className="text-sm font-medium text-gray-500">{label}</p>
-                    <p className={`mt-2 text-3xl font-bold tracking-tight ${c.valueBg}`}>{value}</p>
+                    <p className={`mt-2 ${textSize} font-bold tracking-tight ${c.valueBg}`}>{value}</p>
                     {trend && (
                         <div className={`mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${isPositive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                             {isPositive ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg> : <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>}

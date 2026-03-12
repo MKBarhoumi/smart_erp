@@ -29,7 +29,7 @@ class UserController extends Controller
     public function create()
     {
         return Inertia::render('Admin/Users/Form', [
-            'roles' => ['admin', 'accountant', 'viewer'],
+            'roles' => ['admin', 'accountant', 'sales', 'inventory_manager', 'viewer'],
         ]);
     }
 
@@ -39,7 +39,8 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', Rule::in(['admin', 'accountant', 'viewer'])],
+            'role' => ['required', Rule::in(['admin', 'accountant', 'sales', 'inventory_manager', 'viewer'])],
+            'is_active' => ['boolean'],
         ]);
 
         User::create([
@@ -47,6 +48,7 @@ class UserController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
+            'is_active' => $validated['is_active'] ?? true,
         ]);
 
         return redirect()->route('admin.users.index')
@@ -57,7 +59,7 @@ class UserController extends Controller
     {
         return Inertia::render('Admin/Users/Form', [
             'user' => $user,
-            'roles' => ['admin', 'accountant', 'viewer'],
+            'roles' => ['admin', 'accountant', 'sales', 'inventory_manager', 'viewer'],
             'isEdit' => true,
         ]);
     }
@@ -68,13 +70,15 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', Rule::in(['admin', 'accountant', 'viewer'])],
+            'role' => ['required', Rule::in(['admin', 'accountant', 'sales', 'inventory_manager', 'viewer'])],
+            'is_active' => ['boolean'],
         ]);
 
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
+            'is_active' => $validated['is_active'] ?? $user->is_active,
         ]);
 
         if (!empty($validated['password'])) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Concerns\LogsActivity;
 use App\Enums\IdentifierType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,7 @@ class Customer extends Model
 {
     use HasFactory;
     use HasUuids;
+    use LogsActivity;
     use SoftDeletes;
 
     protected $fillable = [

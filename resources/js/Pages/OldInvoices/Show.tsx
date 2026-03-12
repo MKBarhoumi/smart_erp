@@ -1,4 +1,4 @@
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import type { FormEvent} from 'react';
 import { useState, useMemo } from 'react';
 import { OldInvoiceStatusBadge } from '@/Components/ui/Badge';
@@ -8,7 +8,7 @@ import { Modal } from '@/Components/ui/Modal';
 import { Select } from '@/Components/ui/Select';
 import { formatTND, formatNumber } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { OldInvoice, Payment, PageProps } from '@/types';
+import type { OldInvoice, Payment, PageProps, User } from '@/types';
 
 interface Props extends PageProps {
     oldinvoice: OldInvoice & {
@@ -29,6 +29,7 @@ interface Props extends PageProps {
         payments: Payment[];
         ttn_logs: Array<{ id: string; direction: string; http_status: number; created_at: string }>;
         creator: { name: string };
+        rejection_reason?: string;
     };
     canValidate: boolean;
     canSign: boolean;
@@ -38,8 +39,19 @@ interface Props extends PageProps {
 }
 
 export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canEdit, canDelete }: Props) {
+    const { auth } = usePage<{ auth: { user: User } }>().props;
+    const isAdmin = auth.user?.role === 'admin' || auth.user?.role === 'super_admin';
+    const canModify = auth.user?.can_modify ?? auth.user?.role !== 'viewer';
+    
     const [showPayment, setShowPayment] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState('');
+
+    // Validation workflow flags
+    const canRequestValidation = oldinvoice.status === 'draft' && canModify && !isAdmin;
+    const canApproveReject = oldinvoice.status === 'pending_validation' && isAdmin;
+    const canDirectValidate = canValidate && isAdmin;
 
     // Calculate paid amount and remaining balance
     const paymentSummary = useMemo(() => {
@@ -70,12 +82,24 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
         });
     };
 
-    const action = (route: string, method: 'post' | 'delete' = 'post') => {
-        router[method](route);
+    const action = (route: string, method: 'post' | 'delete' = 'post', data?: Record<string, string>) => {
+        if (data) {
+            router[method](route, data);
+        } else {
+            router[method](route);
+        }
+    };
+
+    const handleReject = () => {
+        if (!rejectionReason.trim()) return;
+        router.post(`/oldinvoices/${oldinvoice.id}/reject-validation`, { rejection_reason: rejectionReason });
+        setShowRejectModal(false);
+        setRejectionReason('');
     };
 
     const statusColor: Record<string, string> = {
         draft: 'bg-gray-100',
+        pending_validation: 'bg-amber-50',
         validated: 'bg-blue-50',
         signed: 'bg-indigo-50',
         submitted: 'bg-yellow-50',
@@ -89,6 +113,36 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
             <Head title={`OldInvoice ${oldinvoice.oldinvoice_number}`} />
 
             <div className="space-y-6">
+                {/* Rejection Reason Banner */}
+                {oldinvoice.status === 'draft' && oldinvoice.rejection_reason && (
+                    <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+                        <div className="flex items-start gap-3">
+                            <svg className="w-5 h-5 text-red-500 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                            </svg>
+                            <div>
+                                <h3 className="font-semibold text-red-800">Validation Rejected</h3>
+                                <p className="text-sm text-red-700 mt-1">{oldinvoice.rejection_reason}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Pending Validation Banner */}
+                {oldinvoice.status === 'pending_validation' && (
+                    <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+                        <div className="flex items-start gap-3">
+                            <svg className="w-5 h-5 text-amber-500 mt-0.5 animate-pulse" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <h3 className="font-semibold text-amber-800">Awaiting Admin Approval</h3>
+                                <p className="text-sm text-amber-700 mt-1">This invoice is pending validation approval from an administrator.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className={`rounded-lg p-6 shadow ${statusColor[oldinvoice.status] ?? 'bg-white'}`}>
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -102,12 +156,34 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {canEdit && <Link href={`/oldinvoices/${oldinvoice.id}/edit`}><Button size="sm">Edit</Button></Link>}
-                            {canValidate && <Button size="sm" variant="secondary" onClick={() => action(`/oldinvoices/${oldinvoice.id}/validate`)}>Validate</Button>}
+                            
+                            {/* Validation Workflow */}
+                            {canRequestValidation && (
+                                <Button size="sm" variant="warning" onClick={() => action(`/oldinvoices/${oldinvoice.id}/request-validation`)}>
+                                    Request Validation
+                                </Button>
+                            )}
+                            {canApproveReject && (
+                                <>
+                                    <Button size="sm" variant="success" onClick={() => action(`/oldinvoices/${oldinvoice.id}/approve-validation`)}>
+                                        Approve
+                                    </Button>
+                                    <Button size="sm" variant="danger" onClick={() => setShowRejectModal(true)}>
+                                        Reject
+                                    </Button>
+                                </>
+                            )}
+                            {canDirectValidate && oldinvoice.status === 'draft' && (
+                                <Button size="sm" variant="secondary" onClick={() => action(`/oldinvoices/${oldinvoice.id}/validate`)}>
+                                    Validate
+                                </Button>
+                            )}
+                            
                             {canSign && <Button size="sm" variant="secondary" onClick={() => action(`/oldinvoices/${oldinvoice.id}/sign`)}>Sign</Button>}
                             {canSubmit && <Button size="sm" onClick={() => action(`/oldinvoices/${oldinvoice.id}/submit`)}>Submit TTN</Button>}
                             <a href={`/oldinvoices/${oldinvoice.id}/pdf`} target="_blank"><Button size="sm" variant="ghost">PDF</Button></a>
                             <a href={`/oldinvoices/${oldinvoice.id}/xml`} target="_blank"><Button size="sm" variant="ghost">XML</Button></a>
-                            <Button size="sm" variant="ghost" onClick={() => action(`/oldinvoices/${oldinvoice.id}/duplicate`)}>Duplicate</Button>
+                            {canModify && <Button size="sm" variant="ghost" onClick={() => action(`/oldinvoices/${oldinvoice.id}/duplicate`)}>Duplicate</Button>}
                             {canDelete && <Button size="sm" variant="danger" onClick={() => setShowDelete(true)}>Delete</Button>}
                         </div>
                     </div>
@@ -362,6 +438,30 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
                 <div className="mt-4 flex justify-end gap-3">
                     <Button variant="secondary" onClick={() => setShowDelete(false)}>Cancel</Button>
                     <Button variant="danger" onClick={() => router.delete(`/oldinvoices/${oldinvoice.id}`)}>Delete</Button>
+                </div>
+            </Modal>
+
+            {/* Reject Validation Modal */}
+            <Modal show={showRejectModal} onClose={() => setShowRejectModal(false)} title="Reject Validation">
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                        Please provide a reason for rejecting the validation request for invoice <strong>{oldinvoice.oldinvoice_number}</strong>.
+                    </p>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Rejection Reason</label>
+                        <textarea
+                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                            rows={3}
+                            placeholder="Enter reason for rejection..."
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="flex justify-end gap-3">
+                        <Button variant="secondary" onClick={() => { setShowRejectModal(false); setRejectionReason(''); }}>Cancel</Button>
+                        <Button variant="danger" onClick={handleReject} disabled={!rejectionReason.trim()}>Reject</Button>
+                    </div>
                 </div>
             </Modal>
         </AuthenticatedLayout>

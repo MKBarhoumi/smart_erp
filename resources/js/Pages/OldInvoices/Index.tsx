@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { OldInvoiceStatusBadge } from '@/Components/ui/Badge';
 import { Button } from '@/Components/ui/Button';
@@ -7,7 +7,7 @@ import { Pagination } from '@/Components/ui/Pagination';
 import { Select } from '@/Components/ui/Select';
 import { formatTND } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { OldInvoice, PaginatedData } from '@/types';
+import type { OldInvoice, PaginatedData, User } from '@/types';
 
 interface Props {
     oldinvoices: PaginatedData<OldInvoice & { customer: { id: string; name: string } | null }>;
@@ -16,6 +16,9 @@ interface Props {
 }
 
 export default function OldInvoicesIndex({ oldinvoices, filters, statuses }: Props) {
+    const { auth } = usePage<{ auth: { user: User } }>().props;
+    const canModify = auth.user?.can_modify ?? auth.user?.role !== 'viewer';
+    
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [dateFrom, setDateFrom] = useState(filters.date_from ?? '');
@@ -32,9 +35,11 @@ export default function OldInvoicesIndex({ oldinvoices, filters, statuses }: Pro
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-gray-900">OldInvoices</h1>
-                    <Link href="/oldinvoices/create">
-                        <Button>New OldInvoice</Button>
-                    </Link>
+                    {canModify && (
+                        <Link href="/oldinvoices/create">
+                            <Button>New OldInvoice</Button>
+                        </Link>
+                    )}
                 </div>
 
                 {/* Filters */}

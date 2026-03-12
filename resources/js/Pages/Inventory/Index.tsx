@@ -1,4 +1,4 @@
-﻿import { Head, useForm } from '@inertiajs/react';
+﻿import { Head, useForm, router, usePage } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Modal } from '@/Components/ui/Modal';
@@ -22,11 +22,16 @@ interface Props extends PageProps {
     products: PaginatedData<Product>;
     recentMovements: StockMovement[];
     lowStockCount: number;
+    filters: { search?: string; stock_status?: string };
 }
 
-export default function Index({ products, recentMovements, lowStockCount }: Props) {
+export default function Index({ products, recentMovements, lowStockCount, filters = {} }: Props) {
+    const { auth } = usePage<PageProps>().props;
+    const canModify = auth.user?.can_modify ?? auth.user?.role !== 'viewer';
     const [showAdjust, setShowAdjust] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [search, setSearch] = useState(filters.search ?? '');
+    const [stockStatus, setStockStatus] = useState(filters.stock_status ?? '');
 
     const form = useForm({ product_id: '', type: 'adjustment', quantity: '', notes: '' });
 
@@ -42,6 +47,21 @@ export default function Index({ products, recentMovements, lowStockCount }: Prop
         e.preventDefault();
         form.post('/inventory/adjustment', { onSuccess: () => { setShowAdjust(false); form.reset(); } });
     };
+
+    const applyFilters = () => {
+        router.get('/inventory', { 
+            search: search || undefined, 
+            stock_status: stockStatus || undefined 
+        }, { preserveState: true, replace: true });
+    };
+
+    const clearFilters = () => {
+        setSearch('');
+        setStockStatus('');
+        router.get('/inventory', {}, { preserveState: true, replace: true });
+    };
+
+    const hasActiveFilters = search || stockStatus;
 
     return (
         <AuthenticatedLayout>
@@ -78,6 +98,44 @@ export default function Index({ products, recentMovements, lowStockCount }: Prop
                     <div className="bg-gradient-to-r from-user-50 to-indigo-50 rounded-xl p-4 border border-user-200/50">
                         <p className="text-sm text-user-600">Recent Movements</p>
                         <p className="text-2xl font-bold text-user-700 mt-1">{recentMovements.length}</p>
+                    </div>
+                </div>
+
+                {/* Filters */}
+                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-5">
+                    <div className="flex flex-wrap items-end gap-4">
+                        <div className="flex-1 min-w-[200px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Search</label>
+                            <div className="relative">
+                                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                                <input 
+                                    type="text" 
+                                    placeholder="Search products..." 
+                                    value={search} 
+                                    onChange={(e) => setSearch(e.target.value)} 
+                                    onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm"
+                                />
+                            </div>
+                        </div>
+                        <div className="min-w-[150px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Stock Status</label>
+                            <select 
+                                value={stockStatus} 
+                                onChange={(e) => setStockStatus(e.target.value)} 
+                                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-user-500 focus:ring-2 focus:ring-user-500/20 transition-all text-sm"
+                            >
+                                <option value="">All</option>
+                                <option value="low">Low Stock</option>
+                                <option value="ok">In Stock</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={applyFilters} className="px-5 py-2.5 bg-user-600 text-white font-semibold rounded-xl hover:bg-user-700 transition-all">Apply</button>
+                            {hasActiveFilters && (
+                                <button onClick={clearFilters} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all">Clear</button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -127,10 +185,12 @@ export default function Index({ products, recentMovements, lowStockCount }: Prop
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button onClick={() => openAdjust(product)} className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-user-100 hover:text-user-700 transition-all">
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>
-                                                    Adjust
-                                                </button>
+                                                {canModify && (
+                                                    <button onClick={() => openAdjust(product)} className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-user-100 hover:text-user-700 transition-all">
+                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>
+                                                        Adjust
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     );
