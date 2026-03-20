@@ -74,6 +74,21 @@ export interface Product {
   updated_at: string;
 }
 
+export interface Service {
+  [key: string]: unknown;
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  category: 'IT' | 'Consulting' | 'Maintenance' | 'Training' | 'Other';
+  unit: 'Hour' | 'Day' | 'Unit' | 'Forfait';
+  unit_price: string;
+  tax_rate: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface OldInvoiceLine {
   id: string;
   oldinvoice_id: string;

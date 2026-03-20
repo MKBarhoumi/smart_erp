@@ -988,4 +988,263 @@ class InvoiceController extends Controller
 
         return back()->with('success', 'Payment deleted successfully.');
     }
+
+    /**
+     * Parse XML file and return extracted data for preview.
+     */
+    public function parseXml(): \Illuminate\Http\JsonResponse
+    {
+        request()->validate([
+            'file' => 'required|file|mimes:xml|max:5120', // 5MB max
+        ]);
+
+        try {
+            $xml = simplexml_load_string(
+                request()->file('file')->get(),
+                'SimpleXMLElement',
+                LIBXML_NOCDATA
+            );
+
+            if ($xml === false) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['Invalid XML file format.'],
+                ], 422);
+            }
+
+            // Register namespaces if they exist
+            $namespaces = $xml->getNamespaces(true);
+            
+            // Try to parse TEIF structure
+            $errors = [];
+            $data = [];
+
+            // Extract Invoice ID
+            $id = (string) ($xml->ID ?? $xml->{'cbc:ID'} ?? '');
+            if (empty($id)) {
+                $errors[] = 'Invoice ID is missing.';
+            } elseif (Invoice::where('document_identifier', $id)->exists()) {
+                $errors[] = "Invoice ID '{$id}' already exists in the system.";
+            }
+            $data['invoice_id'] = $id;
+
+            // Extract Issue Date
+            $issueDate = (string) ($xml->IssueDate ?? $xml->{'cbc:IssueDate'} ?? '');
+            if (empty($issueDate)) {
+                $errors[] = 'Issue date is missing.';
+            } elseif (!strtotime($issueDate)) {
+                $errors[] = 'Issue date is invalid.';
+            }
+            $data['issue_date'] = $issueDate;
+
+            // Extract Invoice Type Code
+            $typeCode = (string) ($xml->InvoiceTypeCode ?? $xml->{'cbc:InvoiceTypeCode'} ?? '');
+            $validTypeCodes = ['CO380', 'I-11', 'I-12', 'I-13', 'I-14', 'I-15', 'I-16', 'T-09', 'FA'];
+            if (empty($typeCode)) {
+                $errors[] = 'Invoice type code is missing.';
+            } elseif (!in_array($typeCode, $validTypeCodes)) {
+                $errors[] = "Invalid invoice type code: {$typeCode}.";
+            }
+            $data['invoice_type'] = $typeCode;
+
+            // Extract Supplier (Sender)
+            $supplierParty = $xml->AccountingSupplierParty->Party 
+                ?? $xml->{'cac:AccountingSupplierParty'}->{'cac:Party'} 
+                ?? null;
+            if ($supplierParty) {
+                $data['sender_name'] = (string) ($supplierParty->PartyName->Name 
+                    ?? $supplierParty->{'cac:PartyName'}->{'cbc:Name'} ?? '');
+                $data['sender_tax_id'] = (string) ($supplierParty->PartyTaxScheme->CompanyID 
+                    ?? $supplierParty->{'cac:PartyTaxScheme'}->{'cbc:CompanyID'} ?? '');
+            } else {
+                $data['sender_name'] = '';
+                $data['sender_tax_id'] = '';
+            }
+
+            // Extract Customer (Receiver)
+            $customerParty = $xml->AccountingCustomerParty->Party 
+                ?? $xml->{'cac:AccountingCustomerParty'}->{'cac:Party'} 
+                ?? null;
+            if ($customerParty) {
+                $data['receiver_name'] = (string) ($customerParty->PartyName->Name 
+                    ?? $customerParty->{'cac:PartyName'}->{'cbc:Name'} ?? '');
+                $data['receiver_tax_id'] = (string) ($customerParty->PartyTaxScheme->CompanyID 
+                    ?? $customerParty->{'cac:PartyTaxScheme'}->{'cbc:CompanyID'} ?? '');
+            } else {
+                $data['receiver_name'] = '';
+                $data['receiver_tax_id'] = '';
+            }
+
+            // Extract Monetary Totals
+            $monetary = $xml->LegalMonetaryTotal ?? $xml->{'cac:LegalMonetaryTotal'} ?? null;
+            if ($monetary) {
+                $data['total_ht'] = (string) ($monetary->TaxExclusiveAmount ?? $monetary->{'cbc:TaxExclusiveAmount'} ?? '0');
+                $data['total_ttc'] = (string) ($monetary->TaxInclusiveAmount ?? $monetary->{'cbc:TaxInclusiveAmount'} ?? $monetary->PayableAmount ?? $monetary->{'cbc:PayableAmount'} ?? '0');
+            } else {
+                $data['total_ht'] = '0';
+                $data['total_ttc'] = '0';
+            }
+
+            // Extract Tax Total
+            $taxTotal = $xml->TaxTotal ?? $xml->{'cac:TaxTotal'} ?? null;
+            $data['total_tva'] = (string) ($taxTotal->TaxAmount ?? $taxTotal->{'cbc:TaxAmount'} ?? '0');
+
+            // Extract Invoice Lines
+            $lines = [];
+            $invoiceLines = $xml->InvoiceLine ?? $xml->{'cac:InvoiceLine'} ?? [];
+            foreach ($invoiceLines as $line) {
+                $lineId = (string) ($line->ID ?? $line->{'cbc:ID'} ?? '');
+                $qty = (string) ($line->InvoicedQuantity ?? $line->{'cbc:InvoicedQuantity'} ?? '0');
+                $lineAmount = (string) ($line->LineExtensionAmount ?? $line->{'cbc:LineExtensionAmount'} ?? '0');
+                $item = $line->Item ?? $line->{'cac:Item'} ?? null;
+                $description = (string) ($item->Description ?? $item->{'cbc:Description'} ?? '');
+                $price = $line->Price ?? $line->{'cac:Price'} ?? null;
+                $unitPrice = (string) ($price->PriceAmount ?? $price->{'cbc:PriceAmount'} ?? '0');
+
+                $lines[] = [
+                    'line_id' => $lineId,
+                    'quantity' => $qty,
+                    'description' => $description,
+                    'unit_price' => $unitPrice,
+                    'line_amount' => $lineAmount,
+                ];
+            }
+            $data['lines'] = $lines;
+
+            if (count($lines) === 0) {
+                $errors[] = 'At least one invoice line is required.';
+            }
+
+            // Check payable amount is positive
+            if (floatval($data['total_ttc']) <= 0) {
+                $errors[] = 'Payable amount must be positive.';
+            }
+
+            return response()->json([
+                'success' => count($errors) === 0,
+                'data' => $data,
+                'errors' => $errors,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['Failed to parse XML: ' . $e->getMessage()],
+            ], 422);
+        }
+    }
+
+    /**
+     * Import invoice from parsed XML data.
+     */
+    public function importXml(): \Illuminate\Http\JsonResponse
+    {
+        $validated = request()->validate([
+            'invoice_id' => 'required|string|max:255',
+            'invoice_type' => 'required|string',
+            'issue_date' => 'required|date',
+            'sender_name' => 'required|string|max:255',
+            'sender_tax_id' => 'required|string|max:255',
+            'receiver_name' => 'required|string|max:255',
+            'receiver_tax_id' => 'required|string|max:255',
+            'total_ht' => 'required|numeric',
+            'total_tva' => 'required|numeric',
+            'total_ttc' => 'required|numeric',
+            'lines' => 'required|array|min:1',
+            'lines.*.line_id' => 'required|string',
+            'lines.*.quantity' => 'required|numeric|min:0',
+            'lines.*.description' => 'required|string',
+            'lines.*.unit_price' => 'required|numeric|min:0',
+            'lines.*.line_amount' => 'required|numeric|min:0',
+        ]);
+
+        // Check for duplicate invoice ID
+        if (Invoice::where('document_identifier', $validated['invoice_id'])->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice ID already exists in the system.',
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Determine document type for database
+            $typeMap = [
+                'CO380' => 'I-11',
+                'I-11' => 'I-11',
+                'I-12' => 'I-12',
+                'I-13' => 'I-13',
+                'I-14' => 'I-14',
+                'I-15' => 'I-15',
+                'I-16' => 'I-16',
+                'T-09' => 'I-11',
+                'FA' => 'I-11',
+            ];
+            $docType = $typeMap[$validated['invoice_type']] ?? 'I-11';
+
+            // Create the invoice
+            $invoice = Invoice::create([
+                'document_identifier' => $validated['invoice_id'],
+                'document_type_code' => $docType,
+                'sender_identifier' => $validated['sender_tax_id'],
+                'receiver_identifier' => $validated['receiver_tax_id'],
+                'invoice_date' => $validated['issue_date'],
+                'total_ht' => $validated['total_ht'],
+                'total_tva' => $validated['total_tva'],
+                'total_ttc' => $validated['total_ttc'],
+                'status' => InvoiceStatus::DRAFT->value,
+                'created_by' => auth()->id(),
+                'notes' => 'Imported from XML file',
+            ]);
+
+            // Create sender partner
+            InvoicePartner::create([
+                'invoice_id' => $invoice->id,
+                'function_code' => 'I-62', // Seller
+                'identifier_type' => 'I-01',
+                'identifier_value' => $validated['sender_tax_id'],
+                'partner_name' => $validated['sender_name'],
+            ]);
+
+            // Create receiver partner
+            InvoicePartner::create([
+                'invoice_id' => $invoice->id,
+                'function_code' => 'I-64', // Buyer
+                'identifier_type' => 'I-01',
+                'identifier_value' => $validated['receiver_tax_id'],
+                'partner_name' => $validated['receiver_name'],
+            ]);
+
+            // Create invoice lines
+            foreach ($validated['lines'] as $index => $line) {
+                InvoiceLine::create([
+                    'invoice_id' => $invoice->id,
+                    'line_number' => $index + 1,
+                    'item_code' => $line['line_id'] ?: 'LINE-' . ($index + 1),
+                    'item_description' => $line['description'],
+                    'quantity' => $line['quantity'],
+                    'unit_of_measure' => 'C62', // Default unit
+                    'unit_price' => $line['unit_price'],
+                    'line_net_amount' => $line['line_amount'],
+                    'tva_rate' => 19, // Default VAT rate
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice imported successfully.',
+                'invoice_id' => $invoice->id,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to import invoice: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { formatTND } from '@/utils/format';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { PageProps } from '@/types';
 
 interface Props extends PageProps {
@@ -57,6 +58,8 @@ export default function Dashboard({
     topCustomers = [],
     lowStockProducts = [],
 }: Props) {
+    const { canViewFinancials } = usePermissions();
+    
     return (
         <AuthenticatedLayout>
             <Head title="Dashboard" />
@@ -78,13 +81,19 @@ export default function Dashboard({
 
                 {/* Stats Grid */}
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                    <StatCard label="Monthly Revenue" value={formatTND(stats.monthly_revenue)} icon="revenue" color="emerald" />
-                    <StatCard label="Year-to-Date Revenue" value={formatTND(stats.yearly_revenue)} icon="revenue" color="blue" />
-                    <StatCard label="Outstanding Balance" value={formatTND(stats.outstanding_balance)} icon="balance" color="rose" />
+                    {canViewFinancials && (
+                        <>
+                            <StatCard label="Monthly Revenue" value={formatTND(stats.monthly_revenue)} icon="revenue" color="emerald" />
+                            <StatCard label="Year-to-Date Revenue" value={formatTND(stats.yearly_revenue)} icon="revenue" color="blue" />
+                            <StatCard label="Outstanding Balance" value={formatTND(stats.outstanding_balance)} icon="balance" color="rose" />
+                        </>
+                    )}
                     <StatCard label="Invoices This Month" value={String(stats.oldinvoices_this_month)} icon="invoices" color="indigo" />
                 </div>
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    <StatCard label="Pending Drafts" value={String(stats.pending_oldinvoices)} icon="pending" color="amber" />
+                    {canViewFinancials && (
+                        <StatCard label="Pending Drafts" value={String(stats.pending_oldinvoices)} icon="pending" color="amber" />
+                    )}
                     <StatCard label="Total Customers" value={String(stats.total_customers)} icon="customers" color="purple" />
                     <StatCard label="Total Products" value={String(stats.total_products)} icon="products" color="indigo" />
                 </div>

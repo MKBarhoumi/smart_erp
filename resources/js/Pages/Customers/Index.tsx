@@ -1,10 +1,11 @@
-﻿import { Head, Link, router, usePage } from '@inertiajs/react';
+﻿import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/Input';
 import { Pagination } from '@/Components/ui/Pagination';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Customer, PaginatedData, User } from '@/types';
+import { usePermissions } from '@/hooks/usePermissions';
+import type { Customer, PaginatedData } from '@/types';
 
 interface Props {
     customers: PaginatedData<Customer>;
@@ -12,8 +13,7 @@ interface Props {
 }
 
 export default function CustomersIndex({ customers, filters }: Props) {
-    const { auth } = usePage<{ auth: { user: User } }>().props;
-    const canModify = auth.user?.can_modify ?? auth.user?.role !== 'viewer';
+    const { canCreate, canEdit } = usePermissions();
     
     const [search, setSearch] = useState(filters.search ?? '');
     const [identifierType, setIdentifierType] = useState(filters.identifier_type ?? '');
@@ -47,7 +47,7 @@ export default function CustomersIndex({ customers, filters }: Props) {
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900">Customers</h1>
                         <p className="mt-1 text-gray-500">Manage your customer relationships and contacts</p>
                     </div>
-                    {canModify && (
+                    {canCreate('customers') && (
                         <Link href="/customers/create">
                             <Button icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}>
                                 Add Customer
@@ -163,7 +163,7 @@ export default function CustomersIndex({ customers, filters }: Props) {
                                                     <Link href={`/customers/${customer.id}`} className="p-2 rounded-lg text-gray-500 hover:text-user-600 hover:bg-user-50 transition-all" title="View">
                                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                                     </Link>
-                                                    {canModify && (
+                                                    {canEdit('customers') && (
                                                         <Link href={`/customers/${customer.id}/edit`} className="p-2 rounded-lg text-gray-500 hover:text-amber-600 hover:bg-amber-50 transition-all" title="Edit">
                                                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
                                                         </Link>

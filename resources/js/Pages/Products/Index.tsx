@@ -1,9 +1,10 @@
-﻿import { Head, Link, router, usePage } from '@inertiajs/react';
+﻿import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Pagination } from '@/Components/ui/Pagination';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { formatTND, formatNumber } from '@/utils/format';
-import type { Product, PaginatedData, User } from '@/types';
+import { usePermissions } from '@/hooks/usePermissions';
+import type { Product, PaginatedData } from '@/types';
 
 interface Props {
     products: PaginatedData<Product>;
@@ -11,8 +12,7 @@ interface Props {
 }
 
 export default function ProductsIndex({ products, filters }: Props) {
-    const { auth } = usePage<{ auth: { user: User } }>().props;
-    const canModify = auth.user?.can_modify ?? auth.user?.role !== 'viewer';
+    const { canCreate, canEdit, canDelete } = usePermissions();
     
     const [search, setSearch] = useState(filters.search ?? '');
     const [tvaRate, setTvaRate] = useState(filters.tva_rate ?? '');
@@ -57,7 +57,7 @@ export default function ProductsIndex({ products, filters }: Props) {
                             </div>
                         </div>
                     </div>
-                    {canModify && (
+                    {canCreate('products') && (
                         <Link href="/products/create">
                             <button className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-user-600 to-user-500 text-white text-sm font-semibold rounded-xl hover:from-user-700 hover:to-user-600 transition-all shadow-lg shadow-user-500/25 hover:shadow-xl hover:shadow-user-500/30 hover:-translate-y-0.5">
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -180,7 +180,9 @@ export default function ProductsIndex({ products, filters }: Props) {
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Link href={`/products/${product.id}`} className="p-2 rounded-lg text-gray-500 hover:text-user-600 hover:bg-user-50 transition-all" title="View"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.64 0 8.577 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></Link>
-                                                    <Link href={`/products/${product.id}/edit`} className="p-2 rounded-lg text-gray-500 hover:text-user-600 hover:bg-user-50 transition-all" title="Edit"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></Link>
+                                                    {canEdit('products') && (
+                                                        <Link href={`/products/${product.id}/edit`} className="p-2 rounded-lg text-gray-500 hover:text-user-600 hover:bg-user-50 transition-all" title="Edit"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></Link>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

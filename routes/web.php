@@ -8,7 +8,9 @@ use App\Http\Controllers\SoapController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Foundation\Application;
@@ -43,6 +45,9 @@ Route::middleware('auth')->group(function () {
 
     // Products
     Route::resource('products', ProductController::class);
+
+    // Services
+    Route::resource('services', ServiceController::class);
 
     // Payments
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -94,10 +99,12 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
         Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
+        Route::get('/profiles', [ProfileController::class, 'index'])->name('profiles.index');
+        Route::post('/profiles', [ProfileController::class, 'store'])->name('profiles.store');
+        Route::put('/profiles/{role}', [ProfileController::class, 'update'])->name('profiles.update');
+        Route::delete('/profiles/{role}', [ProfileController::class, 'destroy'])->name('profiles.destroy');
     });
-
-
-    });
+});
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

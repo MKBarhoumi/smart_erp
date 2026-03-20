@@ -7,6 +7,10 @@ Route::middleware('auth')->group(function () {
     // Invoice CRUD
     Route::resource('invoices', InvoiceController::class);
 
+    // Invoice import from XML
+    Route::post('/invoices-import/parse', [InvoiceController::class, 'parseXml'])->name('invoices.parseXml');
+    Route::post('/invoices-import/store', [InvoiceController::class, 'importXml'])->name('invoices.importXml');
+
     // Invoice actions
     Route::prefix('invoices/{invoice}')->name('invoices.')->group(function () {
         Route::post('/request-validation', [InvoiceController::class, 'requestValidation'])->name('requestValidation');
