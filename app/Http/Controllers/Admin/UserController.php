@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomRole;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,6 +12,33 @@ use Inertia\Inertia;
 
 class UserController extends Controller
 {
+    /**
+     * Get all available roles (both system and custom).
+     */
+    private function getAvailableRoles(): array
+    {
+        return CustomRole::active()
+            ->orderByRaw("CASE WHEN is_system = 1 THEN 0 ELSE 1 END")
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($role) => [
+                'slug' => $role->slug,
+                'name' => $role->name,
+                'color' => $role->color,
+                'is_system' => $role->is_system,
+                'description' => $role->description,
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Get all valid role slugs for validation.
+     */
+    private function getValidRoleSlugs(): array
+    {
+        return CustomRole::active()->pluck('slug')->toArray();
+    }
+
     public function index(Request $request)
     {
         $users = User::query()
@@ -29,17 +57,19 @@ class UserController extends Controller
     public function create()
     {
         return Inertia::render('Admin/Users/Form', [
-            'roles' => ['admin', 'accountant', 'sales', 'inventory_manager', 'viewer'],
+            'roles' => $this->getAvailableRoles(),
         ]);
     }
 
     public function store(Request $request)
     {
+        $validRoles = $this->getValidRoleSlugs();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', Rule::in(['admin', 'accountant', 'sales', 'inventory_manager', 'viewer'])],
+            'role' => ['required', Rule::in($validRoles)],
             'is_active' => ['boolean'],
         ]);
 
@@ -59,18 +89,20 @@ class UserController extends Controller
     {
         return Inertia::render('Admin/Users/Form', [
             'user' => $user,
-            'roles' => ['admin', 'accountant', 'sales', 'inventory_manager', 'viewer'],
+            'roles' => $this->getAvailableRoles(),
             'isEdit' => true,
         ]);
     }
 
     public function update(Request $request, User $user)
     {
+        $validRoles = $this->getValidRoleSlugs();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', Rule::in(['admin', 'accountant', 'sales', 'inventory_manager', 'viewer'])],
+            'role' => ['required', Rule::in($validRoles)],
             'is_active' => ['boolean'],
         ]);
 

@@ -6,9 +6,19 @@ import { Select } from '@/Components/ui/Select';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Customer, Product, InvoiceFormData, InvoiceFormLine } from '@/types';
 
+interface Service {
+    id: string;
+    code: string;
+    name: string;
+    description?: string;
+    unit_price: string;
+    tva_rate: string;
+}
+
 interface Props {
     customers: Customer[];
     products: Product[];
+    services: Service[];
     documentTypes: Array<{ value: string; label: string }>;
     identifierTypes: Array<{ value: string; label: string }>;
     companySettings: {
@@ -23,7 +33,15 @@ interface Props {
     isEdit?: boolean;
 }
 
-const emptyLine: InvoiceFormLine = {
+type LineType = 'product' | 'service';
+
+interface ExtendedInvoiceFormLine extends InvoiceFormLine {
+    line_type: LineType;
+    service_id?: string;
+}
+
+const emptyProductLine: ExtendedInvoiceFormLine = {
+    line_type: 'product',
     product_id: '',
     item_code: '',
     item_description: '',
@@ -33,21 +51,34 @@ const emptyLine: InvoiceFormLine = {
     tva_rate: '19',
 };
 
-export default function InvoiceForm({ 
-    customers, 
-    products, 
-    documentTypes, 
+const emptyServiceLine: ExtendedInvoiceFormLine = {
+    line_type: 'service',
+    service_id: '',
+    product_id: '',
+    item_code: '',
+    item_description: '',
+    quantity: '1',
+    unit_of_measure: 'SERVICE',
+    unit_price: '0',
+    tva_rate: '19',
+};
+
+export default function InvoiceForm({
+    customers,
+    products,
+    services,
+    documentTypes,
     identifierTypes,
     companySettings,
-    invoice, 
-    isEdit = false 
+    invoice,
+    isEdit = false
 }: Props) {
-    const { data, setData, post, put, processing, errors } = useForm<InvoiceFormData>({
+    const { data, setData, post, put, processing, errors } = useForm<InvoiceFormData & { lines: ExtendedInvoiceFormLine[] }>({
         document_type_code: invoice?.document_type_code ?? 'I-11',
         invoice_date: invoice?.invoice_date ?? new Date().toISOString().split('T')[0],
         due_date: invoice?.due_date ?? '',
         notes: invoice?.notes ?? '',
-        
+
         // Sender (seller) - pre-fill from company settings
         sender_identifier: invoice?.sender_identifier ?? companySettings.identifier,
         sender_type: invoice?.sender_type ?? 'I-01',
@@ -56,7 +87,7 @@ export default function InvoiceForm({
         sender_city: invoice?.sender_city ?? companySettings.city,
         sender_postal_code: invoice?.sender_postal_code ?? companySettings.postal_code,
         sender_country: invoice?.sender_country ?? (companySettings.country || 'TN'),
-        
+
         // Receiver (buyer)
         receiver_identifier: invoice?.receiver_identifier ?? '',
         receiver_type: invoice?.receiver_type ?? 'I-01',
@@ -65,11 +96,13 @@ export default function InvoiceForm({
         receiver_city: invoice?.receiver_city ?? '',
         receiver_postal_code: invoice?.receiver_postal_code ?? '',
         receiver_country: invoice?.receiver_country ?? 'TN',
-        
+
         // Lines
         lines: invoice?.lines?.length
             ? invoice.lines.map((l) => ({
+                line_type: (l as ExtendedInvoiceFormLine).line_type || 'product',
                 product_id: '',
+                service_id: '',
                 item_code: l.item_code ?? '',
                 item_description: l.item_description ?? '',
                 quantity: String(l.quantity ?? '1'),
@@ -77,11 +110,15 @@ export default function InvoiceForm({
                 unit_price: String(l.unit_price ?? '0'),
                 tva_rate: String(l.tva_rate ?? '19'),
             }))
-            : [{ ...emptyLine }],
+            : [{ ...emptyProductLine }],
     });
 
-    const addLine = () => {
-        setData('lines', [...data.lines, { ...emptyLine }]);
+    const addLine = (lineType: LineType = 'product') => {
+        if (lineType === 'service') {
+            setData('lines', [...data.lines, { ...emptyServiceLine }]);
+        } else {
+            setData('lines', [...data.lines, { ...emptyProductLine }]);
+        }
     };
 
     const removeLine = (index: number) => {
@@ -89,7 +126,7 @@ export default function InvoiceForm({
         setData('lines', data.lines.filter((_, i) => i !== index));
     };
 
-    const updateLine = (index: number, field: keyof InvoiceFormLine, value: string) => {
+    const updateLine = (index: number, field: keyof ExtendedInvoiceFormLine, value: string) => {
         const updated = [...data.lines];
         updated[index] = { ...updated[index], [field]: value };
         setData('lines', updated);
@@ -102,11 +139,29 @@ export default function InvoiceForm({
         updated[index] = {
             ...updated[index],
             product_id: product.id,
+            service_id: '',
             item_code: product.code,
             item_description: product.name,
             unit_price: product.unit_price,
             unit_of_measure: product.unit_of_measure,
             tva_rate: product.tva_rate,
+        };
+        setData('lines', updated);
+    };
+
+    const selectService = (index: number, serviceId: string) => {
+        const service = services.find((s) => s.id === serviceId);
+        if (!service) return;
+        const updated = [...data.lines];
+        updated[index] = {
+            ...updated[index],
+            service_id: service.id,
+            product_id: '',
+            item_code: service.code,
+            item_description: service.name,
+            unit_price: service.unit_price,
+            unit_of_measure: 'SERVICE',
+            tva_rate: service.tva_rate,
         };
         setData('lines', updated);
     };
@@ -337,25 +392,50 @@ export default function InvoiceForm({
                     <div className="mb-4 flex items-center justify-between">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">Invoice Lines</h2>
-                            <p className="text-sm text-gray-500">Add items/services to this invoice</p>
+                            <p className="text-sm text-gray-500">Add products or services to this invoice</p>
                         </div>
-                        <Button type="button" size="sm" onClick={addLine}>+ Add Line</Button>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => addLine('product')}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                Add Product
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => addLine('service')}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-sm"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                Add Service
+                            </button>
+                        </div>
                     </div>
 
                     {errors.lines && <p className="mb-2 text-sm text-red-600">{errors.lines}</p>}
 
                     <div className="space-y-4">
-                        {data.lines.map((line, index) => (
-                            <div key={index} className="rounded-lg border border-gray-200 p-4 transition-colors hover:border-gray-300">
+                        {data.lines.map((line, index) => {
+                            const isService = line.line_type === 'service';
+                            return (
+                            <div key={index} className={`rounded-lg border-2 p-4 transition-colors ${isService ? 'border-purple-200 bg-purple-50/30 hover:border-purple-300' : 'border-blue-200 bg-blue-50/30 hover:border-blue-300'}`}>
                                 <div className="mb-3 flex items-center justify-between">
-                                    <span className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-xs">{index + 1}</span>
-                                        Line Item
+                                    <span className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                                        <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs text-white ${isService ? 'bg-purple-500' : 'bg-blue-500'}`}>{index + 1}</span>
+                                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${isService ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            {isService ? 'Service' : 'Product'}
+                                        </span>
                                     </span>
                                     {data.lines.length > 1 && (
-                                        <button 
-                                            type="button" 
-                                            onClick={() => removeLine(index)} 
+                                        <button
+                                            type="button"
+                                            onClick={() => removeLine(index)}
                                             className="text-sm text-red-600 hover:text-red-800 transition-colors"
                                         >
                                             Remove
@@ -365,15 +445,27 @@ export default function InvoiceForm({
 
                                 <div className="grid gap-3 sm:grid-cols-7">
                                     <div className="sm:col-span-2">
-                                        <Select
-                                            label="Product"
-                                            options={[
-                                                { value: '', label: 'Select product...' },
-                                                ...products.map((p) => ({ value: p.id, label: `${p.code} - ${p.name}` }))
-                                            ]}
-                                            value={line.product_id}
-                                            onChange={(e) => selectProduct(index, e.target.value)}
-                                        />
+                                        {isService ? (
+                                            <Select
+                                                label="Service"
+                                                options={[
+                                                    { value: '', label: 'Select service...' },
+                                                    ...services.map((s) => ({ value: s.id, label: `${s.code} - ${s.name}` }))
+                                                ]}
+                                                value={line.service_id || ''}
+                                                onChange={(e) => selectService(index, e.target.value)}
+                                            />
+                                        ) : (
+                                            <Select
+                                                label="Product"
+                                                options={[
+                                                    { value: '', label: 'Select product...' },
+                                                    ...products.map((p) => ({ value: p.id, label: `${p.code} - ${p.name}` }))
+                                                ]}
+                                                value={line.product_id}
+                                                onChange={(e) => selectProduct(index, e.target.value)}
+                                            />
+                                        )}
                                     </div>
                                     <Input 
                                         label="Code" 
@@ -437,7 +529,8 @@ export default function InvoiceForm({
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        );
+                        })}
                     </div>
                 </div>
 

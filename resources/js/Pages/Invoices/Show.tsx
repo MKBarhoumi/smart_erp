@@ -30,6 +30,8 @@ interface Props extends PageProps {
     };
     canEdit: boolean;
     canDelete: boolean;
+    canDuplicate: boolean;
+    canAddPayment: boolean;
     canRequestValidation: boolean;
     canValidate: boolean;
     canDirectValidate: boolean;
@@ -52,7 +54,7 @@ const methodStyles: Record<string, { bg: string; text: string; label: string }> 
     effect: { bg: 'bg-violet-100', text: 'text-violet-700', label: 'Bill of Exchange' },
 };
 
-export default function Show({ invoice, canEdit, canDelete, canRequestValidation, canValidate, canDirectValidate, canSign, canSubmit, isAdmin, validationInfo }: Props) {
+export default function Show({ invoice, canEdit, canDelete, canDuplicate, canAddPayment, canRequestValidation, canValidate, canDirectValidate, canSign, canSubmit, isAdmin, validationInfo }: Props) {
     const [showDelete, setShowDelete] = useState(false);
     const [showPayment, setShowPayment] = useState(false);
     const [showReject, setShowReject] = useState(false);
@@ -120,7 +122,7 @@ export default function Show({ invoice, canEdit, canDelete, canRequestValidation
         rejected: 'bg-red-50 border-red-200',
     };
 
-    const canAddPayment = ['validated', 'signed', 'submitted', 'accepted'].includes(invoice.status) && !paymentSummary.isPaidInFull;
+    const showAddPaymentButton = canAddPayment && ['validated', 'signed', 'submitted', 'accepted'].includes(invoice.status) && !paymentSummary.isPaidInFull;
 
     return (
         <AuthenticatedLayout>
@@ -217,14 +219,16 @@ export default function Show({ invoice, canEdit, canDelete, canRequestValidation
                             <a href={`/invoices/${invoice.id}/pdf`} target="_blank" rel="noopener noreferrer">
                                 <Button size="sm" variant="ghost">Download PDF</Button>
                             </a>
-                            <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => performAction(`/invoices/${invoice.id}/duplicate`, 'post', 'duplicate')}
-                                loading={actionLoading === 'duplicate'}
-                            >
-                                Duplicate
-                            </Button>
+                            {canDuplicate && (
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => performAction(`/invoices/${invoice.id}/duplicate`, 'post', 'duplicate')}
+                                    loading={actionLoading === 'duplicate'}
+                                >
+                                    Duplicate
+                                </Button>
+                            )}
                             {canDelete && (
                                 <Button size="sm" variant="danger" onClick={() => setShowDelete(true)}>
                                     Delete
@@ -494,7 +498,7 @@ export default function Show({ invoice, canEdit, canDelete, canRequestValidation
                                 </span>
                             </div>
                         </div>
-                        {canAddPayment && (
+                        {showAddPaymentButton && (
                             <Button size="sm" onClick={() => setShowPayment(true)}>+ Payment</Button>
                         )}
                     </div>

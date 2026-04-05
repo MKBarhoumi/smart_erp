@@ -1,8 +1,40 @@
 import { Head, Link } from '@inertiajs/react';
 
-const FeatureIcon = ({ d }: { d: string }) => (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d={d} />
+// Modern feature icons with proper coloring
+const DocumentIcon = ({ className }: { className?: string }) => (
+    <svg className={className || "w-7 h-7"} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+    </svg>
+);
+
+const ShieldCheckIcon = ({ className }: { className?: string }) => (
+    <svg className={className || "w-7 h-7"} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+    </svg>
+);
+
+const BuildingOfficeIcon = ({ className }: { className?: string }) => (
+    <svg className={className || "w-7 h-7"} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+    </svg>
+);
+
+const CurrencyDollarIcon = ({ className }: { className?: string }) => (
+    <svg className={className || "w-7 h-7"} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+
+const ChartBarIcon = ({ className }: { className?: string }) => (
+    <svg className={className || "w-7 h-7"} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+    </svg>
+);
+
+const QrCodeIcon = ({ className }: { className?: string }) => (
+    <svg className={className || "w-7 h-7"} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
     </svg>
 );
 
@@ -10,44 +42,50 @@ const features = [
     {
         title: 'TEIF v1.8.8 Compliant',
         desc: 'Full XML generation compliant with the Tunisian El Fatoora standard including all regulatory codes and validations.',
-        icon: <FeatureIcon d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />,
+        icon: DocumentIcon,
         gradient: 'from-blue-500 to-cyan-500',
         bg: 'bg-blue-500/10',
+        iconColor: 'text-blue-400',
     },
     {
         title: 'XAdES-BES Signature',
         desc: 'RSA-SHA256 digital signature with X.509 certificate integration and automatic TTN validation.',
-        icon: <FeatureIcon d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />,
+        icon: ShieldCheckIcon,
         gradient: 'from-indigo-500 to-purple-500',
         bg: 'bg-indigo-500/10',
+        iconColor: 'text-indigo-400',
     },
     {
         title: 'Multi-Tenant',
         desc: 'Full company settings, user roles, team management, and secure multi-tenant access control.',
-        icon: <FeatureIcon d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 0h.008v.008h-.008v-.008z" />,
+        icon: BuildingOfficeIcon,
         gradient: 'from-emerald-500 to-teal-500',
         bg: 'bg-emerald-500/10',
+        iconColor: 'text-emerald-400',
     },
     {
         title: 'TND Precision',
         desc: 'Precise monetary calculations with bcmath library. Zero floating point, zero rounding errors - 3 decimal precision.',
-        icon: <FeatureIcon d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
+        icon: CurrencyDollarIcon,
         gradient: 'from-amber-500 to-orange-500',
         bg: 'bg-amber-500/10',
+        iconColor: 'text-amber-400',
     },
     {
         title: 'Reports & Analytics',
         desc: 'Interactive dashboards, monthly revenue reports, quarterly VAT returns, and customer balance tracking.',
-        icon: <FeatureIcon d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />,
+        icon: ChartBarIcon,
         gradient: 'from-purple-500 to-pink-500',
         bg: 'bg-purple-500/10',
+        iconColor: 'text-purple-400',
     },
     {
         title: 'PDF & QR CEV',
         desc: 'Professional PDF invoicing with Electronic Verification Certificate QR code for instant validation.',
-        icon: <FeatureIcon d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m0 0a48.159 48.159 0 0110.5 0m-10.5 0V3.375c0-.621.504-1.125 1.125-1.125h9.75c.621 0 1.125.504 1.125 1.125v3.659M9.75 8.25h.008v.008H9.75V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />,
+        icon: QrCodeIcon,
         gradient: 'from-rose-500 to-red-500',
         bg: 'bg-rose-500/10',
+        iconColor: 'text-rose-400',
     },
 ];
 
@@ -178,9 +216,7 @@ export default function Welcome() {
                                     <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
                                     
                                     <div className={`inline-flex rounded-2xl p-4 ${feature.bg}`}>
-                                        <div className={`bg-gradient-to-br ${feature.gradient} bg-clip-text text-transparent`}>
-                                            {feature.icon}
-                                        </div>
+                                        <feature.icon className={`w-7 h-7 ${feature.iconColor}`} />
                                     </div>
                                     <h3 className="mt-6 text-xl font-semibold text-white">{feature.title}</h3>
                                     <p className="mt-3 text-gray-400 leading-relaxed">{feature.desc}</p>

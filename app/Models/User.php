@@ -107,4 +107,62 @@ class User extends Authenticatable
     {
         return !$this->isViewer();
     }
+
+    /**
+     * Get the user's custom role from the database.
+     */
+    public function getCustomRole(): ?CustomRole
+    {
+        return CustomRole::where('slug', $this->role)->where('is_active', true)->first();
+    }
+
+    /**
+     * Check if user can access a specific page.
+     */
+    public function canAccessPage(string $page): bool
+    {
+        $role = $this->getCustomRole();
+        if (!$role) return false;
+        return $role->page_permissions[$page]['access'] ?? false;
+    }
+
+    /**
+     * Check if user can create on a specific page.
+     */
+    public function canCreateOnPage(string $page): bool
+    {
+        $role = $this->getCustomRole();
+        if (!$role) return false;
+        return $role->page_permissions[$page]['create'] ?? false;
+    }
+
+    /**
+     * Check if user can edit on a specific page.
+     */
+    public function canEditOnPage(string $page): bool
+    {
+        $role = $this->getCustomRole();
+        if (!$role) return false;
+        return $role->page_permissions[$page]['edit'] ?? false;
+    }
+
+    /**
+     * Check if user can delete on a specific page.
+     */
+    public function canDeleteOnPage(string $page): bool
+    {
+        $role = $this->getCustomRole();
+        if (!$role) return false;
+        return $role->page_permissions[$page]['delete'] ?? false;
+    }
+
+    /**
+     * Check if user has a special permission.
+     */
+    public function hasSpecialPermission(string $permission): bool
+    {
+        $role = $this->getCustomRole();
+        if (!$role) return false;
+        return $role->special_permissions[$permission] ?? false;
+    }
 }

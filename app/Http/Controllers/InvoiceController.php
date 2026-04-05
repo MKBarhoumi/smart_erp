@@ -19,6 +19,7 @@ use App\Models\InvoiceLine;
 use App\Models\InvoicePartner;
 use App\Models\InvoiceTax;
 use App\Models\Product;
+use App\Models\Service;
 use App\Services\InvoicePdfService;
 use App\Services\TeifXmlBuilder;
 use App\Services\XadesSignatureService;
@@ -100,6 +101,15 @@ class InvoiceController extends Controller
             'products' => Product::where('is_active', true)->orderBy('name')->get([
                 'id', 'code', 'name', 'unit_price', 'unit_of_measure', 'tva_rate',
             ]),
+            'services' => Service::where('is_active', true)->orderBy('name')->get()
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'code' => $s->code,
+                    'name' => $s->name,
+                    'description' => $s->description,
+                    'unit_price' => $s->unit_price,
+                    'tva_rate' => $s->tax_rate,
+                ]),
             'documentTypes' => collect(DocumentTypeCode::cases())->map(fn ($d) => [
                 'value' => $d->value,
                 'label' => $d->label(),
@@ -329,13 +339,15 @@ class InvoiceController extends Controller
                     'creator' => $payment->creator?->name,
                 ]),
             ],
-            'canEdit' => $invoice->isEditable(),
-            'canDelete' => $invoice->isDeletable(),
-            'canRequestValidation' => $invoice->status === InvoiceStatus::DRAFT->value && !auth()->user()->hasAnyRole('admin', 'super_admin'),
-            'canValidate' => $invoice->status === InvoiceStatus::PENDING_VALIDATION->value && auth()->user()->hasAnyRole('admin', 'super_admin'),
-            'canDirectValidate' => $invoice->status === InvoiceStatus::DRAFT->value && auth()->user()->hasAnyRole('admin', 'super_admin'),
-            'canSign' => $invoice->status === InvoiceStatus::VALIDATED->value,
-            'canSubmit' => $invoice->status === InvoiceStatus::SIGNED->value,
+            'canEdit' => $invoice->isEditable() && auth()->user()->canEditOnPage('invoices'),
+            'canDelete' => $invoice->isDeletable() && auth()->user()->canDeleteOnPage('invoices'),
+            'canDuplicate' => auth()->user()->canCreateOnPage('invoices'),
+            'canAddPayment' => auth()->user()->canCreateOnPage('payments'),
+            'canRequestValidation' => $invoice->status === InvoiceStatus::DRAFT->value && !auth()->user()->hasAnyRole('admin', 'super_admin') && auth()->user()->canEditOnPage('invoices'),
+            'canValidate' => $invoice->status === InvoiceStatus::PENDING_VALIDATION->value && auth()->user()->hasAnyRole('admin', 'super_admin') && auth()->user()->hasSpecialPermission('canValidateInvoices'),
+            'canDirectValidate' => $invoice->status === InvoiceStatus::DRAFT->value && auth()->user()->hasAnyRole('admin', 'super_admin') && auth()->user()->hasSpecialPermission('canValidateInvoices'),
+            'canSign' => $invoice->status === InvoiceStatus::VALIDATED->value && auth()->user()->canEditOnPage('invoices'),
+            'canSubmit' => $invoice->status === InvoiceStatus::SIGNED->value && auth()->user()->canEditOnPage('invoices'),
             'isAdmin' => auth()->user()->hasAnyRole('admin', 'super_admin'),
             'validationInfo' => [
                 'requested_by' => $invoice->validationRequestedBy?->name,
@@ -427,6 +439,15 @@ class InvoiceController extends Controller
             'products' => Product::where('is_active', true)->orderBy('name')->get([
                 'id', 'code', 'name', 'unit_price', 'unit_of_measure', 'tva_rate',
             ]),
+            'services' => Service::where('is_active', true)->orderBy('name')->get()
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'code' => $s->code,
+                    'name' => $s->name,
+                    'description' => $s->description,
+                    'unit_price' => $s->unit_price,
+                    'tva_rate' => $s->tax_rate,
+                ]),
             'documentTypes' => collect(DocumentTypeCode::cases())->map(fn ($d) => [
                 'value' => $d->value,
                 'label' => $d->label(),
@@ -769,6 +790,11 @@ class InvoiceController extends Controller
      */
     public function duplicate(Invoice $invoice): RedirectResponse
     {
+        // Check if user has permission to create invoices
+        if (!auth()->user()->canCreateOnPage('invoices')) {
+            return back()->with('error', 'You do not have permission to duplicate invoices.');
+        }
+
         return DB::transaction(function () use ($invoice) {
             $newDocId = $this->generateDocumentIdentifier();
 
@@ -991,19 +1017,17 @@ class InvoiceController extends Controller
 
     /**
      * Parse XML file and return extracted data for preview.
+     * Supports both TEIF (Tunisian E-Invoice Format) and UBL formats.
      */
     public function parseXml(): \Illuminate\Http\JsonResponse
     {
         request()->validate([
-            'file' => 'required|file|mimes:xml|max:5120', // 5MB max
+            'file' => 'required|file|max:5120', // 5MB max
         ]);
 
         try {
-            $xml = simplexml_load_string(
-                request()->file('file')->get(),
-                'SimpleXMLElement',
-                LIBXML_NOCDATA
-            );
+            $xmlContent = request()->file('file')->get();
+            $xml = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NOCDATA);
 
             if ($xml === false) {
                 return response()->json([
@@ -1012,111 +1036,39 @@ class InvoiceController extends Controller
                 ], 422);
             }
 
-            // Register namespaces if they exist
-            $namespaces = $xml->getNamespaces(true);
-            
-            // Try to parse TEIF structure
             $errors = [];
             $data = [];
 
-            // Extract Invoice ID
-            $id = (string) ($xml->ID ?? $xml->{'cbc:ID'} ?? '');
-            if (empty($id)) {
+            // Detect format: TEIF or UBL
+            $rootName = $xml->getName();
+
+            if ($rootName === 'TEIF') {
+                // Parse TEIF format (Tunisian E-Invoice Format)
+                $data = $this->parseTeifXml($xml, $errors);
+            } else {
+                // Parse UBL format (Universal Business Language)
+                $data = $this->parseUblXml($xml, $errors);
+            }
+
+            // Check for duplicate invoice ID
+            if (!empty($data['invoice_id']) && Invoice::where('document_identifier', $data['invoice_id'])->exists()) {
+                $errors[] = "Invoice ID '{$data['invoice_id']}' already exists in the system.";
+            }
+
+            // Validate required data
+            if (empty($data['invoice_id'])) {
                 $errors[] = 'Invoice ID is missing.';
-            } elseif (Invoice::where('document_identifier', $id)->exists()) {
-                $errors[] = "Invoice ID '{$id}' already exists in the system.";
             }
-            $data['invoice_id'] = $id;
-
-            // Extract Issue Date
-            $issueDate = (string) ($xml->IssueDate ?? $xml->{'cbc:IssueDate'} ?? '');
-            if (empty($issueDate)) {
+            if (empty($data['issue_date'])) {
                 $errors[] = 'Issue date is missing.';
-            } elseif (!strtotime($issueDate)) {
-                $errors[] = 'Issue date is invalid.';
             }
-            $data['issue_date'] = $issueDate;
-
-            // Extract Invoice Type Code
-            $typeCode = (string) ($xml->InvoiceTypeCode ?? $xml->{'cbc:InvoiceTypeCode'} ?? '');
-            $validTypeCodes = ['CO380', 'I-11', 'I-12', 'I-13', 'I-14', 'I-15', 'I-16', 'T-09', 'FA'];
-            if (empty($typeCode)) {
+            if (empty($data['invoice_type'])) {
                 $errors[] = 'Invoice type code is missing.';
-            } elseif (!in_array($typeCode, $validTypeCodes)) {
-                $errors[] = "Invalid invoice type code: {$typeCode}.";
             }
-            $data['invoice_type'] = $typeCode;
-
-            // Extract Supplier (Sender)
-            $supplierParty = $xml->AccountingSupplierParty->Party 
-                ?? $xml->{'cac:AccountingSupplierParty'}->{'cac:Party'} 
-                ?? null;
-            if ($supplierParty) {
-                $data['sender_name'] = (string) ($supplierParty->PartyName->Name 
-                    ?? $supplierParty->{'cac:PartyName'}->{'cbc:Name'} ?? '');
-                $data['sender_tax_id'] = (string) ($supplierParty->PartyTaxScheme->CompanyID 
-                    ?? $supplierParty->{'cac:PartyTaxScheme'}->{'cbc:CompanyID'} ?? '');
-            } else {
-                $data['sender_name'] = '';
-                $data['sender_tax_id'] = '';
-            }
-
-            // Extract Customer (Receiver)
-            $customerParty = $xml->AccountingCustomerParty->Party 
-                ?? $xml->{'cac:AccountingCustomerParty'}->{'cac:Party'} 
-                ?? null;
-            if ($customerParty) {
-                $data['receiver_name'] = (string) ($customerParty->PartyName->Name 
-                    ?? $customerParty->{'cac:PartyName'}->{'cbc:Name'} ?? '');
-                $data['receiver_tax_id'] = (string) ($customerParty->PartyTaxScheme->CompanyID 
-                    ?? $customerParty->{'cac:PartyTaxScheme'}->{'cbc:CompanyID'} ?? '');
-            } else {
-                $data['receiver_name'] = '';
-                $data['receiver_tax_id'] = '';
-            }
-
-            // Extract Monetary Totals
-            $monetary = $xml->LegalMonetaryTotal ?? $xml->{'cac:LegalMonetaryTotal'} ?? null;
-            if ($monetary) {
-                $data['total_ht'] = (string) ($monetary->TaxExclusiveAmount ?? $monetary->{'cbc:TaxExclusiveAmount'} ?? '0');
-                $data['total_ttc'] = (string) ($monetary->TaxInclusiveAmount ?? $monetary->{'cbc:TaxInclusiveAmount'} ?? $monetary->PayableAmount ?? $monetary->{'cbc:PayableAmount'} ?? '0');
-            } else {
-                $data['total_ht'] = '0';
-                $data['total_ttc'] = '0';
-            }
-
-            // Extract Tax Total
-            $taxTotal = $xml->TaxTotal ?? $xml->{'cac:TaxTotal'} ?? null;
-            $data['total_tva'] = (string) ($taxTotal->TaxAmount ?? $taxTotal->{'cbc:TaxAmount'} ?? '0');
-
-            // Extract Invoice Lines
-            $lines = [];
-            $invoiceLines = $xml->InvoiceLine ?? $xml->{'cac:InvoiceLine'} ?? [];
-            foreach ($invoiceLines as $line) {
-                $lineId = (string) ($line->ID ?? $line->{'cbc:ID'} ?? '');
-                $qty = (string) ($line->InvoicedQuantity ?? $line->{'cbc:InvoicedQuantity'} ?? '0');
-                $lineAmount = (string) ($line->LineExtensionAmount ?? $line->{'cbc:LineExtensionAmount'} ?? '0');
-                $item = $line->Item ?? $line->{'cac:Item'} ?? null;
-                $description = (string) ($item->Description ?? $item->{'cbc:Description'} ?? '');
-                $price = $line->Price ?? $line->{'cac:Price'} ?? null;
-                $unitPrice = (string) ($price->PriceAmount ?? $price->{'cbc:PriceAmount'} ?? '0');
-
-                $lines[] = [
-                    'line_id' => $lineId,
-                    'quantity' => $qty,
-                    'description' => $description,
-                    'unit_price' => $unitPrice,
-                    'line_amount' => $lineAmount,
-                ];
-            }
-            $data['lines'] = $lines;
-
-            if (count($lines) === 0) {
+            if (empty($data['lines']) || count($data['lines']) === 0) {
                 $errors[] = 'At least one invoice line is required.';
             }
-
-            // Check payable amount is positive
-            if (floatval($data['total_ttc']) <= 0) {
+            if (floatval($data['total_ttc'] ?? 0) <= 0 && empty($errors)) {
                 $errors[] = 'Payable amount must be positive.';
             }
 
@@ -1135,27 +1087,360 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Parse TEIF (Tunisian E-Invoice Format) XML structure.
+     */
+    private function parseTeifXml(\SimpleXMLElement $xml, array &$errors): array
+    {
+        $data = [
+            'invoice_id' => '',
+            'issue_date' => '',
+            'invoice_type' => '',
+            'sender_name' => '',
+            'sender_tax_id' => '',
+            'receiver_name' => '',
+            'receiver_tax_id' => '',
+            'total_ht' => '0',
+            'total_tva' => '0',
+            'total_ttc' => '0',
+            'lines' => [],
+        ];
+
+        // Get InvoiceHeader for sender/receiver identifiers
+        $header = $xml->InvoiceHeader ?? null;
+        if ($header) {
+            $data['sender_tax_id'] = (string) ($header->MessageSenderIdentifier ?? '');
+            $data['receiver_tax_id'] = (string) ($header->MessageRecieverIdentifier ?? '');
+        }
+
+        // Get InvoiceBody
+        $body = $xml->InvoiceBody ?? null;
+        if (!$body) {
+            $errors[] = 'Invalid TEIF structure: InvoiceBody not found.';
+            return $data;
+        }
+
+        // Extract from Bgm (Begin Message)
+        $bgm = $body->Bgm ?? null;
+        if ($bgm) {
+            $data['invoice_id'] = (string) ($bgm->DocumentIdentifier ?? '');
+            $docType = $bgm->DocumentType ?? null;
+            if ($docType) {
+                $data['invoice_type'] = (string) ($docType['code'] ?? 'I-11');
+            }
+        }
+
+        // Extract Issue Date from Dtm
+        $dtm = $body->Dtm ?? null;
+        if ($dtm) {
+            foreach ($dtm->DateText as $dateText) {
+                $functionCode = (string) ($dateText['functionCode'] ?? '');
+                if ($functionCode === 'I-31') { // Invoice date
+                    $format = (string) ($dateText['format'] ?? '');
+                    $value = (string) $dateText;
+                    $data['issue_date'] = $this->parseTeifDate($value, $format);
+                    break;
+                }
+            }
+        }
+
+        // Extract Partners from PartnerSection
+        $partnerSection = $body->PartnerSection ?? null;
+        if ($partnerSection) {
+            foreach ($partnerSection->PartnerDetails as $partner) {
+                $functionCode = (string) ($partner['functionCode'] ?? '');
+                $nad = $partner->Nad ?? null;
+
+                if ($nad) {
+                    $name = (string) ($nad->PartnerName ?? '');
+                    $identifier = (string) ($nad->PartnerIdentifier ?? '');
+
+                    if ($functionCode === 'I-62') { // Seller
+                        $data['sender_name'] = $name;
+                        if (!empty($identifier)) {
+                            $data['sender_tax_id'] = $identifier;
+                        }
+                    } elseif ($functionCode === 'I-64') { // Buyer
+                        $data['receiver_name'] = $name;
+                        if (!empty($identifier)) {
+                            $data['receiver_tax_id'] = $identifier;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Extract Invoice Lines from LinSection
+        $linSection = $body->LinSection ?? null;
+        if ($linSection) {
+            foreach ($linSection->Lin as $lin) {
+                $lineId = (string) ($lin->ItemIdentifier ?? '');
+                $linImd = $lin->LinImd ?? null;
+                $itemCode = (string) ($linImd->ItemCode ?? '');
+                $description = (string) ($linImd->ItemDescription ?? $itemCode);
+
+                // Quantity
+                $linQty = $lin->LinQty ?? null;
+                $quantity = '0';
+                if ($linQty && $linQty->Quantity) {
+                    $quantity = (string) $linQty->Quantity;
+                }
+
+                // Tax rate
+                $taxRate = '0';
+                $linTax = $lin->LinTax ?? null;
+                if ($linTax && $linTax->TaxDetails && $linTax->TaxDetails->TaxRate) {
+                    $taxRate = (string) $linTax->TaxDetails->TaxRate;
+                }
+
+                // Amounts from LinMoa
+                $unitPrice = '0';
+                $lineAmount = '0';
+                $linMoa = $lin->LinMoa ?? null;
+                if ($linMoa) {
+                    foreach ($linMoa->AmountDetails ?? $linMoa->MoaDetails ?? [] as $moaContainer) {
+                        $moa = $moaContainer instanceof \SimpleXMLElement && isset($moaContainer->Moa)
+                            ? $moaContainer->Moa
+                            : $moaContainer;
+
+                        if (!$moa) continue;
+
+                        $typeCode = (string) ($moa['amountTypeCode'] ?? '');
+                        $amount = (string) ($moa->Amount ?? '0');
+
+                        if ($typeCode === 'I-183') { // Unit price
+                            $unitPrice = $amount;
+                        } elseif ($typeCode === 'I-171' || $typeCode === 'I-176') { // Line amount
+                            $lineAmount = $amount;
+                        }
+                    }
+                }
+
+                // If unit price not found, calculate from line amount and quantity
+                if ($unitPrice === '0' && floatval($quantity) > 0 && floatval($lineAmount) > 0) {
+                    $unitPrice = number_format(floatval($lineAmount) / floatval($quantity), 3, '.', '');
+                }
+
+                $data['lines'][] = [
+                    'line_id' => $lineId ?: $itemCode,
+                    'item_code' => $itemCode,
+                    'quantity' => $quantity,
+                    'description' => $description,
+                    'unit_price' => $unitPrice,
+                    'line_amount' => $lineAmount,
+                    'tax_rate' => $taxRate,
+                ];
+            }
+        }
+
+        // Extract Invoice Totals from InvoiceMoa
+        $invoiceMoa = $body->InvoiceMoa ?? null;
+        if ($invoiceMoa) {
+            foreach ($invoiceMoa->AmountDetails as $amtDetails) {
+                $moa = $amtDetails->Moa ?? null;
+                if (!$moa) continue;
+
+                $typeCode = (string) ($moa['amountTypeCode'] ?? '');
+                $amount = (string) ($moa->Amount ?? '0');
+
+                switch ($typeCode) {
+                    case 'I-176': // Total HT (taxable amount)
+                    case 'I-182': // Taxable amount
+                        $data['total_ht'] = $amount;
+                        break;
+                    case 'I-180': // Total TTC (payable amount)
+                    case 'I-179': // Total amount
+                        $data['total_ttc'] = $amount;
+                        break;
+                    case 'I-181': // Total TVA
+                        $data['total_tva'] = $amount;
+                        break;
+                }
+            }
+        }
+
+        // Calculate totals if not found in InvoiceMoa
+        if (floatval($data['total_ht']) === 0.0 && count($data['lines']) > 0) {
+            $totalHt = 0;
+            foreach ($data['lines'] as $line) {
+                $totalHt += floatval($line['line_amount']);
+            }
+            $data['total_ht'] = number_format($totalHt, 3, '.', '');
+        }
+
+        return $data;
+    }
+
+    /**
+     * Parse TEIF date format to Y-m-d.
+     */
+    private function parseTeifDate(string $value, string $format): string
+    {
+        if (empty($value)) {
+            return '';
+        }
+
+        // Common TEIF date formats
+        switch ($format) {
+            case 'ddMMyy':
+                if (strlen($value) >= 6) {
+                    $day = substr($value, 0, 2);
+                    $month = substr($value, 2, 2);
+                    $year = '20' . substr($value, 4, 2);
+                    return "{$year}-{$month}-{$day}";
+                }
+                break;
+            case 'ddMMyyyy':
+                if (strlen($value) >= 8) {
+                    $day = substr($value, 0, 2);
+                    $month = substr($value, 2, 2);
+                    $year = substr($value, 4, 4);
+                    return "{$year}-{$month}-{$day}";
+                }
+                break;
+            case 'yyyyMMdd':
+                if (strlen($value) >= 8) {
+                    $year = substr($value, 0, 4);
+                    $month = substr($value, 4, 2);
+                    $day = substr($value, 6, 2);
+                    return "{$year}-{$month}-{$day}";
+                }
+                break;
+        }
+
+        // Try to parse as standard date
+        $timestamp = strtotime($value);
+        if ($timestamp) {
+            return date('Y-m-d', $timestamp);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Parse UBL (Universal Business Language) XML structure.
+     */
+    private function parseUblXml(\SimpleXMLElement $xml, array &$errors): array
+    {
+        $data = [
+            'invoice_id' => '',
+            'issue_date' => '',
+            'invoice_type' => '',
+            'sender_name' => '',
+            'sender_tax_id' => '',
+            'receiver_name' => '',
+            'receiver_tax_id' => '',
+            'total_ht' => '0',
+            'total_tva' => '0',
+            'total_ttc' => '0',
+            'lines' => [],
+        ];
+
+        // Register namespaces
+        $namespaces = $xml->getNamespaces(true);
+
+        // Extract Invoice ID
+        $data['invoice_id'] = (string) ($xml->ID ?? $xml->{'cbc:ID'} ?? '');
+
+        // Extract Issue Date
+        $issueDate = (string) ($xml->IssueDate ?? $xml->{'cbc:IssueDate'} ?? '');
+        if (!empty($issueDate) && strtotime($issueDate)) {
+            $data['issue_date'] = date('Y-m-d', strtotime($issueDate));
+        } else {
+            $data['issue_date'] = $issueDate;
+        }
+
+        // Extract Invoice Type Code
+        $typeCode = (string) ($xml->InvoiceTypeCode ?? $xml->{'cbc:InvoiceTypeCode'} ?? '');
+        $validTypeCodes = ['CO380', 'I-11', 'I-12', 'I-13', 'I-14', 'I-15', 'I-16', 'T-09', 'FA', '380', '381', '383', '384'];
+        $data['invoice_type'] = in_array($typeCode, $validTypeCodes) ? $typeCode : 'I-11';
+
+        // Extract Supplier (Sender)
+        $supplierParty = $xml->AccountingSupplierParty->Party
+            ?? $xml->{'cac:AccountingSupplierParty'}->{'cac:Party'}
+            ?? null;
+        if ($supplierParty) {
+            $data['sender_name'] = (string) ($supplierParty->PartyName->Name
+                ?? $supplierParty->{'cac:PartyName'}->{'cbc:Name'} ?? '');
+            $data['sender_tax_id'] = (string) ($supplierParty->PartyTaxScheme->CompanyID
+                ?? $supplierParty->{'cac:PartyTaxScheme'}->{'cbc:CompanyID'}
+                ?? $supplierParty->PartyLegalEntity->CompanyID
+                ?? '');
+        }
+
+        // Extract Customer (Receiver)
+        $customerParty = $xml->AccountingCustomerParty->Party
+            ?? $xml->{'cac:AccountingCustomerParty'}->{'cac:Party'}
+            ?? null;
+        if ($customerParty) {
+            $data['receiver_name'] = (string) ($customerParty->PartyName->Name
+                ?? $customerParty->{'cac:PartyName'}->{'cbc:Name'} ?? '');
+            $data['receiver_tax_id'] = (string) ($customerParty->PartyTaxScheme->CompanyID
+                ?? $customerParty->{'cac:PartyTaxScheme'}->{'cbc:CompanyID'}
+                ?? $customerParty->PartyLegalEntity->CompanyID
+                ?? '');
+        }
+
+        // Extract Monetary Totals
+        $monetary = $xml->LegalMonetaryTotal ?? $xml->{'cac:LegalMonetaryTotal'} ?? null;
+        if ($monetary) {
+            $data['total_ht'] = (string) ($monetary->TaxExclusiveAmount ?? $monetary->{'cbc:TaxExclusiveAmount'} ?? '0');
+            $data['total_ttc'] = (string) ($monetary->TaxInclusiveAmount ?? $monetary->{'cbc:TaxInclusiveAmount'} ?? $monetary->PayableAmount ?? $monetary->{'cbc:PayableAmount'} ?? '0');
+        }
+
+        // Extract Tax Total
+        $taxTotal = $xml->TaxTotal ?? $xml->{'cac:TaxTotal'} ?? null;
+        $data['total_tva'] = (string) ($taxTotal->TaxAmount ?? $taxTotal->{'cbc:TaxAmount'} ?? '0');
+
+        // Extract Invoice Lines
+        $invoiceLines = $xml->InvoiceLine ?? $xml->{'cac:InvoiceLine'} ?? [];
+        foreach ($invoiceLines as $line) {
+            $lineId = (string) ($line->ID ?? $line->{'cbc:ID'} ?? '');
+            $qty = (string) ($line->InvoicedQuantity ?? $line->{'cbc:InvoicedQuantity'} ?? '0');
+            $lineAmount = (string) ($line->LineExtensionAmount ?? $line->{'cbc:LineExtensionAmount'} ?? '0');
+            $item = $line->Item ?? $line->{'cac:Item'} ?? null;
+            $description = (string) ($item->Description ?? $item->{'cbc:Description'} ?? $item->Name ?? $item->{'cbc:Name'} ?? '');
+            $price = $line->Price ?? $line->{'cac:Price'} ?? null;
+            $unitPrice = (string) ($price->PriceAmount ?? $price->{'cbc:PriceAmount'} ?? '0');
+
+            $data['lines'][] = [
+                'line_id' => $lineId,
+                'item_code' => $lineId,
+                'quantity' => $qty,
+                'description' => $description,
+                'unit_price' => $unitPrice,
+                'line_amount' => $lineAmount,
+                'tax_rate' => '19',
+            ];
+        }
+
+        return $data;
+    }
+
+    /**
      * Import invoice from parsed XML data.
+     * Auto-creates customers and products if they don't exist.
      */
     public function importXml(): \Illuminate\Http\JsonResponse
     {
         $validated = request()->validate([
             'invoice_id' => 'required|string|max:255',
-            'invoice_type' => 'required|string',
+            'invoice_type' => 'nullable|string',
             'issue_date' => 'required|date',
-            'sender_name' => 'required|string|max:255',
-            'sender_tax_id' => 'required|string|max:255',
-            'receiver_name' => 'required|string|max:255',
-            'receiver_tax_id' => 'required|string|max:255',
-            'total_ht' => 'required|numeric',
-            'total_tva' => 'required|numeric',
-            'total_ttc' => 'required|numeric',
+            'sender_name' => 'nullable|string|max:255',
+            'sender_tax_id' => 'nullable|string|max:255',
+            'receiver_name' => 'nullable|string|max:255',
+            'receiver_tax_id' => 'nullable|string|max:255',
+            'total_ht' => 'nullable|numeric',
+            'total_tva' => 'nullable|numeric',
+            'total_ttc' => 'nullable|numeric',
             'lines' => 'required|array|min:1',
-            'lines.*.line_id' => 'required|string',
+            'lines.*.line_id' => 'nullable|string',
+            'lines.*.item_code' => 'nullable|string',
             'lines.*.quantity' => 'required|numeric|min:0',
-            'lines.*.description' => 'required|string',
-            'lines.*.unit_price' => 'required|numeric|min:0',
-            'lines.*.line_amount' => 'required|numeric|min:0',
+            'lines.*.description' => 'nullable|string',
+            'lines.*.unit_price' => 'nullable|numeric|min:0',
+            'lines.*.line_amount' => 'nullable|numeric|min:0',
+            'lines.*.tax_rate' => 'nullable|numeric|min:0',
         ]);
 
         // Check for duplicate invoice ID
@@ -1180,56 +1465,216 @@ class InvoiceController extends Controller
                 'I-16' => 'I-16',
                 'T-09' => 'I-11',
                 'FA' => 'I-11',
+                '380' => 'I-11',
+                '381' => 'I-12',
             ];
-            $docType = $typeMap[$validated['invoice_type']] ?? 'I-11';
+            $docType = $typeMap[$validated['invoice_type'] ?? 'I-11'] ?? 'I-11';
+
+            // Get document type name
+            $typeNames = [
+                'I-11' => 'Facture',
+                'I-12' => 'Facture rectificative',
+                'I-13' => 'Facture de groupe',
+                'I-14' => 'Facture pro forma',
+                'I-15' => 'Note de crédit',
+                'I-16' => 'Note de débit',
+            ];
+            $docTypeName = $typeNames[$docType] ?? 'Facture';
+
+            // Auto-create customer if receiver_tax_id is provided
+            $customer = null;
+            $receiverTaxId = $validated['receiver_tax_id'] ?? '';
+            $receiverName = $validated['receiver_name'] ?? 'Unknown Customer';
+            if (!empty($receiverTaxId)) {
+                $customer = Customer::firstOrCreate(
+                    [
+                        'identifier_type' => IdentifierType::MATRICULE_FISCAL,
+                        'identifier_value' => $receiverTaxId,
+                    ],
+                    [
+                        'matricule_fiscal' => $receiverTaxId,
+                        'name' => $receiverName,
+                        'country_code' => 'TN',
+                    ]
+                );
+            }
+
+            // Format invoice date for TEIF
+            $issueDate = date('Y-m-d', strtotime($validated['issue_date']));
+            $issueDateTeif = date('dmy', strtotime($validated['issue_date']));
+
+            // Calculate totals from lines if not provided
+            $totalHt = floatval($validated['total_ht'] ?? 0);
+            $totalTva = floatval($validated['total_tva'] ?? 0);
+            $totalTtc = floatval($validated['total_ttc'] ?? 0);
+
+            if ($totalHt === 0.0) {
+                foreach ($validated['lines'] as $line) {
+                    $totalHt += floatval($line['line_amount'] ?? 0);
+                }
+            }
+
+            if ($totalTva === 0.0 && $totalHt > 0) {
+                // Calculate TVA from lines if not provided
+                foreach ($validated['lines'] as $line) {
+                    $lineAmount = floatval($line['line_amount'] ?? 0);
+                    $taxRate = floatval($line['tax_rate'] ?? 19);
+                    $totalTva += $lineAmount * ($taxRate / 100);
+                }
+            }
+
+            if ($totalTtc === 0.0) {
+                $totalTtc = $totalHt + $totalTva;
+            }
+
+            // Build dates array for TEIF
+            $dates = [
+                [
+                    'function_code' => 'I-31',
+                    'format' => 'ddMMyy',
+                    'value' => $issueDateTeif,
+                ],
+            ];
+
+            // Build invoice amounts array for TEIF
+            $invoiceAmounts = [
+                [
+                    'amount_type_code' => 'I-176',
+                    'currency_code_list' => 'ISO_4217',
+                    'amount' => number_format($totalHt, 3, '.', ''),
+                    'currency_identifier' => 'TND',
+                ],
+                [
+                    'amount_type_code' => 'I-181',
+                    'currency_code_list' => 'ISO_4217',
+                    'amount' => number_format($totalTva, 3, '.', ''),
+                    'currency_identifier' => 'TND',
+                ],
+                [
+                    'amount_type_code' => 'I-180',
+                    'currency_code_list' => 'ISO_4217',
+                    'amount' => number_format($totalTtc, 3, '.', ''),
+                    'currency_identifier' => 'TND',
+                ],
+            ];
 
             // Create the invoice
             $invoice = Invoice::create([
                 'document_identifier' => $validated['invoice_id'],
                 'document_type_code' => $docType,
-                'sender_identifier' => $validated['sender_tax_id'],
-                'receiver_identifier' => $validated['receiver_tax_id'],
-                'invoice_date' => $validated['issue_date'],
-                'total_ht' => $validated['total_ht'],
-                'total_tva' => $validated['total_tva'],
-                'total_ttc' => $validated['total_ttc'],
+                'document_type_name' => $docTypeName,
+                'sender_identifier' => $validated['sender_tax_id'] ?? '',
+                'sender_type' => 'I-01',
+                'receiver_identifier' => $receiverTaxId,
+                'receiver_type' => 'I-01',
+                'dates' => $dates,
+                'invoice_amounts' => $invoiceAmounts,
+                'version' => '1.8.8',
+                'controlling_agency' => 'TTN',
                 'status' => InvoiceStatus::DRAFT->value,
                 'created_by' => auth()->id(),
                 'notes' => 'Imported from XML file',
             ]);
 
             // Create sender partner
-            InvoicePartner::create([
-                'invoice_id' => $invoice->id,
-                'function_code' => 'I-62', // Seller
-                'identifier_type' => 'I-01',
-                'identifier_value' => $validated['sender_tax_id'],
-                'partner_name' => $validated['sender_name'],
-            ]);
-
-            // Create receiver partner
-            InvoicePartner::create([
-                'invoice_id' => $invoice->id,
-                'function_code' => 'I-64', // Buyer
-                'identifier_type' => 'I-01',
-                'identifier_value' => $validated['receiver_tax_id'],
-                'partner_name' => $validated['receiver_name'],
-            ]);
-
-            // Create invoice lines
-            foreach ($validated['lines'] as $index => $line) {
-                InvoiceLine::create([
+            if (!empty($validated['sender_tax_id'])) {
+                InvoicePartner::create([
                     'invoice_id' => $invoice->id,
-                    'line_number' => $index + 1,
-                    'item_code' => $line['line_id'] ?: 'LINE-' . ($index + 1),
-                    'item_description' => $line['description'],
-                    'quantity' => $line['quantity'],
-                    'unit_of_measure' => 'C62', // Default unit
-                    'unit_price' => $line['unit_price'],
-                    'line_net_amount' => $line['line_amount'],
-                    'tva_rate' => 19, // Default VAT rate
+                    'function_code' => 'I-62', // Seller
+                    'partner_identifier_type' => 'I-01',
+                    'partner_identifier' => $validated['sender_tax_id'],
+                    'partner_name' => $validated['sender_name'] ?? 'Seller',
+                    'partner_name_type' => 'Qualification',
                 ]);
             }
+
+            // Create receiver partner
+            if (!empty($receiverTaxId)) {
+                InvoicePartner::create([
+                    'invoice_id' => $invoice->id,
+                    'function_code' => 'I-64', // Buyer
+                    'partner_identifier_type' => 'I-01',
+                    'partner_identifier' => $receiverTaxId,
+                    'partner_name' => $receiverName,
+                    'partner_name_type' => 'Qualification',
+                ]);
+            }
+
+            // Create invoice lines and auto-create products
+            foreach ($validated['lines'] as $index => $line) {
+                $itemCode = $line['item_code'] ?? $line['line_id'] ?? 'LINE-' . ($index + 1);
+                $description = $line['description'] ?? $itemCode;
+                $unitPrice = floatval($line['unit_price'] ?? 0);
+                $quantity = floatval($line['quantity'] ?? 0);
+                $lineAmount = floatval($line['line_amount'] ?? ($unitPrice * $quantity));
+                $taxRate = floatval($line['tax_rate'] ?? 19);
+
+                // Auto-create product if it doesn't exist
+                $product = Product::firstOrCreate(
+                    ['code' => $itemCode],
+                    [
+                        'name' => $description,
+                        'description' => $description,
+                        'unit_price' => $unitPrice,
+                        'unit_of_measure' => 'UNIT',
+                        'tva_rate' => $taxRate,
+                        'is_active' => true,
+                    ]
+                );
+
+                // Build line amounts array for TEIF
+                $lineAmounts = [
+                    [
+                        'amount_type_code' => 'I-183',
+                        'currency_code_list' => 'ISO_4217',
+                        'amount' => number_format($unitPrice, 3, '.', ''),
+                        'currency_identifier' => 'TND',
+                    ],
+                    [
+                        'amount_type_code' => 'I-171',
+                        'currency_code_list' => 'ISO_4217',
+                        'amount' => number_format($lineAmount, 3, '.', ''),
+                        'currency_identifier' => 'TND',
+                    ],
+                ];
+
+                InvoiceLine::create([
+                    'invoice_id' => $invoice->id,
+                    'item_identifier' => strval($index + 1),
+                    'item_code' => $itemCode,
+                    'item_description' => $description,
+                    'item_lang' => 'fr',
+                    'quantity' => $quantity,
+                    'measurement_unit' => 'UNIT',
+                    'tax_type_code' => 'I-1602',
+                    'tax_type_name' => 'TVA',
+                    'tax_rate' => $taxRate,
+                    'amounts' => $lineAmounts,
+                    'sort_order' => $index + 1,
+                ]);
+            }
+
+            // Create invoice tax summary
+            InvoiceTax::create([
+                'invoice_id' => $invoice->id,
+                'tax_type_code' => 'I-1602',
+                'tax_type_name' => 'TVA',
+                'tax_rate' => 19,
+                'amounts' => [
+                    [
+                        'amount_type_code' => 'I-177',
+                        'currency_code_list' => 'ISO_4217',
+                        'amount' => number_format($totalHt, 3, '.', ''),
+                        'currency_identifier' => 'TND',
+                    ],
+                    [
+                        'amount_type_code' => 'I-178',
+                        'currency_code_list' => 'ISO_4217',
+                        'amount' => number_format($totalTva, 3, '.', ''),
+                        'currency_identifier' => 'TND',
+                    ],
+                ],
+            ]);
 
             DB::commit();
 

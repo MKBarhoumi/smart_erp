@@ -11,10 +11,12 @@ interface ImportXmlModalProps {
 
 interface ParsedLine {
     line_id: string;
+    item_code?: string;
     quantity: string;
     description: string;
     unit_price: string;
     line_amount: string;
+    tax_rate?: string;
 }
 
 interface ParsedData {
@@ -97,12 +99,17 @@ export function ImportXmlModal({ show, onClose }: ImportXmlModalProps) {
         const formData = new FormData();
         formData.append('file', file);
 
+        // Get CSRF token from meta tag or cookie
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
         try {
             const response = await fetch('/invoices-import/parse', {
                 method: 'POST',
                 body: formData,
+                credentials: 'same-origin',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json',
                 },
             });
@@ -128,12 +135,17 @@ export function ImportXmlModal({ show, onClose }: ImportXmlModalProps) {
         setIsLoading(true);
         setErrors([]);
 
+        // Get CSRF token from meta tag or cookie
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
         try {
             const response = await fetch('/invoices-import/store', {
                 method: 'POST',
                 body: JSON.stringify(parsedData),
+                credentials: 'same-origin',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
                 },

@@ -72,7 +72,7 @@ export default function Dashboard({
                         <p className="mt-1 text-gray-500">Welcome back! Here&apos;s what&apos;s happening with your business.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link href="/oldinvoices/create" className="inline-flex items-center gap-2 px-4 py-2.5 bg-user-600 text-white text-sm font-semibold rounded-xl hover:bg-user-700 transition-all shadow-lg shadow-user-600/25 hover:shadow-xl hover:shadow-user-600/30 hover:-translate-y-0.5">
+                        <Link href="/invoices/create" className="inline-flex items-center gap-2 px-4 py-2.5 bg-user-600 text-white text-sm font-semibold rounded-xl hover:bg-user-700 transition-all shadow-lg shadow-user-600/25 hover:shadow-xl hover:shadow-user-600/30 hover:-translate-y-0.5">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                             New Invoice
                         </Link>
@@ -109,7 +109,7 @@ export default function Dashboard({
                                 </div>
                                 <h2 className="text-lg font-semibold text-gray-900">Recent Invoices</h2>
                             </div>
-                            <Link href="/oldinvoices" className="text-sm font-medium text-user-600 hover:text-user-700 transition-colors">View all →</Link>
+                            <Link href="/invoices" className="text-sm font-medium text-user-600 hover:text-user-700 transition-colors">View all →</Link>
                         </div>
                         <div className="divide-y divide-gray-50">
                             {recentOldInvoices.length === 0 ? (
@@ -118,7 +118,7 @@ export default function Dashboard({
                                         <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
                                     </div>
                                     <p className="text-sm text-gray-500">No invoices yet</p>
-                                    <Link href="/oldinvoices/create" className="mt-2 inline-flex text-sm font-medium text-user-600 hover:text-user-700">Create your first invoice →</Link>
+                                    <Link href="/invoices/create" className="mt-2 inline-flex text-sm font-medium text-user-600 hover:text-user-700">Create your first invoice →</Link>
                                 </div>
                             ) : (
                                 recentOldInvoices.map((inv) => {

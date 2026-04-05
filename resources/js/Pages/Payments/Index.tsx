@@ -4,13 +4,18 @@ import { formatTND, formatDate } from '@/utils/format';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Payment, OldInvoice, PaginatedData, PageProps } from '@/types';
 
-interface PaymentWithOldInvoice extends Payment {
-  oldinvoice: Pick<OldInvoice, 'id' | 'oldinvoice_number' | 'total_ttc' | 'status'> & { customer: { id: string; name: string } };
+interface PaymentWithInvoices extends Payment {
+  oldinvoice?: Pick<OldInvoice, 'id' | 'oldinvoice_number' | 'total_ttc' | 'status'> & { customer?: { id: string; name: string } };
+  invoice?: {
+    id: string;
+    document_identifier: string;
+    status: string;
+  };
   creator?: { name: string };
 }
 
 interface Props extends PageProps {
-  payments: PaginatedData<PaymentWithOldInvoice>;
+  payments: PaginatedData<PaymentWithInvoices>;
   filters: { search?: string; method?: string; date_from?: string; date_to?: string };
   totalCollected: string;
 }
@@ -55,11 +60,11 @@ export default function Index({ payments, filters, totalCollected }: Props) {
           </div>
           <div className="bg-gradient-to-r from-user-50 to-indigo-50 rounded-xl p-4 border border-user-200/50">
             <p className="text-sm text-user-600">Bank Transfers</p>
-            <p className="text-2xl font-bold text-user-700 mt-1">{payments.data.filter(p => p.method === 'bank_transfer').length}</p>
+            <p className="text-2xl font-bold text-user-700 mt-1">{payments.data.filter(p => p && p.method === 'bank_transfer').length}</p>
           </div>
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200/50">
             <p className="text-sm text-amber-600">Cheques</p>
-            <p className="text-2xl font-bold text-amber-700 mt-1">{payments.data.filter(p => p.method === 'cheque').length}</p>
+            <p className="text-2xl font-bold text-amber-700 mt-1">{payments.data.filter(p => p && p.method === 'cheque').length}</p>
           </div>
         </div>
 
@@ -118,15 +123,22 @@ export default function Index({ payments, filters, totalCollected }: Props) {
                     <p className="mt-1 text-sm text-gray-500">No payments match your current filters.</p>
                   </td></tr>
                 ) : (
-                  payments.data.map((payment, idx) => {
+                  payments.data.filter(p => p !== null).map((payment, idx) => {
+                    if (!payment || (!payment.oldinvoice && !payment.invoice)) return null;
                     const style = methodStyles[payment.method] || methodStyles.cash;
+                    const isOldInvoice = !!payment.oldinvoice;
+                    const invoiceNumber = isOldInvoice ? payment.oldinvoice?.oldinvoice_number : payment.invoice?.document_identifier;
+                    const customerName = isOldInvoice ? payment.oldinvoice?.customer?.name : payment.invoice ? 'New Invoice' : '—';
+                    const invoiceId = isOldInvoice ? payment.oldinvoice?.id : payment.invoice?.id;
+                    const invoiceLink = isOldInvoice ? `/oldinvoices/${invoiceId}` : `/invoices/${invoiceId}`;
+
                     return (
                       <tr key={payment.id} className={`transition-colors hover:bg-user-50/30 ${idx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDate(payment.payment_date)}</td>
                         <td className="px-6 py-4">
-                          <Link href={`/oldinvoices/${payment.oldinvoice.id}`} className="font-semibold text-user-600 hover:text-user-700 transition-colors">{payment.oldinvoice.oldinvoice_number}</Link>
+                          <Link href={invoiceLink} className="font-semibold text-user-600 hover:text-user-700 transition-colors">{invoiceNumber}</Link>
                         </td>
-                        <td className="px-6 py-4 text-gray-700">{payment.oldinvoice.customer?.name || '—'}</td>
+                        <td className="px-6 py-4 text-gray-700">{customerName || '—'}</td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium ${style.bg} ${style.text}`}>{style.label}</span>
                         </td>

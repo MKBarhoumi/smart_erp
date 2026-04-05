@@ -20,14 +20,25 @@ class PaymentController extends Controller
         $payments = Payment::with([
             'oldinvoice:id,oldinvoice_number,total_ttc,status,customer_id',
             'oldinvoice.customer:id,name',
+            'invoice:id,document_identifier,status,created_by',
             'creator:id,name',
         ])
+            ->where(function ($q) {
+                // Include payments that have either oldinvoice OR invoice
+                $q->whereNotNull('oldinvoice_id')
+                    ->orWhereNotNull('invoice_id');
+            })
             ->when($request->input('search'), function ($query, $search) {
-                $query->whereHas('oldinvoice', function ($q) use ($search) {
-                    $q->where('oldinvoice_number', 'like', "%{$search}%")
-                        ->orWhereHas('customer', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
-                })
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('oldinvoice', function ($qq) use ($search) {
+                        $qq->where('oldinvoice_number', 'like', "%{$search}%")
+                            ->orWhereHas('customer', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
+                    })
+                    ->orWhereHas('invoice', function ($qq) use ($search) {
+                        $qq->where('document_identifier', 'like', "%{$search}%");
+                    })
                     ->orWhere('reference', 'like', "%{$search}%");
+                });
             })
             ->when($request->input('method'), fn ($q, $method) => $q->where('method', $method))
             ->when($request->input('date_from'), fn ($q, $d) => $q->where('payment_date', '>=', $d))
