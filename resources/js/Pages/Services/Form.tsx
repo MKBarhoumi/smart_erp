@@ -13,6 +13,7 @@ interface ServiceFormData {
     category: string;
     unit: string;
     unit_price: string;
+    discount_rate: string;
     tax_rate: string;
     is_active: boolean;
 }
@@ -39,6 +40,7 @@ export default function ServiceForm({ service, categories, billingUnits, isEdit 
         category: service?.category ?? 'Other',
         unit: service?.unit ?? 'Unit',
         unit_price: service?.unit_price ?? '',
+        discount_rate: (service as any)?.discount_rate ?? '0',
         tax_rate: service?.tax_rate ?? '19',
         is_active: service?.is_active ?? true,
     });
@@ -123,7 +125,7 @@ export default function ServiceForm({ service, categories, billingUnits, isEdit 
                         />
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-3">
                         <Input 
                             label="Unit Price (TND)" 
                             type="number" 
@@ -133,6 +135,15 @@ export default function ServiceForm({ service, categories, billingUnits, isEdit 
                             error={errors.unit_price} 
                             placeholder="0.000"
                             required 
+                        />
+                        <Input 
+                            label="Discount %" 
+                            type="number" 
+                            step="0.01" 
+                            value={data.discount_rate} 
+                            onChange={(e) => setData('discount_rate', e.target.value)} 
+                            error={errors.discount_rate} 
+                            placeholder="0.00"
                         />
                         <Select 
                             label="Tax Rate (TVA)" 

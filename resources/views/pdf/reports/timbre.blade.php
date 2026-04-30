@@ -53,7 +53,7 @@
                 @foreach($monthlyData as $row)
                 @php
                     $monthIndex = ($row['month'] ?? $row->month ?? 1) - 1;
-                    $count = (int)($row['oldinvoice_count'] ?? $row->oldinvoice_count ?? 0);
+                    $count = (int)($row['invoice_count'] ?? $row->invoice_count ?? 0);
                     $total = (float)($row['total_timbre'] ?? $row->total_timbre ?? 0);
                     $avg = $count > 0 ? $total / $count : 0;
                 @endphp
@@ -68,9 +68,9 @@
             <tfoot>
                 <tr>
                     <td><strong>Total</strong></td>
-                    <td class="right"><strong>{{ $monthlyData->sum(fn($r) => (int)($r['oldinvoice_count'] ?? $r->oldinvoice_count ?? 0)) }}</strong></td>
+                    <td class="right"><strong>{{ $monthlyData->sum(fn($r) => (int)($r['invoice_count'] ?? $r->invoice_count ?? 0)) }}</strong></td>
                     <td class="right"><strong>{{ number_format((float)$yearlyTotal, 3, '.', ' ') }} TND</strong></td>
-                    <td class="right">—</td>
+                    <td class="right">-</td>
                 </tr>
             </tfoot>
         </table>

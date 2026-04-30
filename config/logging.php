@@ -127,6 +127,30 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'billing' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/billing.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_BILLING_DAYS', 30),
+            'replace_placeholders' => true,
+        ],
+
+        'monitoring' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/monitoring.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_MONITORING_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
+        'security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/security.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_SECURITY_DAYS', 90),
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

@@ -27,6 +27,7 @@ class UpdateProductRequest extends FormRequest
             'unit_price' => ['required', 'numeric', 'min:0', 'max:99999999999999999.999'],
             'unit_of_measure' => ['nullable', 'string', 'max:10'],
             'tva_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'discount_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'is_subject_to_timbre' => ['boolean'],
             'track_inventory' => ['boolean'],
             'current_stock' => ['nullable', 'numeric', 'min:0'],

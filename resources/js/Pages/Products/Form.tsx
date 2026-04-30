@@ -11,6 +11,7 @@ interface ProductFormData {
     description: string;
     item_lang: string;
     unit_price: string;
+    discount_rate: string;
     unit_of_measure: string;
     tva_rate: string;
     is_subject_to_timbre: boolean;
@@ -50,6 +51,7 @@ export default function ProductForm({ product, isEdit = false }: Props) {
         description: product?.description ?? '',
         item_lang: product?.item_lang ?? 'fr',
         unit_price: product?.unit_price ?? '',
+        discount_rate: (product as any)?.discount_rate ?? '0',
         unit_of_measure: product?.unit_of_measure ?? 'U',
         tva_rate: product?.tva_rate ?? '19',
         is_subject_to_timbre: product?.is_subject_to_timbre ?? false,
@@ -90,8 +92,9 @@ export default function ProductForm({ product, isEdit = false }: Props) {
                         <textarea className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" rows={3} value={data.description} onChange={(e) => setData('description', e.target.value)} />
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-4">
                         <Input label="Unit Price excl. tax (TND)" type="number" step="0.001" value={data.unit_price} onChange={(e) => setData('unit_price', e.target.value)} error={errors.unit_price} required />
+                        <Input label="Discount %" type="number" step="0.01" value={data.discount_rate} onChange={(e) => setData('discount_rate', e.target.value)} error={errors.discount_rate} />
                         <Select label="TVA %" options={tvaRates} value={data.tva_rate} onChange={(e) => setData('tva_rate', e.target.value)} error={errors.tva_rate} />
                         <Select label="Unit of Measure" options={uomOptions} value={data.unit_of_measure} onChange={(e) => setData('unit_of_measure', e.target.value)} />
                     </div>

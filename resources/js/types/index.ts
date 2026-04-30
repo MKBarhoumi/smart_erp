@@ -8,6 +8,16 @@ export interface User {
   can_modify?: boolean;
   is_admin?: boolean;
   unread_notifications_count?: number;
+  permissions?: {
+    page_permissions?: Record<string, {
+      access?: boolean;
+      view?: boolean;
+      create?: boolean;
+      edit?: boolean;
+      delete?: boolean;
+    }>;
+    special_permissions?: Record<string, boolean>;
+  } | null;
   email_verified_at: string | null;
   created_at: string;
   updated_at: string;

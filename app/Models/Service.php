@@ -26,6 +26,7 @@ class Service extends Model
         'unit',
         'unit_price',
         'tax_rate',
+        'discount_rate',
         'is_active',
     ];
 
@@ -38,6 +39,7 @@ class Service extends Model
             'is_active' => 'boolean',
             'unit_price' => 'decimal:3',
             'tax_rate' => 'decimal:2',
+            'discount_rate' => 'decimal:2',
         ];
     }
 

@@ -36,6 +36,7 @@ class UpdateCompanySettingsRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'website' => ['nullable', 'url', 'max:255'],
             'bank_rib' => ['nullable', 'string', 'max:30'],
+            'iban' => ['nullable', 'string', 'min:15', 'max:34'],
             'bank_name' => ['nullable', 'string', 'max:100'],
             'bank_branch_code' => ['nullable', 'string', 'max:10'],
             'postal_account' => ['nullable', 'string', 'max:30'],

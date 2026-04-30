@@ -9,7 +9,7 @@ interface QuarterData {
     timbre_fiscal: string;
     total_tax: string;
     taxable_base: string;
-    oldinvoice_count: number;
+    invoice_count: number;
 }
 
 interface Props {
@@ -40,7 +40,7 @@ export default function TaxSummary({ data, year, availableYears, totals }: Props
                             </svg>
                             Reports
                         </Link>
-                        <h1 className="mt-2 text-2xl font-bold text-gray-900">Tax Summary — {safeYear}</h1>
+                        <h1 className="mt-2 text-2xl font-bold text-gray-900">Tax Summary - {safeYear}</h1>
                     </div>
                     <div className="flex items-center gap-3">
                         <a
@@ -88,7 +88,7 @@ export default function TaxSummary({ data, year, availableYears, totals }: Props
                             <thead className="border-b text-left text-xs uppercase text-gray-500">
                                 <tr>
                                     <th className="px-4 py-3">Quarter</th>
-                                    <th className="px-4 py-3 text-right">OldInvoices</th>
+                                    <th className="px-4 py-3 text-right">Invoices</th>
                                     <th className="px-4 py-3 text-right">Taxable Base</th>
                                     <th className="px-4 py-3 text-right">VAT</th>
                                     <th className="px-4 py-3 text-right">Stamp</th>
@@ -99,7 +99,7 @@ export default function TaxSummary({ data, year, availableYears, totals }: Props
                                 {safeData.map((q) => (
                                     <tr key={q.quarter}>
                                         <td className="px-4 py-3 font-medium">{quarterLabels[q.quarter]}</td>
-                                        <td className="px-4 py-3 text-right">{q.oldinvoice_count}</td>
+                                        <td className="px-4 py-3 text-right">{q.invoice_count}</td>
                                         <td className="px-4 py-3 text-right">{formatNumber(q.taxable_base)}</td>
                                         <td className="px-4 py-3 text-right">{formatNumber(q.tva_collected)}</td>
                                         <td className="px-4 py-3 text-right">{formatNumber(q.timbre_fiscal)}</td>
@@ -110,7 +110,7 @@ export default function TaxSummary({ data, year, availableYears, totals }: Props
                             <tfoot className="border-t font-bold">
                                 <tr>
                                     <td className="px-4 py-3">Yearly Total</td>
-                                    <td className="px-4 py-3 text-right">{safeData.reduce((s, q) => s + (q.oldinvoice_count || 0), 0)}</td>
+                                    <td className="px-4 py-3 text-right">{safeData.reduce((s, q) => s + (q.invoice_count || 0), 0)}</td>
                                     <td className="px-4 py-3 text-right">{formatNumber(safeTotals.base)}</td>
                                     <td className="px-4 py-3 text-right">{formatNumber(safeTotals.tva)}</td>
                                     <td className="px-4 py-3 text-right">{formatNumber(safeTotals.timbre)}</td>

@@ -19,7 +19,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/sign', [InvoiceController::class, 'sign'])->name('sign');
         Route::post('/submit', [InvoiceController::class, 'submit'])->name('submit');
         Route::get('/xml', [InvoiceController::class, 'downloadXml'])->name('xml');
+        Route::get('/xml-without-tva', [InvoiceController::class, 'downloadXmlWithoutTva'])->name('xmlWithoutTva');
         Route::get('/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
+        Route::get('/pdf-without-tva', [InvoiceController::class, 'downloadPdfWithoutTva'])->name('pdfWithoutTva');
         Route::post('/duplicate', [InvoiceController::class, 'duplicate'])->name('duplicate');
         
         // Invoice payments

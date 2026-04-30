@@ -114,6 +114,17 @@ class InvoiceService
         ?int $parentId,
         int $order
     ): InvoiceLine {
+        // Extract discount_rate from allowances if available
+        $discountRate = 0;
+        if (!empty($lineData['allowances'])) {
+            foreach ($lineData['allowances'] as $alc) {
+                if (!empty($alc['percentage'])) {
+                    $discountRate = (float)$alc['percentage'];
+                    break;
+                }
+            }
+        }
+
         $line = InvoiceLine::create([
             'invoice_id'      => $invoiceId,
             'parent_line_id'  => $parentId,
@@ -130,6 +141,7 @@ class InvoiceService
             'tax_category'    => $lineData['tax_category'],
             'tax_rate'        => $lineData['tax_rate'],
             'tax_rate_basis'  => $lineData['tax_rate_basis'],
+            'discount_rate'   => $discountRate,
             'allowances'      => $lineData['allowances'],
             'amounts'         => $lineData['amounts'],
             'free_texts'      => $lineData['free_texts'],

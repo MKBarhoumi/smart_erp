@@ -71,7 +71,7 @@
                 @foreach($data as $q)
                 <tr>
                     <td>{{ $quarterLabels[($q['quarter'] ?? 1) - 1] ?? 'Q?' }}</td>
-                    <td class="right">{{ $q['oldinvoice_count'] ?? 0 }}</td>
+                    <td class="right">{{ $q['invoice_count'] ?? 0 }}</td>
                     <td class="right">{{ number_format((float)($q['taxable_base'] ?? 0), 3, '.', ' ') }}</td>
                     <td class="right">{{ number_format((float)($q['tva_collected'] ?? 0), 3, '.', ' ') }}</td>
                     <td class="right">{{ number_format((float)($q['timbre_fiscal'] ?? 0), 3, '.', ' ') }}</td>
@@ -82,7 +82,7 @@
             <tfoot>
                 <tr>
                     <td><strong>Yearly Total</strong></td>
-                    <td class="right"><strong>{{ $data->sum(fn($q) => $q['oldinvoice_count'] ?? 0) }}</strong></td>
+                    <td class="right"><strong>{{ $data->sum(fn($q) => $q['invoice_count'] ?? 0) }}</strong></td>
                     <td class="right"><strong>{{ number_format((float)$totals['base'], 3, '.', ' ') }}</strong></td>
                     <td class="right"><strong>{{ number_format((float)$totals['tva'], 3, '.', ' ') }}</strong></td>
                     <td class="right"><strong>{{ number_format((float)$totals['timbre'], 3, '.', ' ') }}</strong></td>

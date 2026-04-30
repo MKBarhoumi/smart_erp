@@ -84,6 +84,19 @@ class ProductTest extends TestCase
         $this->assertFalse($product->fresh()->is_active);
     }
 
+    public function test_product_has_discount_rate(): void
+    {
+        $product = Product::create([
+            'code' => 'PRD-DISC',
+            'name' => 'Discounted Product',
+            'unit_price' => '100.000',
+            'tva_rate' => '19.000',
+            'discount_rate' => '10.00',
+        ]);
+
+        $this->assertEquals('10.00', $product->fresh()->discount_rate);
+    }
+
     public function test_product_has_stock_movements(): void
     {
         $product = Product::create([

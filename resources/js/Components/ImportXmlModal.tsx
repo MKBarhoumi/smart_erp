@@ -356,7 +356,7 @@ export function ImportXmlModal({ show, onClose }: ImportXmlModalProps) {
                                             {parsedData.lines.map((line, idx) => (
                                                 <tr key={idx}>
                                                     <td className="py-2 text-gray-500">{line.line_id || idx + 1}</td>
-                                                    <td className="py-2 text-gray-900">{line.description || '—'}</td>
+                                                    <td className="py-2 text-gray-900">{line.description || '-'}</td>
                                                     <td className="py-2 text-right text-gray-900">{line.quantity}</td>
                                                     <td className="py-2 text-right text-gray-900">{formatTND(line.unit_price)}</td>
                                                     <td className="py-2 text-right font-medium text-gray-900">{formatTND(line.line_amount)}</td>

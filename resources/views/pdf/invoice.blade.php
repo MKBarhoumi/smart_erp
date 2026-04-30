@@ -266,11 +266,11 @@
             <tr>
                 <td style="border:none; padding:10px 0 0 0; vertical-align:bottom;">
                     @if($company)
-                        <p style="font-size:8px; color:#888;">{{ $company->company_name }} — MF: {{ $company->matricule_fiscale }}</p>
+                        <p style="font-size:8px; color:#888;">{{ $company->company_name }} - MF: {{ $company->matricule_fiscale }}</p>
                         <p style="font-size:8px; color:#888;">{{ $company->address_street }}, {{ $company->address_postal_code }} {{ $company->address_city }}</p>
                     @endif
-                    <p style="font-size:7px; color:#aaa; margin-top:4px;">TEIF Document — Generated on {{ now()->format('d/m/Y H:i') }} — NovERP</p>
-                    <p style="font-size:7px; color:#aaa;">Standard: TEIF XML v{{ $invoice->version ?? '1.8.8' }} — Tunisia Tax Network</p>
+                    <p style="font-size:7px; color:#aaa; margin-top:4px;">TEIF Document - Generated on {{ now()->format('d/m/Y H:i') }} - NovERP</p>
+                    <p style="font-size:7px; color:#aaa;">Standard: TEIF XML v{{ $invoice->version ?? '1.8.8' }} - Tunisia Tax Network</p>
                 </td>
                 <td style="border:none; padding:10px 0 0 0; text-align:right; vertical-align:bottom; width:100px;">
                     @if(!empty($qrCode))

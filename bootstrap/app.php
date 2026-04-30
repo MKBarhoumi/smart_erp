@@ -3,6 +3,8 @@
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\EnsureTenantIsSubscribed;
+use App\Http\Middleware\EnforcePlanLimits;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -11,12 +13,21 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
+// Load tenancy helper functions
+require_once __DIR__.'/../app/Helpers/TenancyHelpers.php';
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withProviders([
+        // Custom tenancy service provider
+        \App\Providers\TenancyServiceProvider::class,
+        // Stancl tenancy service provider
+        \Stancl\Tenancy\TenancyServiceProvider::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
             'soap/*',
@@ -38,6 +49,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register middleware aliases
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
+            'tenancy.initialize' => \App\Http\Middleware\InitializeTenancy::class,
+            'subscribed' => EnsureTenantIsSubscribed::class,
+            'plan.limits' => EnforcePlanLimits::class,
+        ]);
+
+        // Add tenant middleware group
+        $middleware->group('tenant', [
+            \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
+            \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -136,11 +136,11 @@ export default function InvoicesIndex({ invoices, filters, statuses }: Props) {
                                             <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-xs font-medium text-gray-700">{inv.document_type_code}</span></td>
                                             <td className="px-6 py-4">
                                                 <div className="text-sm">
-                                                    <p className="font-medium text-gray-900">{inv.sender_name || '—'}</p>
+                                                    <p className="font-medium text-gray-900">{inv.sender_name || '-'}</p>
                                                     <p className="text-gray-500 text-xs">→ {inv.receiver_name || inv.receiver_identifier}</p>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{inv.invoice_date || '—'}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{inv.invoice_date || '-'}</td>
                                             <td className="px-6 py-4 text-right font-semibold text-gray-900">{formatTND(inv.total_ttc)}</td>
                                             <td className="px-6 py-4 text-center"><InvoiceStatusBadge status={inv.status} /></td>
                                             <td className="px-6 py-4 text-right">

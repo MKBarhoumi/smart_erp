@@ -1,4 +1,4 @@
-# NovERP — Feature Development Task Specification
+# NovERP - Feature Development Task Specification
 
 > **Project:** NovERP (Tunisia-focused ERP system)
 > **Stack Context:** React frontend, dark navy sidebar nav, purple/blue primary color scheme
@@ -6,7 +6,7 @@
 
 ---
 
-## TASK 1 — New "Services" Page
+## TASK 1 - New "Services" Page
 
 ### Overview
 Add a new top-level navigation item called **"Services"** in the sidebar, between **Products** and **Payments**. This page manages the company's service catalog (distinct from physical products in inventory).
@@ -40,7 +40,7 @@ Fields:
 - **Service Code** *(required, auto-generated or manual)*
 - **Service Name** *(required)*
 - **Description** *(textarea, optional)*
-- **Category** *(dropdown — create/select: IT, Consulting, Maintenance, Training, Other)*
+- **Category** *(dropdown - create/select: IT, Consulting, Maintenance, Training, Other)*
 - **Billing Unit** *(dropdown: Hour, Day, Unit, Forfait)*
 - **Unit Price (TND)** *(required, numeric)*
 - **Tax Rate** *(dropdown: 0%, 7%, 13%, 19%)*
@@ -73,7 +73,7 @@ Fields:
 
 ---
 
-## TASK 2 — Import Invoice XML Button (Invoices Page)
+## TASK 2 - Import Invoice XML Button (Invoices Page)
 
 ### Overview
 Add an **"Import XML"** button on the existing **Invoices page** (`/invoices`) that allows users to upload a TEIF-compliant XML invoice file and parse it into the system.
@@ -86,13 +86,13 @@ Add an **"Import XML"** button on the existing **Invoices page** (`/invoices`) t
 
 #### Import Flow (Step-by-step modal)
 
-**Step 1 — File Upload**
+**Step 1 - File Upload**
 - Drag-and-drop zone OR click-to-browse
 - Accepts: `.xml` files only
 - Max file size: 5MB
 - Shows filename once selected
 
-**Step 2 — Validation & Preview**
+**Step 2 - Validation & Preview**
 - Parse the XML and display a preview table with extracted fields:
   | Field | Extracted Value |
   |-------|----------------|
@@ -107,7 +107,7 @@ Add an **"Import XML"** button on the existing **Invoices page** (`/invoices`) t
 - Show validation errors in red if required fields are missing or malformed
 - Only allow proceeding to Step 3 if validation passes (green checkmark)
 
-**Step 3 — Confirm & Import**
+**Step 3 - Confirm & Import**
 - Summary of what will be imported
 - **`Import Invoice`** confirm button (purple)
 - **`Cancel`** button
@@ -160,7 +160,7 @@ Add an **"Import XML"** button on the existing **Invoices page** (`/invoices`) t
 
 ---
 
-## TASK 3 — Role Descriptions & Permissions
+## TASK 3 - Role Descriptions & Permissions
 
 ### Context
 When creating a new user in the Admin panel, the **Role** dropdown currently shows: Admin, Accountant, Sales, Inventory_manager, Viewer.
@@ -259,7 +259,7 @@ Below are the detailed permission definitions for the three roles needing specif
 
 ---
 
-## TASK 4 — New Admin Page: "Profile Manager"
+## TASK 4 - New Admin Page: "Profile Manager"
 
 ### Overview
 Add a new page **"Profile Manager"** inside the Admin panel (alongside Users and Audit Log). This page allows admins to create custom access profiles/roles with granular page-level permissions, and assign those profiles to users.
@@ -271,7 +271,7 @@ Add a new page **"Profile Manager"** inside the Admin panel (alongside Users and
 
 ---
 
-### Profile Manager — List Page (`/admin/profiles`)
+### Profile Manager - List Page (`/admin/profiles`)
 
 - Page title: **"Profile Manager"**
 - Subtitle: *"Create and manage access profiles for users"*
@@ -291,12 +291,12 @@ Add a new page **"Profile Manager"** inside the Admin panel (alongside Users and
 
 ### New Profile Form (`/admin/profiles/new`)
 
-#### Section 1 — Profile Info
+#### Section 1 - Profile Info
 - **Profile Name** *(required)*
 - **Description** *(textarea, optional)*
-- **Base Role** *(optional — clone permissions from an existing role: Admin, Accountant, Sales, Inventory_manager, Viewer)*
+- **Base Role** *(optional - clone permissions from an existing role: Admin, Accountant, Sales, Inventory_manager, Viewer)*
 
-#### Section 2 — Page Access Matrix
+#### Section 2 - Page Access Matrix
 
 A visual permissions grid with toggle switches:
 
@@ -304,17 +304,17 @@ A visual permissions grid with toggle switches:
 |------|-----------|-----------|-------------|-------------|
 | Dashboard | ⭕ | ⭕ | ⭕ | ⭕ |
 | Invoices | ⭕ | ⭕ | ⭕ | ⭕ |
-| OldInvoices | ⭕ | ⭕ | — | — |
+| OldInvoices | ⭕ | ⭕ | - | - |
 | Customers | ⭕ | ⭕ | ⭕ | ⭕ |
 | Products | ⭕ | ⭕ | ⭕ | ⭕ |
 | Services | ⭕ | ⭕ | ⭕ | ⭕ |
 | Payments | ⭕ | ⭕ | ⭕ | ⭕ |
 | Inventory | ⭕ | ⭕ | ⭕ | ⭕ |
-| Reports | ⭕ | ⭕ | — | — |
+| Reports | ⭕ | ⭕ | - | - |
 | Settings | ⭕ | ⭕ | ⭕ | ⭕ |
-| Admin — Users | ⭕ | ⭕ | ⭕ | ⭕ |
-| Admin — Audit Log | ⭕ | ⭕ | — | — |
-| Admin — Profile Manager | ⭕ | ⭕ | ⭕ | ⭕ |
+| Admin - Users | ⭕ | ⭕ | ⭕ | ⭕ |
+| Admin - Audit Log | ⭕ | ⭕ | - | - |
+| Admin - Profile Manager | ⭕ | ⭕ | ⭕ | ⭕ |
 
 **Permission Level Definitions:**
 - **No Access:** Page is hidden from sidebar; direct URL access returns 403
@@ -322,7 +322,7 @@ A visual permissions grid with toggle switches:
 - **View + Edit:** Can view and edit existing records; cannot create or delete
 - **Full Access:** Can view, create, edit, and delete all records on this page
 
-#### Section 3 — Special Permissions (checkboxes)
+#### Section 3 - Special Permissions (checkboxes)
 - [ ] Can validate/submit TEIF invoices
 - [ ] Can import XML invoices
 - [ ] Can export data (CSV/PDF)

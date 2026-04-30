@@ -21,18 +21,7 @@ class SettingsController extends Controller
 
     public function edit(): Response
     {
-        $settings = CompanySetting::first();
-        $certValid = $this->certificateManager->isValid();
-        $certExpiring = $this->certificateManager->isExpiringSoon();
-
-        return Inertia::render('Settings/Edit', [
-            'settings' => $settings,
-            'certificateStatus' => [
-                'valid' => $certValid,
-                'expiring_soon' => $certExpiring,
-                'expires_at' => $settings?->certificate_expires_at,
-            ],
-        ]);
+        return Inertia::render('Settings/CompanySettings');
     }
 
     public function update(UpdateCompanySettingsRequest $request): RedirectResponse

@@ -13,6 +13,7 @@ use App\Exceptions\SignatureException;
 use App\Exceptions\TeifValidationException;
 use App\Exceptions\TTNSubmissionException;
 use App\Http\Requests\StoreInvoiceRequest;
+use App\Models\CompanySetting;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceLine;
@@ -21,6 +22,8 @@ use App\Models\InvoiceTax;
 use App\Models\Product;
 use App\Models\Service;
 use App\Services\InvoicePdfService;
+use App\Services\InvoiceWithoutTvaPdfService;
+use App\Services\InvoiceWithoutTvaXmlService;
 use App\Services\TeifXmlBuilder;
 use App\Services\XadesSignatureService;
 use App\Services\TTNApiClient;
@@ -37,6 +40,8 @@ class InvoiceController extends Controller
         private readonly XadesSignatureService $signatureService,
         private readonly TTNApiClient $ttnClient,
         private readonly InvoicePdfService $pdfService,
+        private readonly InvoiceWithoutTvaXmlService $withoutTvaXmlService,
+        private readonly InvoiceWithoutTvaPdfService $withoutTvaPdfService,
     ) {
     }
 
@@ -231,6 +236,7 @@ class InvoiceController extends Controller
                     'tax_type_code' => 'I-1602',
                     'tax_type_name' => 'TVA',
                     'tax_rate' => $lineData['tva_rate'],
+                    'discount_rate' => $lineData['discount_rate'] ?? 0,
                     'amounts' => $lineAmounts,
                     'sort_order' => $index,
                 ]);
@@ -321,6 +327,7 @@ class InvoiceController extends Controller
                     'measurement_unit' => $line->measurement_unit,
                     'tax_rate' => $line->tax_rate,
                     'unit_price' => $this->getAmountFromJson($line->amounts, 'I-183'),
+                    'discount_rate' => $line->discount_rate,
                     'line_net' => $this->getAmountFromJson($line->amounts, 'I-171'),
                 ]),
                 'taxes' => $invoice->taxes->map(fn ($tax) => [
@@ -432,6 +439,7 @@ class InvoiceController extends Controller
                     'quantity' => $line->quantity,
                     'unit_of_measure' => $line->measurement_unit,
                     'unit_price' => $this->getAmountFromJson($line->amounts, 'I-183'),
+                    'discount_rate' => $line->discount_rate,
                     'tva_rate' => $line->tax_rate,
                 ]),
             ],
@@ -564,6 +572,7 @@ class InvoiceController extends Controller
                     'tax_type_code' => 'I-1602',
                     'tax_type_name' => 'TVA',
                     'tax_rate' => $lineData['tva_rate'],
+                    'discount_rate' => $lineData['discount_rate'] ?? 0,
                     'amounts' => $lineAmounts,
                     'sort_order' => $index,
                 ]);
@@ -786,6 +795,25 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Download XML without TVA.
+     */
+    public function downloadXmlWithoutTva(Invoice $invoice): RedirectResponse|HttpResponse
+    {
+        try {
+            $xml = $this->withoutTvaXmlService->generate($invoice);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to generate XML without TVA: ' . $e->getMessage());
+        }
+
+        $filename = str_replace(['/', '\\', ' '], '-', $invoice->document_identifier) . '-without-tva.xml';
+
+        return response($xml, 200, [
+            'Content-Type' => 'application/xml',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
      * Duplicate an invoice.
      */
     public function duplicate(Invoice $invoice): RedirectResponse
@@ -868,9 +896,13 @@ class InvoiceController extends Controller
         foreach ($lines as $line) {
             $qty = floatval($line['quantity'] ?? 0);
             $price = floatval($line['unit_price'] ?? 0);
+            $discountRate = floatval($line['discount_rate'] ?? 0);
             $tvaRate = floatval($line['tva_rate'] ?? 0);
 
-            $lineNet = $qty * $price;
+            $gross = $qty * $price;
+            $discountAmount = $gross * ($discountRate / 100);
+            $lineNet = $gross - $discountAmount;
+            
             $lineTva = $lineNet * ($tvaRate / 100);
 
             $totalHt += $lineNet;
@@ -906,7 +938,11 @@ class InvoiceController extends Controller
     {
         $qty = floatval($lineData['quantity'] ?? 0);
         $price = floatval($lineData['unit_price'] ?? 0);
-        $lineNet = $qty * $price;
+        $discountRate = floatval($lineData['discount_rate'] ?? 0);
+        
+        $gross = $qty * $price;
+        $discountAmount = $gross * ($discountRate / 100);
+        $lineNet = $gross - $discountAmount;
 
         return [
             ['amount_type_code' => 'I-183', 'amount' => number_format($price, 3, '.', ''), 'currency' => 'TND'],
@@ -935,27 +971,7 @@ class InvoiceController extends Controller
      */
     private function getCompanySettings(): array
     {
-        $settings = \App\Models\CompanySetting::first();
-
-        if (!$settings) {
-            return [
-                'identifier' => '',
-                'name' => '',
-                'street' => '',
-                'city' => '',
-                'postal_code' => '',
-                'country' => 'TN',
-            ];
-        }
-
-        return [
-            'identifier' => $settings->matricule_fiscal ?? '',
-            'name' => $settings->company_name ?? '',
-            'street' => $settings->street ?? '',
-            'city' => $settings->city ?? '',
-            'postal_code' => $settings->postal_code ?? '',
-            'country' => $settings->country_code ?? 'TN',
-        ];
+        return CompanySetting::senderDefaultsForUser(auth()->user());
     }
 
     /**
@@ -967,6 +983,25 @@ class InvoiceController extends Controller
         
         $filename = "invoice_{$invoice->document_identifier}_" . now()->format('Ymd') . '.pdf';
         
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Download invoice as PDF without TVA.
+     */
+    public function downloadPdfWithoutTva(Invoice $invoice): HttpResponse|RedirectResponse
+    {
+        try {
+            $pdfContent = $this->withoutTvaPdfService->generate($invoice);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to generate PDF without TVA: ' . $e->getMessage());
+        }
+
+        $filename = "invoice_{$invoice->document_identifier}_without_tva_" . now()->format('Ymd') . '.pdf';
+
         return response($pdfContent, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',

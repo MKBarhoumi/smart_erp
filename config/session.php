@@ -154,9 +154,11 @@ return [
     | available to. By default, the cookie will be available to the root
     | domain without subdomains. Typically, this shouldn't be changed.
     |
+    | For multi-tenancy, we set this to null to allow subdomain-specific sessions.
+    |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => env('SESSION_DOMAIN', null),
 
     /*
     |--------------------------------------------------------------------------

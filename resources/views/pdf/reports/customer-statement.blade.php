@@ -90,9 +90,9 @@
                     $status = $balance <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid');
                 @endphp
                 <tr>
-                    <td>{{ $inv->oldinvoice_date }}</td>
-                    <td>{{ $inv->oldinvoice_number }}</td>
-                    <td>{{ $inv->due_date ?? '—' }}</td>
+                    <td>{{ $inv->invoice_date }}</td>
+                    <td>{{ $inv->document_identifier }}</td>
+                    <td>{{ $inv->due_date ?? '-' }}</td>
                     <td class="right">{{ number_format((float)$inv->total_ttc, 3, '.', ' ') }}</td>
                     <td class="right">{{ number_format((float)$paid, 3, '.', ' ') }}</td>
                     <td class="right" @if($balance > 0) style="color:#dc2626; font-weight:bold;" @endif>{{ number_format($balance, 3, '.', ' ') }}</td>

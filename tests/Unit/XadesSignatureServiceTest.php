@@ -45,7 +45,7 @@ class XadesSignatureServiceTest extends TestCase
 
         $privateKey = openssl_pkey_new($keyConfig);
         if ($privateKey === false) {
-            $this->markTestSkipped('Cannot generate RSA key — openssl.cnf not found or OpenSSL misconfigured');
+            $this->markTestSkipped('Cannot generate RSA key - openssl.cnf not found or OpenSSL misconfigured');
         }
 
         openssl_pkey_export($privateKey, $this->privateKeyPem, null, $keyConfig);

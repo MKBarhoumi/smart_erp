@@ -27,6 +27,7 @@ class UpdateServiceRequest extends FormRequest
             'unit' => ['required', 'string', 'max:50', 'in:Hour,Day,Unit,Forfait'],
             'unit_price' => ['required', 'numeric', 'min:0', 'max:99999999999999999.999'],
             'tax_rate' => ['required', 'numeric', 'in:0,7,13,19'],
+            'discount_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'is_active' => ['boolean'],
         ];
     }

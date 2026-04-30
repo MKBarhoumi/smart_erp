@@ -20,6 +20,7 @@
         "laravel/wayfinder": "^0.1.9",
         "league/fractal": "^0.21.0",
         "sabre/xml": "^4.0",
+        "stancl/tenancy": "^3.10",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
@@ -39,7 +40,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Helpers/TenancyHelpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

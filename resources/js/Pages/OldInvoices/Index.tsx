@@ -79,7 +79,7 @@ export default function OldInvoicesIndex({ oldinvoices, filters, statuses }: Pro
                                             {inv.oldinvoice_number}
                                         </Link>
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-gray-700">{inv.customer?.name ?? '—'}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-700">{inv.customer?.name ?? '-'}</td>
                                     <td className="px-4 py-3 text-sm text-gray-500">{inv.oldinvoice_date}</td>
                                     <td className="px-4 py-3 text-right font-medium">{formatTND(inv.total_ttc)}</td>
                                     <td className="px-4 py-3 text-center"><OldInvoiceStatusBadge status={inv.status} /></td>

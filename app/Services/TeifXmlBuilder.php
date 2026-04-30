@@ -83,13 +83,21 @@ class TeifXmlBuilder
         if (!empty($invoice->dates)) {
             $dtm = $this->dom->createElement('Dtm');
             foreach ($invoice->dates as $d) {
-                $dateText = $this->dom->createElement('DateText',
-                              htmlspecialchars($d['value']));
-                $dateText->setAttribute('functionCode', $d['function_code']);
-                $dateText->setAttribute('format', $d['format']);
-                $dtm->appendChild($dateText);
+                $val = $d['value'] ?? $d['date_value'] ?? null;
+                $fCode = $d['function_code'] ?? $d['date_type_code'] ?? null;
+                $fmt = $d['format'] ?? 'ddMMyy';
+
+                if ($val !== null && $fCode !== null) {
+                    $dateText = $this->dom->createElement('DateText',
+                                  htmlspecialchars((string)$val));
+                    $dateText->setAttribute('functionCode', (string)$fCode);
+                    $dateText->setAttribute('format', (string)$fmt);
+                    $dtm->appendChild($dateText);
+                }
             }
-            $body->appendChild($dtm);
+            if ($dtm->hasChildNodes()) {
+                $body->appendChild($dtm);
+            }
         }
 
         // PartnerSection
@@ -170,13 +178,13 @@ class TeifXmlBuilder
                 foreach ($partner->contacts as $ctaData) {
                     $cta = $this->dom->createElement('CtaSection');
                     $contact = $this->dom->createElement('Contact');
-                    if ($ctaData['function_code']) {
+                    if (!empty($ctaData['function_code'])) {
                         $contact->setAttribute('functionCode', $ctaData['function_code']);
                     }
                     $this->appendTextChild($contact, 'ContactIdentifier',
-                        $ctaData['contact_identifier']);
+                        $ctaData['contact_identifier'] ?? '');
                     $this->appendTextChild($contact, 'ContactName',
-                        $ctaData['contact_name']);
+                        $ctaData['contact_name'] ?? '');
                     $cta->appendChild($contact);
 
                     if (!empty($ctaData['com_means_type'])) {
@@ -214,8 +222,8 @@ class TeifXmlBuilder
             }
 
             if (!empty($psd['fii'])) {
-                $fii = $this->dom->createElementNS(null, 'PytFii');
-                $fii->setAttribute('functionCode', $psd['fii']['function_code']);
+                $fii = $this->dom->createElement('PytFii');
+                $fii->setAttribute('functionCode', $psd['fii']['function_code'] ?? 'I-141');
 
                 if (!empty($psd['fii']['account_number'])) {
                     $ah = $this->dom->createElement('AccountHolder');
@@ -228,9 +236,11 @@ class TeifXmlBuilder
                     $fii->appendChild($ah);
                 }
 
-                if (!empty($psd['fii']['name_code'])) {
+                if (!empty($psd['fii']['name_code']) || !empty($psd['fii']['institution_name'])) {
                     $inst = $this->dom->createElement('InstitutionIdentification');
-                    $inst->setAttribute('nameCode', $psd['fii']['name_code']);
+                    if (!empty($psd['fii']['name_code'])) {
+                        $inst->setAttribute('nameCode', $psd['fii']['name_code']);
+                    }
                     if (!empty($psd['fii']['branch_identifier'])) {
                         $this->appendTextChild($inst, 'BranchIdentifier',
                             $psd['fii']['branch_identifier']);

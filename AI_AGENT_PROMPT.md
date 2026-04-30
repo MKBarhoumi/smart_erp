@@ -1,4 +1,4 @@
-# AI Agent Development Prompt — SaaS Smart ERP Lite for Tunisia
+# AI Agent Development Prompt - SaaS Smart ERP Lite for Tunisia
 
 ## Your Role and Mission
 
@@ -6,7 +6,7 @@ You are an **Expert Full-Stack Developer and Regulatory Compliance Architect** t
 
 ## Your Source of Truth
 
-You have been provided with **PROJECT_BLUEPRINT.md** — a comprehensive, machine-readable specification document. This blueprint is your **SINGLE SOURCE OF TRUTH** for all development decisions.
+You have been provided with **PROJECT_BLUEPRINT.md** - a comprehensive, machine-readable specification document. This blueprint is your **SINGLE SOURCE OF TRUTH** for all development decisions.
 
 **YOU MUST:**
 - ✅ Read and internalize the ENTIRE blueprint before writing any code
@@ -39,13 +39,13 @@ You have been provided with **PROJECT_BLUEPRINT.md** — a comprehensive, machin
 Work through the **Implementation Roadmap (Section 7)** systematically:
 
 **FOR EACH PHASE:**
-1. **Read the phase objectives** — Understand what this phase delivers
-2. **Review all checkbox tasks** — Plan your implementation order
-3. **Implement each task completely** — No partial implementations
-4. **Test each task** — Unit tests, feature tests, manual verification
-5. **Check off the task** — Mark it as complete only when fully working
-6. **Document any deviations** — If you must adjust, explain why and get approval
-7. **Commit progress** — Frequent, atomic Git commits with clear messages
+1. **Read the phase objectives** - Understand what this phase delivers
+2. **Review all checkbox tasks** - Plan your implementation order
+3. **Implement each task completely** - No partial implementations
+4. **Test each task** - Unit tests, feature tests, manual verification
+5. **Check off the task** - Mark it as complete only when fully working
+6. **Document any deviations** - If you must adjust, explain why and get approval
+7. **Commit progress** - Frequent, atomic Git commits with clear messages
 
 **DO NOT PROCEED TO THE NEXT PHASE** until all checkboxes in the current phase are completed and tested.
 
@@ -161,7 +161,7 @@ const formatTND = (amount: number): string => {
 - ✅ Central database (`landlord`) stores: tenants, domains, plans
 - ✅ Tenant databases store: all business data (oldinvoices, customers, products)
 - ✅ NEVER allow cross-tenant data access
-- ✅ NEVER use `tenant_id` foreign keys — use separate databases
+- ✅ NEVER use `tenant_id` foreign keys - use separate databases
 - ✅ Tenant identification via subdomain middleware
 - ✅ Automatic DB connection switching per request
 
@@ -265,7 +265,7 @@ export default function OldInvoiceCreate() {
 
 **Standards Checklist:**
 - ✅ TypeScript strict mode enabled (`"strict": true` in `tsconfig.json`)
-- ✅ NO `any` types — use proper interfaces
+- ✅ NO `any` types - use proper interfaces
 - ✅ All props have interfaces
 - ✅ All API responses have typed interfaces
 - ✅ Functional components only (no class components)
@@ -290,11 +290,11 @@ npm run build              # Production build test
 ### Backend Tests (PHPUnit/Pest)
 
 **Unit Tests:**
-- ✅ `OldInvoiceCalculationService` — all calculation scenarios
-- ✅ `TeifXmlBuilder` — XML generation with assertions on structure
-- ✅ `XadesSignatureService` — signature components validation
-- ✅ `MatriculeFiscaleValidator` — valid/invalid patterns
-- ✅ `AmountInWordsService` — French number-to-words conversion
+- ✅ `OldInvoiceCalculationService` - all calculation scenarios
+- ✅ `TeifXmlBuilder` - XML generation with assertions on structure
+- ✅ `XadesSignatureService` - signature components validation
+- ✅ `MatriculeFiscaleValidator` - valid/invalid patterns
+- ✅ `AmountInWordsService` - French number-to-words conversion
 
 **Feature Tests:**
 - ✅ OldInvoice CRUD operations
@@ -542,19 +542,19 @@ git commit -m "docs: add XAdES-BES signature implementation notes"
 ```
 
 **Commit Message Format:**
-- `feat:` — New feature
-- `fix:` — Bug fix
-- `test:` — Add/update tests
-- `docs:` — Documentation
-- `refactor:` — Code refactoring (no behavior change)
-- `perf:` — Performance improvement
-- `chore:` — Build/config changes
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `test:` - Add/update tests
+- `docs:` - Documentation
+- `refactor:` - Code refactoring (no behavior change)
+- `perf:` - Performance improvement
+- `chore:` - Build/config changes
 
 **Branch Strategy:**
-- `main` — Production-ready code
-- `develop` — Integration branch
-- `feature/teif-xml-builder` — Feature branches
-- `fix/oldinvoice-calculation` — Bug fix branches
+- `main` - Production-ready code
+- `develop` - Integration branch
+- `feature/teif-xml-builder` - Feature branches
+- `fix/oldinvoice-calculation` - Bug fix branches
 
 ---
 
@@ -664,13 +664,13 @@ git commit -m "docs: add XAdES-BES signature implementation notes"
 
 ## Your Next Steps
 
-1. **📖 Read the entire PROJECT_BLUEPRINT.md** — Understand the full scope
-2. **📋 Review Phase 1 tasks** — Plan your first implementation sprint
-3. **🏗️ Set up the development environment** — PHP 8.3, PostgreSQL, Node.js, Redis
-4. **⚙️ Initialize Laravel 11 project** — Follow Phase 1A scaffolding checklist
-5. **✅ Complete Phase 1** — Don't move to Phase 2 until all Phase 1 tasks are done
-6. **🔁 Repeat for Phases 2-8** — Systematic, test-driven, quality-focused development
-7. **🚀 Deploy to production** — Follow deployment checklist carefully
+1. **📖 Read the entire PROJECT_BLUEPRINT.md** - Understand the full scope
+2. **📋 Review Phase 1 tasks** - Plan your first implementation sprint
+3. **🏗️ Set up the development environment** - PHP 8.3, PostgreSQL, Node.js, Redis
+4. **⚙️ Initialize Laravel 11 project** - Follow Phase 1A scaffolding checklist
+5. **✅ Complete Phase 1** - Don't move to Phase 2 until all Phase 1 tasks are done
+6. **🔁 Repeat for Phases 2-8** - Systematic, test-driven, quality-focused development
+7. **🚀 Deploy to production** - Follow deployment checklist carefully
 8. **🎉 Deliver a production-ready, regulation-compliant SaaS ERP platform**
 
 ---
@@ -683,11 +683,11 @@ This is a **REGULATORY COMPLIANCE PROJECT** for electronic invoicing in Tunisia.
 - ❌ Loss of trust and business viability
 
 **Therefore:**
-- **Take your time** — Accuracy over speed
-- **Test thoroughly** — Edge cases matter in financial systems
-- **Follow the blueprint precisely** — It was designed with Tunisia's exact requirements
-- **Ask for clarification** — If anything in the blueprint is unclear, pause and ask
-- **Document your work** — Future developers will thank you
+- **Take your time** - Accuracy over speed
+- **Test thoroughly** - Edge cases matter in financial systems
+- **Follow the blueprint precisely** - It was designed with Tunisia's exact requirements
+- **Ask for clarification** - If anything in the blueprint is unclear, pause and ask
+- **Document your work** - Future developers will thank you
 
 **You have everything you need to build this successfully. The blueprint is complete. Now execute with precision and care.**
 

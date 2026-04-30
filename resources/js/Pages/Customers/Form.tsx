@@ -36,7 +36,7 @@ const identifierTypes = [
 ];
 
 const categoryTypes = [
-    { value: '', label: '— Sélectionner —' },
+    { value: '', label: '- Sélectionner -' },
     { value: 'A', label: 'A' },
     { value: 'B', label: 'B' },
     { value: 'D', label: 'D' },
@@ -45,7 +45,7 @@ const categoryTypes = [
 ];
 
 const personTypes = [
-    { value: '', label: '— Select —' },
+    { value: '', label: '- Select -' },
     { value: 'C', label: 'C - Legal Entity' },
     { value: 'M', label: 'M - Natural Person' },
     { value: 'N', label: 'N - Non-Resident' },

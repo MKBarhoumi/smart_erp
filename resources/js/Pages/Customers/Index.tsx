@@ -153,7 +153,7 @@ export default function CustomersIndex({ customers, filters }: Props) {
                                                     <p className="mt-1 font-mono text-gray-700">{customer.identifier_value}</p>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{customer.city || '—'}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{customer.city || '-'}</td>
                                             <td className="px-6 py-4 text-sm">
                                                 {customer.phone && <p className="text-gray-600">{customer.phone}</p>}
                                                 {customer.email && <p className="text-gray-500 text-xs">{customer.email}</p>}

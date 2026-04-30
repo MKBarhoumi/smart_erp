@@ -1,0 +1,135 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: smart_erp_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, pdo, pdo_mysql, redis
+          coverage: xdebug
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Run migrations
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: smart_erp_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
+
+      - name: Run tests
+        run: php artisan test --coverage
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: smart_erp_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
+
+      - name: Run code analysis
+        run: |
+          composer require --dev phpstan/phpstan
+          vendor/bin/phpstan analyse app --level=8
+
+      - name: Run security audit
+        run: |
+          composer require --dev enshrined/svg-security-scanner
+          vendor/bin/svg-security-scanner scan
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Deploy to production
+        run: |
+          # Add your deployment commands here
+          # Example: Deploy using SSH, rsync, or deployment tool
+          echo "Deploying to production..."
+          
+      - name: Run migrations on production
+        run: |
+          # Add your migration commands here
+          echo "Running migrations..."
+          
+      - name: Clear cache
+        run: |
+          # Add your cache clearing commands here
+          echo "Clearing cache..."
+          
+      - name: Restart queue workers
+        run: |
+          # Add your queue worker restart commands here
+          echo "Restarting queue workers..."
+
+  monitor:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run health checks
+        run: |
+          # Add your health check commands here
+          echo "Running health checks..."
+          curl -f https://your-domain.com/health || exit 1
+
+      - name: Send deployment notification
+        run: |
+          # Add your notification commands here
+          echo "Sending deployment notification..."

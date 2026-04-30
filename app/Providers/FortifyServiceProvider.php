@@ -11,7 +11,7 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Intentionally empty — provided as a minimal stub for autoload/migrations
+        // Intentionally empty - provided as a minimal stub for autoload/migrations
     }
 
     /**

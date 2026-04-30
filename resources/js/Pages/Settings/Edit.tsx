@@ -148,7 +148,7 @@ export default function Edit({ settings, certificateInfo }: Props) {
                             <div className="grid sm:grid-cols-2 gap-3 text-sm">
                                 <div><span className="text-gray-500">Subject:</span> <span className="text-gray-900">{certificateInfo.subject}</span></div>
                                 <div><span className="text-gray-500">Issuer:</span> <span className="text-gray-900">{certificateInfo.issuer}</span></div>
-                                <div className="flex items-center gap-2"><span className="text-gray-500">Validity:</span> <span className="text-gray-900">{certificateInfo.valid_from} — {certificateInfo.valid_to}</span>{certificateInfo.is_expiring_soon && <span className="inline-flex px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Expiring Soon</span>}</div>
+                                <div className="flex items-center gap-2"><span className="text-gray-500">Validity:</span> <span className="text-gray-900">{certificateInfo.valid_from} - {certificateInfo.valid_to}</span>{certificateInfo.is_expiring_soon && <span className="inline-flex px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Expiring Soon</span>}</div>
                                 <div><span className="text-gray-500">Serial:</span> <span className="font-mono text-xs text-gray-700">{certificateInfo.serial_number}</span></div>
                             </div>
                         </div>

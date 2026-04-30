@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,7 @@ class CompanySetting extends Model
     use HasUuids;
 
     protected $fillable = [
+        'user_id',
         'company_name',
         'matricule_fiscal',
         'category_type',
@@ -29,6 +31,7 @@ class CompanySetting extends Model
         'email',
         'website',
         'logo_path',
+        'iban',
         'bank_rib',
         'bank_name',
         'bank_branch_code',
@@ -51,6 +54,39 @@ class CompanySetting extends Model
             'next_oldinvoice_counter' => 'integer',
             'certificate_expires_at' => 'datetime',
             'certificate_passphrase' => 'encrypted',
+            'default_timbre_fiscal' => 'decimal:3',
+        ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public static function resolveForUser(?User $user): ?self
+    {
+        if (!$user) {
+            return static::query()->whereNull('user_id')->first();
+        }
+
+        return static::query()->where('user_id', $user->id)->first()
+            ?? static::query()->whereNull('user_id')->first();
+    }
+
+    /**
+     * @return array{identifier: string, name: string, street: string, city: string, postal_code: string, country: string}
+     */
+    public static function senderDefaultsForUser(?User $user): array
+    {
+        $settings = static::resolveForUser($user);
+
+        return [
+            'identifier' => $settings?->matricule_fiscal ?? '',
+            'name' => $settings?->company_name ?? '',
+            'street' => $settings?->street ?? '',
+            'city' => $settings?->city ?? '',
+            'postal_code' => $settings?->postal_code ?? '',
+            'country' => $settings?->country_code ?? '',
         ];
     }
 

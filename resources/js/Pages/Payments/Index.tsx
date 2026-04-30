@@ -128,7 +128,7 @@ export default function Index({ payments, filters, totalCollected }: Props) {
                     const style = methodStyles[payment.method] || methodStyles.cash;
                     const isOldInvoice = !!payment.oldinvoice;
                     const invoiceNumber = isOldInvoice ? payment.oldinvoice?.oldinvoice_number : payment.invoice?.document_identifier;
-                    const customerName = isOldInvoice ? payment.oldinvoice?.customer?.name : payment.invoice ? 'New Invoice' : '—';
+                    const customerName = isOldInvoice ? payment.oldinvoice?.customer?.name : payment.invoice ? 'New Invoice' : '-';
                     const invoiceId = isOldInvoice ? payment.oldinvoice?.id : payment.invoice?.id;
                     const invoiceLink = isOldInvoice ? `/oldinvoices/${invoiceId}` : `/invoices/${invoiceId}`;
 
@@ -138,13 +138,13 @@ export default function Index({ payments, filters, totalCollected }: Props) {
                         <td className="px-6 py-4">
                           <Link href={invoiceLink} className="font-semibold text-user-600 hover:text-user-700 transition-colors">{invoiceNumber}</Link>
                         </td>
-                        <td className="px-6 py-4 text-gray-700">{customerName || '—'}</td>
+                        <td className="px-6 py-4 text-gray-700">{customerName || '-'}</td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium ${style.bg} ${style.text}`}>{style.label}</span>
                         </td>
-                        <td className="px-6 py-4 font-mono text-xs text-gray-500">{payment.reference || '—'}</td>
+                        <td className="px-6 py-4 font-mono text-xs text-gray-500">{payment.reference || '-'}</td>
                         <td className="px-6 py-4 text-right"><span className="font-bold text-gray-900">{formatTND(payment.amount)}</span></td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{payment.creator?.name || '—'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{payment.creator?.name || '-'}</td>
                         <td className="px-6 py-4 text-right">
                           {canModify && (
                             <button onClick={() => { if (confirm('Delete this payment?')) router.delete(`/payments/${payment.id}`); }} className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Delete">

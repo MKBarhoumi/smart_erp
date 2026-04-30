@@ -1,37 +1,29 @@
 <?php
 
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\SoapController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Admin\AuditLogController;
-use App\Http\Controllers\Admin\UserController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-// SOAP endpoints (no auth, no CSRF)
-Route::get('/soap/invoicing', [SoapController::class, 'wsdl'])->name('soap.wsdl');
-Route::post('/soap/invoicing', [SoapController::class, 'handle'])->name('soap.handle');
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
 
-Route::middleware('guest')->group(function () {
+// Load central routes (no tenancy)
+require __DIR__.'/central.php';
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-})->name('home');
-});
+// Load tenant routes (with tenancy)
+require __DIR__.'/tenant.php';
+
+// Load other route files
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';
+require __DIR__.'/oldInvoices.php';
+require __DIR__.'/invoices.php';
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {
@@ -89,6 +81,11 @@ Route::middleware('auth')->group(function () {
 
     // Company Settings (admin only)
     Route::middleware('can:manage-settings')->group(function () {
+        Route::prefix('api')->name('api.')->group(function () {
+            Route::get('/company-settings', [CompanySettingsController::class, 'show'])->name('company-settings.show');
+            Route::put('/company-settings', [CompanySettingsController::class, 'update'])->name('company-settings.update');
+        });
+
         Route::get('/company-settings', [SettingsController::class, 'edit'])->name('company-settings.edit');
         Route::put('/company-settings', [SettingsController::class, 'update'])->name('company-settings.update');
         Route::post('/company-settings/certificate', [SettingsController::class, 'uploadCertificate'])->name('company-settings.certificate');
@@ -121,3 +118,20 @@ if (app()->environment('local')) {
         Route::get('/503', fn() => Inertia::render('Errors/Error503'))->name('test.error503');
     });
 }
+
+// Tenant test route
+Route::middleware(['tenant'])->group(function () {
+    Route::get('/test-tenancy', function () {
+        $tenancy = tenancy();
+        return [
+            'tenant' => $tenancy->tenant ? [
+                'id' => $tenancy->tenant->id,
+                'name' => $tenancy->tenant->name,
+                'database' => $tenancy->tenant->database_name,
+            ] : null,
+            'initialized' => $tenancy->initialized,
+            'db_connection' => DB::getDefaultConnection(),
+            'db_name' => DB::connection()->getDatabaseName(),
+        ];
+    })->name('test.tenancy');
+});

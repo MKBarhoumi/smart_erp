@@ -26,6 +26,7 @@ class Product extends Model
         'unit_of_measure',
         'unit_price',
         'tva_rate',
+        'discount_rate',
         'is_subject_to_timbre',
         'track_inventory',
         'min_stock_alert',
@@ -41,6 +42,9 @@ class Product extends Model
         return [
             'track_inventory' => 'boolean',
             'is_active' => 'boolean',
+            'unit_price' => 'decimal:3',
+            'tva_rate' => 'decimal:3',
+            'discount_rate' => 'decimal:2',
         ];
     }
 

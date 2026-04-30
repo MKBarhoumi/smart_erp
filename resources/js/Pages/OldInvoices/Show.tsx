@@ -340,7 +340,7 @@ export default function Show({ oldinvoice, canValidate, canSign, canSubmit, canE
                                     <tr key={p.id}>
                                         <td className="px-3 py-2">{p.payment_date}</td>
                                         <td className="px-3 py-2 capitalize">{p.method.replace('_', ' ')}</td>
-                                        <td className="px-3 py-2">{p.reference || '—'}</td>
+                                        <td className="px-3 py-2">{p.reference || '-'}</td>
                                         <td className="px-3 py-2 text-right font-medium">{formatTND(p.amount)}</td>
                                         <td className="px-3 py-2 text-right">
                                             <button onClick={() => router.delete(`/oldinvoices/${oldinvoice.id}/payments/${p.id}`)} className="text-red-600 hover:underline text-xs">Delete</button>

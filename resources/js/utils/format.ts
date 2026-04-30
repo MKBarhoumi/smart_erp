@@ -67,13 +67,13 @@ export function formatDate(
     dateString: string | Date | null | undefined,
     options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' }
 ): string {
-    if (!dateString) return '—';
+    if (!dateString) return '-';
     
     try {
         const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
         return date.toLocaleDateString('en-US', options);
     } catch {
-        return '—';
+        return '-';
     }
 }
 
@@ -83,7 +83,7 @@ export function formatDate(
  * @returns Formatted datetime string
  */
 export function formatDateTime(dateString: string | null | undefined): string {
-    if (!dateString) return '—';
+    if (!dateString) return '-';
     
     try {
         return new Date(dateString).toLocaleString('en-US', {
@@ -94,6 +94,6 @@ export function formatDateTime(dateString: string | null | undefined): string {
             minute: '2-digit',
         });
     } catch {
-        return '—';
+        return '-';
     }
 }

@@ -25,7 +25,7 @@ interface Props extends PageProps {
 }
 
 function formatAuditValue(key: string, value: unknown): string {
-    if (value === null || value === undefined) return '—';
+    if (value === null || value === undefined) return '-';
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (typeof value === 'object') {
         if (Array.isArray(value)) return value.length > 0 ? `${value.length} item(s)` : 'Empty';

@@ -11,7 +11,7 @@ interface AgingCustomer {
     days_30_60: string;
     days_60_90: string;
     over_90: string;
-    oldest_oldinvoice_date: string;
+    oldest_invoice_date: string;
 }
 
 interface Props {
@@ -115,7 +115,7 @@ export default function CustomerAging({ customers = [], totals }: Props) {
                                             <td className="px-4 py-3 text-right">{formatNumber(c.days_60_90)}</td>
                                             <td className="px-4 py-3 text-right font-medium text-red-600">{formatNumber(c.over_90)}</td>
                                             <td className="px-4 py-3 text-right font-semibold">{formatNumber(c.total_outstanding)}</td>
-                                            <td className="px-4 py-3 text-xs text-gray-500">{c.oldest_oldinvoice_date}</td>
+                                            <td className="px-4 py-3 text-xs text-gray-500">{c.oldest_invoice_date}</td>
                                         </tr>
                                     );
                                 })}

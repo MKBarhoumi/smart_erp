@@ -60,6 +60,7 @@ export default function Show({ invoice, canEdit, canDelete, canDuplicate, canAdd
     const [showReject, setShowReject] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [rejectReason, setRejectReason] = useState('');
+    const [withoutTvaExport, setWithoutTvaExport] = useState(false);
 
     // Payment calculations
     const paymentSummary = useMemo(() => {
@@ -219,6 +220,25 @@ export default function Show({ invoice, canEdit, canDelete, canDuplicate, canAdd
                             <a href={`/invoices/${invoice.id}/pdf`} target="_blank" rel="noopener noreferrer">
                                 <Button size="sm" variant="ghost">Download PDF</Button>
                             </a>
+                            <label className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    checked={withoutTvaExport}
+                                    onChange={(e) => setWithoutTvaExport(e.target.checked)}
+                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <span>Invoice without TVA</span>
+                            </label>
+                            {withoutTvaExport && (
+                                <>
+                                    <a href={`/invoices/${invoice.id}/xml-without-tva`} target="_blank" rel="noopener noreferrer">
+                                        <Button size="sm" variant="secondary">Download XML without TVA</Button>
+                                    </a>
+                                    <a href={`/invoices/${invoice.id}/pdf-without-tva`} target="_blank" rel="noopener noreferrer">
+                                        <Button size="sm" variant="secondary">Download PDF without TVA</Button>
+                                    </a>
+                                </>
+                            )}
                             {canDuplicate && (
                                 <Button
                                     size="sm"
@@ -354,7 +374,7 @@ export default function Show({ invoice, canEdit, canDelete, canDuplicate, canAdd
                         <dl className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <dt className="text-gray-500">Invoice Date</dt>
-                                <dd>{invoice.invoice_date || '—'}</dd>
+                                <dd>{invoice.invoice_date || '-'}</dd>
                             </div>
                             {invoice.submitted_at && (
                                 <div className="flex justify-between">
@@ -543,8 +563,8 @@ export default function Show({ invoice, canEdit, canDelete, canDuplicate, canAdd
                                                     {style.label}
                                                 </span>
                                             </td>
-                                            <td className="px-3 py-2">{p.reference || '—'}</td>
-                                            <td className="px-3 py-2 text-gray-500">{p.creator || '—'}</td>
+                                            <td className="px-3 py-2">{p.reference || '-'}</td>
+                                            <td className="px-3 py-2 text-gray-500">{p.creator || '-'}</td>
                                             <td className="px-3 py-2 text-right font-medium">{formatTND(p.amount)}</td>
                                             <td className="px-3 py-2 text-right">
                                                 <button 

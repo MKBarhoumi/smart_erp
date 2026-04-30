@@ -60,7 +60,7 @@ export default function History({ movements, filters, products }: Props) {
               <option value="">All products</option>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.code} — {p.name}
+                  {p.code} - {p.name}
                 </option>
               ))}
             </select>
@@ -144,8 +144,8 @@ export default function History({ movements, filters, products }: Props) {
                       <td className="px-4 py-3 text-right font-medium">{parseFloat(m.quantity).toFixed(3)}</td>
                       <td className="px-4 py-3 text-right text-gray-500">{parseFloat(m.stock_before).toFixed(3)}</td>
                       <td className="px-4 py-3 text-right text-gray-500">{parseFloat(m.stock_after).toFixed(3)}</td>
-                      <td className="px-4 py-3 text-gray-600">{m.reason || '—'}</td>
-                      <td className="px-4 py-3 text-gray-500">{m.performer?.name || '—'}</td>
+                      <td className="px-4 py-3 text-gray-600">{m.reason || '-'}</td>
+                      <td className="px-4 py-3 text-gray-500">{m.performer?.name || '-'}</td>
                     </tr>
                   );
                 })

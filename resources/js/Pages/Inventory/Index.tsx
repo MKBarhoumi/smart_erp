@@ -237,7 +237,7 @@ export default function Index({ products, recentMovements, lowStockCount, filter
                                                 <td className="px-6 py-3 text-right font-semibold text-gray-900">{parseFloat(m.quantity).toFixed(3)}</td>
                                                 <td className="px-6 py-3 text-right text-gray-500">{parseFloat(m.quantity_before).toFixed(3)}</td>
                                                 <td className="px-6 py-3 text-right text-gray-900">{parseFloat(m.quantity_after).toFixed(3)}</td>
-                                                <td className="px-6 py-3 text-sm text-gray-500">{m.notes || '—'}</td>
+                                                <td className="px-6 py-3 text-sm text-gray-500">{m.notes || '-'}</td>
                                             </tr>
                                         );
                                     })}

@@ -128,7 +128,7 @@ class DashboardController extends Controller
             ->take(10)
             ->values();
 
-        // Monthly revenue chart (last 12 months) — use driver-specific month formatting
+        // Monthly revenue chart (last 12 months) - use driver-specific month formatting
         $driver = DB::connection()->getDriverName();
         switch ($driver) {
             case 'pgsql':

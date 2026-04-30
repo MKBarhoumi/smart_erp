@@ -38,7 +38,12 @@ type LineType = 'product' | 'service';
 interface ExtendedInvoiceFormLine extends InvoiceFormLine {
     line_type: LineType;
     service_id?: string;
+    discount_rate?: string;
 }
+
+type InvoiceFormState = Omit<InvoiceFormData, 'lines'> & {
+    lines: ExtendedInvoiceFormLine[];
+};
 
 const emptyProductLine: ExtendedInvoiceFormLine = {
     line_type: 'product',
@@ -49,6 +54,7 @@ const emptyProductLine: ExtendedInvoiceFormLine = {
     unit_of_measure: 'UNIT',
     unit_price: '0',
     tva_rate: '19',
+    discount_rate: '0',
 };
 
 const emptyServiceLine: ExtendedInvoiceFormLine = {
@@ -61,6 +67,7 @@ const emptyServiceLine: ExtendedInvoiceFormLine = {
     unit_of_measure: 'SERVICE',
     unit_price: '0',
     tva_rate: '19',
+    discount_rate: '0',
 };
 
 export default function InvoiceForm({
@@ -73,7 +80,16 @@ export default function InvoiceForm({
     invoice,
     isEdit = false
 }: Props) {
-    const { data, setData, post, put, processing, errors } = useForm<InvoiceFormData & { lines: ExtendedInvoiceFormLine[] }>({
+    const hasCompanySettings = Boolean(
+        companySettings.identifier ||
+        companySettings.name ||
+        companySettings.street ||
+        companySettings.city ||
+        companySettings.postal_code ||
+        companySettings.country,
+    );
+
+    const { data, setData, post, put, processing, errors } = useForm<InvoiceFormState>({
         document_type_code: invoice?.document_type_code ?? 'I-11',
         invoice_date: invoice?.invoice_date ?? new Date().toISOString().split('T')[0],
         due_date: invoice?.due_date ?? '',
@@ -86,7 +102,7 @@ export default function InvoiceForm({
         sender_street: invoice?.sender_street ?? companySettings.street,
         sender_city: invoice?.sender_city ?? companySettings.city,
         sender_postal_code: invoice?.sender_postal_code ?? companySettings.postal_code,
-        sender_country: invoice?.sender_country ?? (companySettings.country || 'TN'),
+        sender_country: invoice?.sender_country ?? companySettings.country ?? '',
 
         // Receiver (buyer)
         receiver_identifier: invoice?.receiver_identifier ?? '',
@@ -99,7 +115,7 @@ export default function InvoiceForm({
 
         // Lines
         lines: invoice?.lines?.length
-            ? invoice.lines.map((l) => ({
+            ? invoice.lines.map<ExtendedInvoiceFormLine>((l) => ({
                 line_type: (l as ExtendedInvoiceFormLine).line_type || 'product',
                 product_id: '',
                 service_id: '',
@@ -143,6 +159,7 @@ export default function InvoiceForm({
             item_code: product.code,
             item_description: product.name,
             unit_price: product.unit_price,
+            discount_rate: (product as any).discount_rate || '0',
             unit_of_measure: product.unit_of_measure,
             tva_rate: product.tva_rate,
         };
@@ -160,6 +177,7 @@ export default function InvoiceForm({
             item_code: service.code,
             item_description: service.name,
             unit_price: service.unit_price,
+            discount_rate: (service as any).discount_rate || '0',
             unit_of_measure: 'SERVICE',
             tva_rate: service.tva_rate,
         };
@@ -185,9 +203,14 @@ export default function InvoiceForm({
     const lineTotals = data.lines.map((line) => {
         const qty = parseFloat(line.quantity) || 0;
         const price = parseFloat(line.unit_price) || 0;
-        const net = qty * price;
+        const discountRate = parseFloat(line.discount_rate || '0') || 0;
+        
+        const gross = qty * price;
+        const discountAmount = gross * (discountRate / 100);
+        const net = gross - discountAmount;
+        
         const tva = net * (parseFloat(line.tva_rate) / 100);
-        return { net, tva, total: net + tva };
+        return { net, tva, discountAmount, total: net + tva };
     });
 
     const totalHT = lineTotals.reduce((s, l) => s + l.net, 0);
@@ -255,6 +278,11 @@ export default function InvoiceForm({
                             <div className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">I-62</div>
                             <h2 className="text-lg font-semibold text-gray-900">Sender (Seller)</h2>
                         </div>
+                        {!hasCompanySettings && (
+                            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                Please configure Company Settings first.
+                            </div>
+                        )}
                         <div className="space-y-4">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Input
@@ -490,7 +518,7 @@ export default function InvoiceForm({
                                         placeholder="UNIT"
                                     />
                                 </div>
-                                <div className="mt-3 grid gap-3 sm:grid-cols-5">
+                                <div className="mt-3 grid gap-3 sm:grid-cols-6">
                                     <Input 
                                         label="Quantity" 
                                         type="number" 
@@ -508,6 +536,14 @@ export default function InvoiceForm({
                                         onChange={(e) => updateLine(index, 'unit_price', e.target.value)} 
                                         error={(errors as Record<string, string>)[`lines.${index}.unit_price`]}
                                         required
+                                    />
+                                    <Input 
+                                        label="Discount %" 
+                                        type="number" 
+                                        step="0.01" 
+                                        value={line.discount_rate || '0'} 
+                                        onChange={(e) => updateLine(index, 'discount_rate', e.target.value)} 
+                                        error={(errors as Record<string, string>)[`lines.${index}.discount_rate`]}
                                     />
                                     <Input 
                                         label="TVA %" 

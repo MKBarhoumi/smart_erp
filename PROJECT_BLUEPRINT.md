@@ -1,9 +1,9 @@
-# PROJECT_BLUEPRINT.md — SaaS Smart ERP Lite (Tunisia)
+# PROJECT_BLUEPRINT.md - SaaS Smart ERP Lite (Tunisia)
 
 > **Version:** 1.0.0  
 > **Last Updated:** 2026-02-13  
 > **Status:** Source of Truth for Autonomous AI Developer Agent  
-> **Regulatory Standard:** Tunisia TradeNet (TTN) El Fatoora — TEIF v1.8.8
+> **Regulatory Standard:** Tunisia TradeNet (TTN) El Fatoora - TEIF v1.8.8
 
 ---
 
@@ -17,7 +17,7 @@
 6. [API Architecture](#6-api-architecture)
 7. [Implementation Roadmap](#7-implementation-roadmap)
 8. [Coding Standards](#8-coding-standards)
-9. [Appendix — TEIF Code Reference Tables](#9-appendix--teif-code-reference-tables)
+9. [Appendix - TEIF Code Reference Tables](#9-appendix--teif-code-reference-tables)
 
 ---
 
@@ -44,15 +44,15 @@ The platform is designed as a **database-per-tenant** SaaS architecture, ensurin
 | **CSS Framework** | Tailwind CSS | 3.x | With `@tailwindcss/forms` plugin |
 | **SPA Bridge** | Inertia.js | 2.x | Server-side routing, client-side rendering |
 | **Database** | PostgreSQL | 16.x | NUMERIC(20,3) for TND precision |
-| **Auth** | Laravel Sanctum | — | API token + SPA cookie auth |
+| **Auth** | Laravel Sanctum | - | API token + SPA cookie auth |
 | **Multi-Tenancy** | stancl/tenancy | 3.x | Database-per-tenant isolation |
-| **XML Processing** | PHP DOMDocument + ext-dom | — | For TEIF XML generation |
-| **Digital Signature** | PHP ext-openssl | — | RSA-SHA256, XAdES-BES envelope |
-| **QR Code** | `simplesoftwareio/simple-qrcode` | — | CEV QR code generation |
-| **PDF Generation** | DomPDF or Snappy | — | OldInvoice PDF export |
-| **Queue** | Laravel Horizon + Redis | — | Async TTN submission jobs |
-| **Testing** | PHPUnit + Pest (backend), Vitest (frontend) | — | Mandatory test coverage |
-| **CI/CD** | GitHub Actions | — | Lint, test, deploy pipeline |
+| **XML Processing** | PHP DOMDocument + ext-dom | - | For TEIF XML generation |
+| **Digital Signature** | PHP ext-openssl | - | RSA-SHA256, XAdES-BES envelope |
+| **QR Code** | `simplesoftwareio/simple-qrcode` | - | CEV QR code generation |
+| **PDF Generation** | DomPDF or Snappy | - | OldInvoice PDF export |
+| **Queue** | Laravel Horizon + Redis | - | Async TTN submission jobs |
+| **Testing** | PHPUnit + Pest (backend), Vitest (frontend) | - | Mandatory test coverage |
+| **CI/CD** | GitHub Actions | - | Lint, test, deploy pipeline |
 
 ### 2.1 Development Environment
 
@@ -192,7 +192,7 @@ Each partner has a `functionCode`:
 | Code | Role |
 |------|------|
 | `I-61` | Buyer (Acheteur) |
-| `I-62` | Seller/Supplier (Vendeur) — **subject to MF validation** |
+| `I-62` | Seller/Supplier (Vendeur) - **subject to MF validation** |
 | `I-63` | OldInvoicee |
 | `I-64` | OldInvoiced party |
 | `I-65` | Delivery party |
@@ -341,7 +341,7 @@ Examples: "2.000", "0.240", "2.540"
 </OldInvoiceMoa>
 ```
 
-> **NOTE:** `I-180` (Total TTC) SHOULD include `<AmountDescription>` — the amount spelled out in words in French.
+> **NOTE:** `I-180` (Total TTC) SHOULD include `<AmountDescription>` - the amount spelled out in words in French.
 
 #### 3.1.11 OldInvoiceTax (OldInvoice-Level Taxes)
 
@@ -659,7 +659,7 @@ INVOICE TOTALS:
   timbre_fiscal (I-1601)= configured flat amount (e.g., 0.600 TND) if applicable
   total_ttc     (I-180) = total_ht + total_tva + timbre_fiscal
 
-ALL amounts stored as NUMERIC(20,3) — 3 decimal places for TND millimes.
+ALL amounts stored as NUMERIC(20,3) - 3 decimal places for TND millimes.
 ```
 
 - [ ] Implement calculation engine as a reusable service class
@@ -936,7 +936,7 @@ CREATE TABLE oldinvoices (
     billing_period_end      DATE,                            -- I-36 end
     -- Parties
     customer_id             UUID NOT NULL REFERENCES customers(id),
-    -- Amounts (OldInvoiceMoa) — all NUMERIC(20,3) for TND
+    -- Amounts (OldInvoiceMoa) - all NUMERIC(20,3) for TND
     total_ht                NUMERIC(20,3) NOT NULL DEFAULT 0,    -- I-176: Total net (HT)
     total_net_before_disc   NUMERIC(20,3) NOT NULL DEFAULT 0,    -- I-182: Net before discounts
     total_gross             NUMERIC(20,3) NOT NULL DEFAULT 0,    -- I-179: Gross total
@@ -1121,7 +1121,7 @@ oldinvoice_lines ─────────1:N───── oldinvoice_lines 
 
 ### 6.1 Route Structure (Inertia.js Server-Side)
 
-All routes use Inertia.js — server returns React page components, not JSON.
+All routes use Inertia.js - server returns React page components, not JSON.
 
 ```
 MIDDLEWARE GROUPS:
@@ -1549,9 +1549,9 @@ interface TTNServiceInterface {
 | Database | Use migrations, NEVER raw SQL in application code |
 | Validation | Use Form Request classes, NEVER inline validation |
 | Services | Business logic in Service classes, NOT in controllers |
-| Controllers | Thin controllers — delegate to services |
+| Controllers | Thin controllers - delegate to services |
 | Naming | Models: singular PascalCase (`OldInvoice`), Tables: plural snake_case (`oldinvoices`) |
-| Money | ALWAYS use `NUMERIC(20,3)` — NEVER use `float` for monetary values |
+| Money | ALWAYS use `NUMERIC(20,3)` - NEVER use `float` for monetary values |
 | Dates | Store as `DATE` or `TIMESTAMP`, format `ddMMyy` only when generating XML |
 | UUIDs | Use UUIDs for all primary keys (PostgreSQL `gen_random_uuid()`) |
 
@@ -1559,7 +1559,7 @@ interface TTNServiceInterface {
 
 | Rule | Standard |
 |------|----------|
-| Language | **TypeScript** (strict mode) — no `any` types allowed |
+| Language | **TypeScript** (strict mode) - no `any` types allowed |
 | Linting | **ESLint** with `@typescript-eslint` + `eslint-plugin-react` + `eslint-plugin-react-hooks` |
 | Formatting | **Prettier** with 2-space indent, single quotes, trailing commas |
 | Components | Functional components only, use hooks |
@@ -1760,14 +1760,14 @@ smart-erp-lite/
 
 ---
 
-## 9. Appendix — TEIF Code Reference Tables
+## 9. Appendix - TEIF Code Reference Tables
 
 ### 9.1 Partner Function Codes
 
 | Code | French | English |
 |------|--------|---------|
 | `I-61` | Acheteur | Buyer |
-| `I-62` | Vendeur (Fournisseur) | Seller (Supplier) — **MF validated** |
+| `I-62` | Vendeur (Fournisseur) | Seller (Supplier) - **MF validated** |
 | `I-63` | Facturé | OldInvoicee |
 | `I-64` | Destinataire de la facture | OldInvoiced party |
 | `I-65` | Livré à | Delivery party |
@@ -1934,4 +1934,4 @@ smart-erp-lite/
 
 ---
 
-> **END OF BLUEPRINT — This document is the single source of truth. All development decisions must align with this specification.**
+> **END OF BLUEPRINT - This document is the single source of truth. All development decisions must align with this specification.**

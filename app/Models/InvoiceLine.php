@@ -15,7 +15,7 @@ class InvoiceLine extends Model
         'item_identifier', 'item_code', 'item_description', 'item_lang',
         'api_details', 'quantity', 'measurement_unit',
         'dates', 'tax_type_code', 'tax_type_name', 'tax_category',
-        'tax_rate', 'tax_rate_basis', 'allowances', 'amounts',
+        'tax_rate', 'tax_rate_basis', 'discount_rate', 'allowances', 'amounts',
         'free_texts', 'sort_order',
     ];
 
@@ -25,6 +25,7 @@ class InvoiceLine extends Model
         'allowances'  => 'array',
         'amounts'     => 'array',
         'free_texts'  => 'array',
+        'discount_rate' => 'decimal:2',
     ];
 
     public function invoice(): BelongsTo

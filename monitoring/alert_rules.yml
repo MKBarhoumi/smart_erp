@@ -1,0 +1,112 @@
+# Prometheus Alert Rules
+# Critical alerts that require immediate attention
+
+groups:
+  - name: critical_alerts
+    interval: 30s
+    rules:
+      # Application is down
+      - alert: ApplicationDown
+        expr: up{job="laravel-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Application is down"
+          description: "Application {{ $labels.instance }} has been down for more than 1 minute."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.instance }}"
+
+      # Database connection issues
+      - alert: DatabaseConnectionIssues
+        expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Database connection usage is {{ $value | humanizePercentage }}"
+
+      # Queue backlog
+      - alert: QueueBacklog
+        expr: laravel_queue_jobs_pending > 1000
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Queue backlog detected"
+          description: "{{ $value }} jobs pending in queue"
+
+  - name: warning_alerts
+    interval: 30s
+    rules:
+      # High response time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space low"
+          description: "Disk space is {{ $value | humanizePercentage }} available"
+
+      # Stripe webhook failures
+      - alert: StripeWebhookFailures
+        expr: rate(stripe_webhook_failures_total[5m]) > 3
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Stripe webhook failure rate"
+          description: "{{ $value }} webhook failures per minute"
+
+  - name: business_alerts
+    interval: 1m
+    rules:
+      # Low tenant registration rate
+      - alert: LowTenantRegistrationRate
+        expr: rate(tenant_registrations_total[1h]) < 0.1
+        for: 1h
+        labels:
+          severity: info
+        annotations:
+          summary: "Low tenant registration rate"
+          description: "Tenant registration rate is {{ $value | humanize }} per hour"
+
+      # High subscription churn
+      - alert: HighSubscriptionChurn
+        expr: rate(subscription_cancellations_total[24h]) / rate(subscription_creations_total[24h]) > 0.1
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "High subscription churn rate"
+          description: "Churn rate is {{ $value | humanizePercentage }}"
